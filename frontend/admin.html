@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>ANMAR COMMAND CENTER // GOD MODE</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --neon-green: #0f0;
+            --neon-red: #f00;
+            --bg-color: #050505;
+            --panel-bg: rgba(20, 20, 20, 0.9);
+            --border: 1px solid #333;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--neon-green);
+            font-family: 'JetBrains Mono', monospace;
+            margin: 0;
+            padding: 20px;
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: 250px 1fr 350px;
+            grid-template-rows: 60px 1fr;
+            gap: 20px;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+
+        /* HEADER */
+        header {
+            grid-column: 1 / -1;
+            border-bottom: 2px solid var(--neon-green);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            background: rgba(0, 50, 0, 0.1);
+        }
+
+        .blink {
+            animation: blinker 1s linear infinite;
+        }
+
+        @keyframes blinker {
+            50% {
+                opacity: 0;
+            }
+        }
+
+        /* PANELS */
+        .panel {
+            border: var(--border);
+            background: var(--panel-bg);
+            padding: 15px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .panel h2 {
+            margin-top: 0;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #888;
+        }
+
+        /* STATUS METRICS */
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 8px;
+            background: #111;
+            border-left: 3px solid #333;
+        }
+
+        .metric.busy {
+            border-left-color: var(--neon-red);
+            color: #faa;
+        }
+
+        .metric.free {
+            border-left-color: var(--neon-green);
+            color: #afa;
+        }
+
+        /* ALERTS FEED */
+        .alert-item {
+            background: rgba(0, 255, 0, 0.05);
+            border: 1px solid #333;
+            margin-bottom: 10px;
+            padding: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .alert-item:hover {
+            background: rgba(0, 255, 0, 0.1);
+            border-color: var(--neon-green);
+        }
+
+        .alert-item.new {
+            border-left: 3px solid var(--neon-green);
+            animation: pulse 2s infinite;
+        }
+
+        .alert-meta {
+            font-size: 0.7rem;
+            color: #666;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* DETAILS PANEL */
+        #handoff-view {
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+
+        .btn-command {
+            background: var(--neon-green);
+            color: black;
+            border: none;
+            padding: 10px;
+            width: 100%;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            margin-top: 20px;
+        }
+
+        .btn-command:hover {
+            background: #fff;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(0, 255, 0, 0.4);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(0, 255, 0, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(0, 255, 0, 0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div><i class="fas fa-terminal"></i> ANMAR SYSTEM // <span class="blink">ONLINE</span></div>
+        <div id="clock">00:00:00</div>
+    </header>
+
+    <!-- LEFT: TEAM STATUS -->
+    <section class="panel">
+        <h2>Squad Status</h2>
+        <div class="metric free" id="status-george">
+            <span>George (Design)</span>
+            <span id="val-george">SCANNING...</span>
+        </div>
+        <div class="metric free" id="status-julian">
+            <span>Julian (Dev)</span>
+            <span id="val-julian">SCANNING...</span>
+        </div>
+        <div class="metric">
+            <span>Server Load</span>
+            <span id="val-load">0%</span>
+        </div>
+
+        <div style="margin-top: 30px; text-align: center; color: #444; font-size: 0.8rem;">
+            <i class="fas fa-shield-alt" style="font-size: 3rem; margin-bottom: 10px;"></i><br>
+            CORTEX SECURITY ACTIVE
+        </div>
+    </section>
+
+    <!-- CENTER: ALERT FEED -->
+    <section class="panel">
+        <h2><i class="fas fa-satellite-dish"></i> Incoming Handoffs</h2>
+        <div id="alerts-feed">
+            <!-- Alerts injected here -->
+            <div style="color:#666; text-align:center; margin-top:50px;">Waiting for signals...</div>
+        </div>
+    </section>
+
+    <!-- RIGHT: DETAILS & COMMAND -->
+    <section class="panel">
+        <h2>Tactical View</h2>
+        <div id="handoff-view">
+            <p style="color:#666;">Selecciona una alerta para inspeccionar.</p>
+        </div>
+    </section>
+
+    <script>
+        // --- SOUNDS ---
+        // Simple blip sound
+        const pingSound = new Audio('https://www.soundjay.com/buttons/beep-01a.mp3');
+
+        let knownAlerts = new Set();
+        let selectedAlert = null;
+
+        function updateClock() {
+            document.getElementById('clock').innerText = new Date().toLocaleTimeString();
+        }
+        setInterval(updateClock, 1000);
+
+        async function fetchSystemStatus() {
+            try {
+                const res = await fetch('/api/admin/system-status');
+                const data = await res.json();
+
+                updateMetric('george', data.george_status);
+                updateMetric('julian', data.julian_status);
+                document.getElementById('val-load').innerText = data.server_load;
+            } catch (e) { console.error("Status error"); }
+        }
+
+        function updateMetric(id, status) {
+            const el = document.getElementById('status-' + id);
+            const val = document.getElementById('val-' + id);
+            val.innerText = status.toUpperCase();
+
+            el.className = 'metric ' + (status === 'Free' ? 'free' : 'busy');
+        }
+
+        async function fetchAlerts() {
+            try {
+                const res = await fetch('/api/admin/alerts');
+                const alerts = await res.json();
+
+                const container = document.getElementById('alerts-feed');
+
+                if (alerts.length === 0) {
+                    container.innerHTML = '<div style="color:#666; text-align:center; margin-top:50px;">Waiting for signals...</div>';
+                    return;
+                }
+
+                let html = '';
+                let hasNew = false;
+
+                alerts.forEach(a => {
+                    const isNew = !knownAlerts.has(a.id);
+                    if (isNew) {
+                        knownAlerts.add(a.id);
+                        hasNew = true;
+                    }
+
+                    const priority = String(a.priority || 'medium').toUpperCase();
+                    const priorityColor = priority === 'HIGH' ? '#ff6b6b' : (priority === 'LOW' ? '#8bc34a' : '#fbbf24');
+
+                    html += `
+                    <div class="alert-item ${isNew ? 'new' : ''}" onclick='showDetails(${JSON.stringify(a)})'>
+                        <div class="alert-meta">
+                            <span>ID: ${a.id}</span>
+                            <span>${new Date(a.updated_at || a.timestamp).toLocaleTimeString()}</span>
+                        </div>
+                        <div style="font-weight:bold; margin: 5px 0; color:#fff;">${a.project_name}</div>
+                        <div style="font-size:0.8rem; color:#aaa;">${a.summary}</div>
+                        <div style="margin-top:5px; font-size:0.7rem;">
+                            Status: <span style="color:#9cdcfe">${String(a.status || 'pending').toUpperCase()}</span> |
+                            Priority: <span style="color:${priorityColor}">${priority}</span>
+                        </div>
+                    </div>
+                    `;
+                });
+
+                // Only update DOM if changed to avoid flicker (rudimentary diff)
+                // For MVP, replacing is fine, but lets check length first
+                if (container.childElementCount !== alerts.length || hasNew) {
+                    container.innerHTML = html;
+                }
+
+                if (hasNew) {
+                    try {
+                        pingSound.play();
+                    } catch (e) { console.log("Audio requires interaction"); }
+                }
+
+            } catch (e) { console.error("Alerts error", e); }
+        }
+
+        async function updateSelectedTicket() {
+            if (!selectedAlert) return;
+
+            const engineer = document.getElementById('fieldEngineer')?.value?.trim() || '';
+            const status = document.getElementById('fieldStatus')?.value || '';
+            const preview_url = document.getElementById('fieldPreviewUrl')?.value?.trim() || '';
+            const delivery_note = document.getElementById('fieldDeliveryNote')?.value?.trim() || '';
+
+            const res = await fetch('/api/admin/update-ticket', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ticket_id: selectedAlert.id,
+                    engineer,
+                    status,
+                    preview_url,
+                    delivery_note
+                })
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                alert(data.error || 'No se pudo actualizar el ticket');
+                return;
+            }
+            await fetchAlerts();
+            if (data.ticket) showDetails(data.ticket);
+            alert('Orden actualizada.');
+        }
+
+        async function takeSelectedTicket() {
+            if (!selectedAlert) return;
+            const engineer = document.getElementById('fieldEngineer')?.value?.trim() || 'Maria P.';
+            const res = await fetch('/api/accept-ticket', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ticket_id: selectedAlert.id,
+                    engineer
+                })
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                alert(data.error || 'No se pudo tomar el ticket');
+                return;
+            }
+            await fetchAlerts();
+            const refresh = { ...selectedAlert, status: 'developing', engineer };
+            showDetails(refresh);
+            alert(`Proyecto tomado por ${engineer}.`);
+        }
+
+        window.showDetails = function (alert) {
+            selectedAlert = alert;
+            const status = String(alert.status || 'pending').toLowerCase();
+            const events = Array.isArray(alert.events) ? alert.events.slice(-4).reverse() : [];
+            const previewValue = alert.preview_url || '';
+            const noteValue = alert.delivery_note || '';
+            const v = document.getElementById('handoff-view');
+            v.innerHTML = `
+                <h3 style="color:#fff">${alert.project_name}</h3>
+                <div style="margin-bottom:10px; color:#aaa;">CLIENTE: ${alert.client_email || alert.client || 'N/D'}</div>
+                <div style="margin-bottom:12px; color:#aaa;">STATUS: ${String(alert.status || 'pending').toUpperCase()}</div>
+                
+                <div style="background:#111; padding:10px; border:1px solid #333; margin-bottom:10px;">
+                    <div style="color:#888; font-size:0.7rem;">RESUMEN CLIENTE</div>
+                    <div style="color:#ddd;">"${alert.summary}"</div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr; gap:10px; margin-bottom:12px;">
+                    <input id="fieldEngineer" value="${alert.engineer || ''}" placeholder="Responsable (ej: Maria P.)" style="background:#111; color:#fff; border:1px solid #333; padding:8px;" />
+                    <select id="fieldStatus" style="background:#111; color:#fff; border:1px solid #333; padding:8px;">
+                        <option value="pending" ${status === 'pending' ? 'selected' : ''}>PENDING</option>
+                        <option value="accepted" ${status === 'accepted' ? 'selected' : ''}>ACCEPTED</option>
+                        <option value="developing" ${status === 'developing' ? 'selected' : ''}>DEVELOPING</option>
+                        <option value="blocked" ${status === 'blocked' ? 'selected' : ''}>BLOCKED</option>
+                        <option value="completed" ${status === 'completed' ? 'selected' : ''}>COMPLETED</option>
+                    </select>
+                    <input id="fieldPreviewUrl" value="${previewValue}" placeholder="Preview URL (ej: /projects/mi_app/index.html)" style="background:#111; color:#fff; border:1px solid #333; padding:8px;" />
+                    <textarea id="fieldDeliveryNote" placeholder="Nota interna / entrega para cliente" style="background:#111; color:#fff; border:1px solid #333; padding:8px; min-height:72px;">${noteValue}</textarea>
+                </div>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                    <button class="btn-command" onclick="takeSelectedTicket()" style="margin-top:0;">
+                        <i class="fas fa-crosshairs"></i> TOMAR PROYECTO
+                    </button>
+                    <button class="btn-command" onclick="updateSelectedTicket()" style="margin-top:0; background:#22c55e;">
+                        <i class="fas fa-save"></i> GUARDAR
+                    </button>
+                </div>
+                ${previewValue ? `
+                <button class="btn-command" onclick="window.open('${previewValue}','_blank')" style="margin-top:8px; background:#60a5fa;">
+                    <i class="fas fa-up-right-from-square"></i> ABRIR PREVIEW
+                </button>
+                ` : ''}
+                <div style="margin-top:12px; color:#666; font-size:0.74rem;">
+                    ${(events.map(ev => `${new Date(ev.timestamp).toLocaleTimeString()} · ${ev.message}`).join('<br>')) || 'Sin eventos todavía.'}
+                </div>
+            `;
+        }
+        window.updateSelectedTicket = updateSelectedTicket;
+        window.takeSelectedTicket = takeSelectedTicket;
+
+        // Init
+        fetchSystemStatus();
+        fetchAlerts();
+        setInterval(fetchSystemStatus, 5000);
+        setInterval(fetchAlerts, 3000);
+
+    </script>
+</body>
+
+</html>

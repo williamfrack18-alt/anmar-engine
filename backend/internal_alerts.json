@@ -1,0 +1,225 @@
+[
+  {
+    "id": "TKT-1771944984-11f6",
+    "project_name": "crea_lo_que_quierras",
+    "client_email": "williamfrack18@gmail.com",
+    "client": "williamfrack18@gmail.com",
+    "status": "developing",
+    "timestamp": "2026-02-24T09:56:24.906810",
+    "updated_at": "2026-02-24T22:22:28.325593",
+    "summary": "crea lo que quierras",
+    "preview_url": "",
+    "delivery_note": "",
+    "engineer_brief": {
+      "vision": "crea lo que quierras",
+      "target_audience": "Pendiente de confirmar",
+      "business_model": "Pendiente de confirmar",
+      "timeline": "Pendiente de confirmar",
+      "must_have_features": [
+        "enviar mensaje interno",
+        "Flujo principal del usuario",
+        "Panel operativo"
+      ],
+      "client_highlights": [
+        "crea lo que quierras",
+        "enviar mensaje interno"
+      ]
+    },
+    "handoff_package": {
+      "project_vision": "crea lo que quierras",
+      "suggested_tech_stack": [
+        "React",
+        "TypeScript",
+        "Python",
+        "Flask",
+        "SQLite"
+      ],
+      "critical_requirements_for_maria_team": [
+        "Implementar V1 con foco en: enviar mensaje interno, Flujo principal del usuario, Panel operativo",
+        "Dise\u00f1ar UX para audiencia objetivo: Pendiente de confirmar",
+        "Asegurar soporte de monetizaci\u00f3n: Pendiente de confirmar",
+        "Entregar dentro de ventana objetivo: Pendiente de confirmar",
+        "Agregar trazabilidad de eventos y estados para operaci\u00f3n interna."
+      ]
+    },
+    "tech_stack": [
+      "React",
+      "TypeScript",
+      "Python",
+      "Flask",
+      "SQLite"
+    ],
+    "blueprint_md": "# Technical Blueprint\n\n## 1. Product Summary\ncrea lo que quierras\n\n## 2. Target Audience\nPendiente de confirmar por cliente.\n\n## 3. Business Model\nPendiente de confirmar por cliente.\n\n## 4. Core Features\n- Flujo de usuario principal\n- Panel administrativo\n- M\u00e9tricas iniciales de conversi\u00f3n\n\n## 5. Recommended Tech Stack\nReact, TypeScript, Python, Flask, SQLite\n\n## 6. Delivery Plan\nMVP recomendado en 2-4 semanas.\n\n## 7. Operational Handoff\n- El ticket entra a la red interna tipo Uber para desarrolladores.\n- Un ingeniero acepta la orden y cambia estado a `accepted`.\n- Durante desarrollo se reporta estado `developing`.\n- Al cierre se entrega como `completed` con URL de preview.\n",
+    "priority": "medium",
+    "sla_due_at": "2026-02-26T09:56:19.426232",
+    "events": [
+      {
+        "timestamp": "2026-02-24T09:56:24.906837",
+        "status": "pending",
+        "actor": "system",
+        "message": "Esperando asignaci\u00f3n de ingeniero en la red Anmar."
+      },
+      {
+        "timestamp": "2026-02-24T09:58:01.069630",
+        "status": "accepted",
+        "actor": "Maria P.",
+        "message": "Maria P. acept\u00f3 el proyecto. Preparando entorno de desarrollo."
+      },
+      {
+        "timestamp": "2026-02-24T09:58:01.071234",
+        "status": "developing",
+        "actor": "Maria P.",
+        "message": "Maria P. est\u00e1 construyendo el MVP."
+      },
+      {
+        "timestamp": "2026-02-24T22:22:28.323101",
+        "status": "accepted",
+        "actor": "Maria P.",
+        "message": "Maria P. acept\u00f3 el proyecto. Preparando entorno de desarrollo."
+      },
+      {
+        "timestamp": "2026-02-24T22:22:28.325744",
+        "status": "developing",
+        "actor": "Maria P.",
+        "message": "Maria P. est\u00e1 construyendo el MVP."
+      }
+    ],
+    "sla_overdue": false,
+    "engineer": "Maria P."
+  },
+  {
+    "id": "a24b2fba",
+    "project_name": "rentalo_app",
+    "client": "williamfrack18@gmail.com",
+    "summary": "New project created.",
+    "viability": 50,
+    "complexity": "Unknown",
+    "timestamp": "2026-02-23T21:45:47.829457",
+    "updated_at": "2026-02-23T21:46:42.087444",
+    "status": "developing",
+    "priority": "medium",
+    "sla_due_at": "2026-02-25T21:45:47.829508",
+    "events": [
+      {
+        "timestamp": "2026-02-23T21:45:47.829539",
+        "status": "pending",
+        "actor": "system",
+        "message": "Proyecto creado e ingresado a cola interna."
+      },
+      {
+        "timestamp": "2026-02-23T21:46:42.085080",
+        "status": "accepted",
+        "actor": "Maria P.",
+        "message": "Maria P. acept\u00f3 el proyecto. Preparando entorno de desarrollo."
+      },
+      {
+        "timestamp": "2026-02-23T21:46:42.087472",
+        "status": "developing",
+        "actor": "Maria P.",
+        "message": "Maria P. est\u00e1 construyendo el MVP."
+      }
+    ],
+    "sla_overdue": false,
+    "engineer": "Maria P."
+  },
+  {
+    "id": "35cb1847",
+    "project_name": "electro_ecommerce",
+    "client": "williamfrack18@gmail.com",
+    "summary": "New project created.",
+    "viability": 50,
+    "complexity": "Unknown",
+    "timestamp": "2026-02-23T21:08:48.435342",
+    "updated_at": "2026-02-23T21:08:48.435360",
+    "status": "pending",
+    "priority": "medium",
+    "sla_due_at": "2026-02-25T21:08:48.435379",
+    "events": [
+      {
+        "timestamp": "2026-02-23T21:08:48.435409",
+        "status": "pending",
+        "actor": "system",
+        "message": "Proyecto creado e ingresado a cola interna."
+      }
+    ]
+  },
+  {
+    "id": "3848ac43",
+    "project_name": "paseo_perros_web",
+    "client": "williamfrack18@gmail.com",
+    "summary": "New project created.",
+    "viability": 50,
+    "complexity": "Unknown",
+    "timestamp": "2026-02-23T20:58:51.179646",
+    "updated_at": "2026-02-23T21:00:09.897768",
+    "status": "developing",
+    "priority": "medium",
+    "sla_due_at": "2026-02-25T20:58:51.179688",
+    "events": [
+      {
+        "timestamp": "2026-02-23T20:58:51.179722",
+        "status": "pending",
+        "actor": "system",
+        "message": "Proyecto creado e ingresado a cola interna."
+      },
+      {
+        "timestamp": "2026-02-23T21:00:09.897165",
+        "status": "accepted",
+        "actor": "Maria P.",
+        "message": "Maria P. acept\u00f3 el proyecto. Preparando entorno de desarrollo."
+      },
+      {
+        "timestamp": "2026-02-23T21:00:09.897774",
+        "status": "developing",
+        "actor": "Maria P.",
+        "message": "Maria P. est\u00e1 construyendo el MVP."
+      }
+    ],
+    "sla_overdue": false,
+    "engineer": "Maria P."
+  },
+  {
+    "id": "e8e39928",
+    "project_name": "chef_en_vivo",
+    "client": "williamfrack18@gmail.com",
+    "summary": "New project created.",
+    "viability": 50,
+    "complexity": "Unknown",
+    "timestamp": "2026-02-22T23:14:38.770047",
+    "updated_at": "2026-02-23T10:30:22.981631",
+    "status": "completed",
+    "priority": "medium",
+    "sla_due_at": "2026-02-24T23:14:38.770063",
+    "events": [
+      {
+        "timestamp": "2026-02-22T23:14:38.770074",
+        "status": "pending",
+        "actor": "system",
+        "message": "Proyecto creado e ingresado a cola interna."
+      },
+      {
+        "timestamp": "2026-02-22T23:14:58.508087",
+        "status": "accepted",
+        "actor": "Maria P.",
+        "message": "Maria P. acept\u00f3 el proyecto. Preparando entorno de desarrollo."
+      },
+      {
+        "timestamp": "2026-02-22T23:14:58.508713",
+        "status": "developing",
+        "actor": "Maria P.",
+        "message": "Maria P. est\u00e1 construyendo el MVP."
+      },
+      {
+        "timestamp": "2026-02-23T10:30:22.982242",
+        "status": "completed",
+        "actor": "Maria P.",
+        "message": "Proyecto completado y desplegado."
+      }
+    ],
+    "sla_overdue": false,
+    "engineer": "Maria P.",
+    "preview_url": "/projects/chef_en_vivo/index.html",
+    "completed_at": "2026-02-23T10:30:22.981635",
+    "sla_breached": false
+  }
+]

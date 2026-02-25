@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ritmo Mental | Entrenamiento Diario</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="subconsciente.css">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="hero">
+      <p class="eyebrow">Entrenamiento mental etico</p>
+      <h1>Ritmo Mental</h1>
+      <p class="intro">
+        Esta app no controla tu subconsciente: te ayuda a crear rituales diarios para enfocar tu mente.
+      </p>
+    </header>
+
+    <section class="cards-grid">
+      <article class="card">
+        <h2>Intencion del dia</h2>
+        <label for="intentionInput">Que quieres reforzar hoy</label>
+        <input id="intentionInput" type="text" placeholder="Ej: calma, enfoque, confianza">
+        <button id="saveIntentionBtn" class="primary-btn">Guardar intencion</button>
+        <p id="intentionStatus" class="status-text"></p>
+      </article>
+
+      <article class="card">
+        <h2>Respiracion 4-4-4-4</h2>
+        <p id="breathStage">Listo para empezar</p>
+        <p id="breathCounter" class="mono">00</p>
+        <div class="actions">
+          <button id="startBreathBtn" class="primary-btn">Iniciar</button>
+          <button id="stopBreathBtn" class="ghost-btn">Detener</button>
+        </div>
+      </article>
+
+      <article class="card">
+        <h2>Afirmaciones</h2>
+        <label for="affirmationInput">Nueva afirmacion</label>
+        <input id="affirmationInput" type="text" placeholder="Ej: Soy constante con mi proceso">
+        <button id="addAffirmationBtn" class="primary-btn">Agregar</button>
+        <ul id="affirmationList" class="list"></ul>
+      </article>
+
+      <article class="card">
+        <h2>Diario breve</h2>
+        <label for="journalInput">Que aprendiste hoy</label>
+        <textarea id="journalInput" rows="5" placeholder="Escribe una nota breve..."></textarea>
+        <button id="saveJournalBtn" class="primary-btn">Guardar nota</button>
+        <p id="journalStatus" class="status-text"></p>
+      </article>
+
+      <article class="card metrics-card">
+        <h2>Panel de consistencia</h2>
+        <div class="metrics">
+          <div>
+            <span class="metric-label">Dias activos</span>
+            <strong id="activeDaysMetric">0</strong>
+          </div>
+          <div>
+            <span class="metric-label">Racha actual</span>
+            <strong id="streakMetric">0</strong>
+          </div>
+          <div>
+            <span class="metric-label">Afirmaciones</span>
+            <strong id="affirmationMetric">0</strong>
+          </div>
+        </div>
+        <button id="markDoneBtn" class="primary-btn">Marcar rutina completada</button>
+        <p id="doneStatus" class="status-text"></p>
+      </article>
+    </section>
+  </main>
+
+  <script src="subconsciente.js"></script>
+</body>
+</html>

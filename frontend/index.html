@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anmar Enterprises | Plataforma de Impulso</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css?v=11">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* RESET & BASE */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #000;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            /* Check for horizontal scroll */
+            overflow-y: auto;
+            /* Enable Vertical Scroll */
+            min-height: 100vh;
+            /* Allow body to grow */
+            width: 100%;
+            font-family: 'Inter', sans-serif;
+            color: #fff;
+            zoom: 0.9;
+        }
+
+        /* --- CONTENT STYLE UPDATES --- */
+        h1.main-title,
+        h2.section-header,
+        p.hero-subtitle,
+        p.section-body {
+            margin-left: 0;
+            margin-right: 0;
+            /* Was auto */
+        }
+
+        .concept-box {
+            /* Centered Style */
+            border-top: 1px solid rgba(255, 255, 255, 0.4);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+            border-left: none;
+            /* Remove asymmetry */
+            padding: 1.5rem 0;
+            margin: 2rem auto;
+            /* Auto margin for centering */
+            font-family: 'Merriweather', serif;
+            font-style: italic;
+            font-size: 1.5rem;
+            color: rgba(255, 255, 255, 0.95);
+            max-width: 700px;
+            width: 100%;
+        }
+
+        /* --- VIDEO BACKGROUND (YouTube) --- */
+        .video-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -100;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .video-background iframe {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 100vw;
+            height: 100vh;
+            transform: translate(-50%, -50%) scale(1.5);
+            /* Zoom to remove borders */
+            pointer-events: none;
+            opacity: 0.6;
+            /* Slight dim */
+        }
+
+        @media (min-aspect-ratio: 16/9) {
+            .video-background iframe {
+                width: 100vw;
+                height: 56.25vw;
+            }
+        }
+
+        @media (max-aspect-ratio: 16/9) {
+            .video-background iframe {
+                width: 177.78vh;
+                height: 100vh;
+            }
+        }
+
+        /* --- TEXTURE OVERLAYS (Scanlines look) --- */
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom,
+                    rgba(255, 255, 255, 0),
+                    rgba(255, 255, 255, 0) 50%,
+                    rgba(0, 0, 0, 0.2) 50%,
+                    rgba(0, 0, 0, 0.2));
+            background-size: 100% 4px;
+            z-index: -50;
+            pointer-events: none;
+        }
+
+        .green-tint {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(20, 40, 20, 0.4);
+            /* Greenish tint from image */
+            z-index: -51;
+            pointer-events: none;
+        }
+
+        /* --- NAVIGATION HEADER --- */
+        header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 3rem;
+            z-index: 100;
+        }
+
+        .logo {
+            font-weight: 700;
+            font-size: 1.2rem;
+            letter-spacing: -0.5px;
+            color: #fff;
+            text-decoration: none;
+        }
+
+        nav {
+            display: flex;
+            gap: 2rem;
+        }
+
+        nav a {
+            text-decoration: none;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+            font-weight: 400;
+            transition: color 0.3s;
+        }
+
+        nav a:hover {
+            color: #fff;
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .btn-login {
+            color: #fff;
+            text-decoration: none;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-start {
+            background: #fff;
+            color: #000;
+            padding: 0.6rem 1.2rem;
+            border-radius: 4px;
+            /* Square/slightly rounded like image */
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-decoration: none;
+            transition: transform 0.2s;
+        }
+
+        .btn-start:hover {
+            transform: translateY(-2px);
+        }
+
+        /* --- HERO SELECTION center-left --- */
+        .hero-container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            /* LEFT ALIGN */
+            text-align: left;
+            padding-left: 10vw;
+            /* EDITORIAL SPACING */
+            padding-right: 5vw;
+            position: relative;
+            z-index: 10;
+        }
+
+        h1.main-title {
+            font-size: 3.5rem;
+            line-height: 1.1;
+            font-weight: 500;
+            /* Cleaner look */
+            letter-spacing: -1px;
+            margin-bottom: 1.5rem;
+            max-width: 800px;
+        }
+
+        h1.main-title strong {
+            display: block;
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        p.hero-subtitle {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.7);
+            max-width: 600px;
+            margin-bottom: 2.5rem;
+            line-height: 1.5;
+        }
+
+        /* MAIN CTA BUTTON */
+        .cta-button {
+            background: #fff;
+            /* Solid White */
+            color: #000;
+            font-weight: 700;
+            font-size: 1rem;
+            padding: 1rem 2rem;
+            text-decoration: none;
+            border-radius: 2px;
+            /* Minimal border radius */
+            display: inline-block;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .cta-button:hover {
+            transform: scale(1.02);
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
+        }
+
+        /* --- SCROLL MOUSE INDICATOR --- */
+        .scroll-indicator {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 24px;
+            height: 40px;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 20px;
+            display: flex;
+            justify-content: center;
+            opacity: 0.8;
+        }
+
+        .scroll-dot {
+            width: 4px;
+            height: 8px;
+            background: #fff;
+            border-radius: 2px;
+            margin-top: 6px;
+            animation: scrollAnim 2s infinite;
+        }
+
+        @keyframes scrollAnim {
+            0% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(15px);
+                opacity: 0;
+            }
+        }
+
+        /* --- CONTENT SECTIONS (GENESIS) --- */
+        .content-section {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 4rem 2rem;
+            position: relative;
+            z-index: 10;
+            /* Fade bg as user scrolls for readability */
+            background: linear-gradient(to bottom, transparent, rgba(5, 5, 5, 0.8));
+        }
+
+        .step-badge {
+            --badge-rgb: 16, 185, 129;
+            background: linear-gradient(180deg, rgba(var(--badge-rgb), 0.17), rgba(var(--badge-rgb), 0.08));
+            border: 1px solid rgba(var(--badge-rgb), 0.38);
+            box-shadow: 0 0 22px rgba(var(--badge-rgb), 0.14), inset 0 0 12px rgba(var(--badge-rgb), 0.08);
+            padding: 12px 24px;
+            border-radius: 999px;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 2.4px;
+            color: rgb(var(--badge-rgb));
+            margin-bottom: 2rem;
+            font-weight: 700;
+            backdrop-filter: blur(9px);
+            line-height: 1;
+        }
+
+        .step-badge.step-genesis {
+            --badge-rgb: 16, 185, 129;
+        }
+
+        .step-badge.step-impulso {
+            --badge-rgb: 59, 130, 246;
+        }
+
+        .step-badge.step-escala {
+            --badge-rgb: 245, 158, 11;
+        }
+
+        h2.section-header {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            color: #fff;
+            letter-spacing: -1px;
+            max-width: 900px;
+        }
+
+        p.section-body {
+            font-size: 1.25rem;
+            line-height: 1.7;
+            color: rgba(255, 255, 255, 0.85);
+            max-width: 800px;
+            margin-bottom: 3.5rem;
+            font-weight: 300;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- YOUTUBE BACKGROUND -->
+    <div class="video-background">
+        <iframe
+            src="https://www.youtube.com/embed/Uc1NI4COG9k?autoplay=1&mute=1&loop=1&playlist=Uc1NI4COG9k&controls=0&showinfo=0&rel=0&iv_load_policy=3&disablekb=1&modestbranding=1"
+            title="Anmar Background" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen>
+        </iframe>
+    </div>
+
+    <!-- OVERLAYS (The "Look") -->
+    <div class="green-tint" style="position:fixed;"></div>
+    <div class="scanlines" style="position:fixed;"></div>
+
+    <!-- HEADER -->
+    <header>
+        <a href="#" class="logo">Anmar Enterprises</a>
+
+        <nav>
+            <a href="#">Inicio</a>
+            <a href="#genesis">Construcción</a>
+            <a href="#impulso">Crecimiento</a>
+            <a href="#escala">Financiación</a>
+            <a href="#preguntas">Preguntas</a>
+        </nav>
+
+        <div class="nav-actions">
+            <!-- Simulated Login -->
+            <a href="login.html" class="btn-login js-auth-link" id="navAuthLink">
+                <i class="fas fa-arrow-right-to-bracket"></i> Iniciar Sesión
+            </a>
+            <!-- Main Action -->
+            <a href="login.html" class="btn-start js-auth-link" id="navStartLink">Comenzar</a>
+        </div>
+    </header>
+
+    <!-- SECTION 1: HERO -->
+    <!-- SECTION 1: HERO -->
+    <div class="hero-container" style="align-items: flex-start; padding-left: 10vw; text-align: left;">
+
+        <h1 class="main-title"
+            style="font-size: 4rem; line-height: 1.1; letter-spacing: -2.5px; font-weight: 500; max-width: 900px;">
+            Construye tu imperio<br>
+            <span style="color: rgba(255,255,255,0.7);">a la velocidad de la luz.</span>
+        </h1>
+
+        <p class="hero-subtitle"
+            style="text-align: left; max-width: 650px; margin-left: 0; font-size: 1.1rem; opacity: 0.6; line-height: 1.6; font-weight: 300;">
+            Anmar es la Supra IA que transforma ideas crudas en startups rentables.
+            Nosotros ponemos el código, el marketing y el capital. Tú pones la visión.
+        </p>
+
+        <a href="login.html" class="cta-button js-auth-link" id="heroCtaLink"
+            style="margin-left: 0; padding: 1rem 2rem; letter-spacing: 0.5px; font-size: 1rem;">
+            Construye tu Imperio
+        </a>
+
+        <!-- MOUSE SCROLL located inside hero to indicate scroll -->
+        <div class="scroll-indicator" style="bottom: 40px; position:absolute; left: 50%; transform: translateX(-50%);">
+            <div class="scroll-dot"></div>
+        </div>
+    </div>
+
+    <!-- SECTION 2: GENESIS -->
+    <section class="content-section" id="genesis">
+        <div class="step-badge step-genesis">Paso 01: El Génesis (Ingeniería & Ejecución Híbrida)</div>
+
+        <h2 class="section-header">Tu visión, construida por expertos.</h2>
+
+        <p class="section-body">
+            Describe tu idea en lenguaje natural. Nuestra Supra IA genera instantáneamente el plano técnico, la
+            arquitectura y los requisitos. Una vez validado por ti, la orden pasa a nuestro equipo interno de ingenieros
+            de élite, quienes utilizan la IA para codear a una velocidad 10x, garantizando un producto final robusto,
+            seguro y escalable.
+        </p>
+
+        <div class="concept-box">
+            "La velocidad de la IA con la artesanía del mejor talento humano."
+        </div>
+    </section>
+
+    <!-- SECTION 3: IMPULSO -->
+    <section class="content-section" id="impulso">
+        <div class="step-badge step-impulso">
+            Paso 02: El Impulso (Crecimiento Estratégico)
+        </div>
+
+        <h2 class="section-header">Marketing de precisión humana.</h2>
+
+        <p class="section-body">
+            No lanzamos contenido genérico. La Supra IA analiza el mercado y genera los activos base, pero son nuestros
+            directores creativos humanos quienes pulen cada video y cada anuncio. Lanzamos campañas reales diseñadas
+            para convertir usuarios en clientes desde el primer día.
+        </p>
+
+        <div class="concept-box">
+            "Estrategias que respiran, ejecutadas por expertos."
+        </div>
+    </section>
+
+    <!-- SECTION 4: ESCALA -->
+    <section class="content-section" style="padding-bottom: 8rem;" id="escala">
+        <div class="step-badge step-escala">
+            Paso 03: La Escala (Financiación Directa)
+        </div>
+
+        <h2 class="section-header">Invertimos en lo que construimos.</h2>
+
+        <p class="section-body">
+            Conocemos tu código porque nosotros lo escribimos. Si tu producto muestra tracción, el Fondo Anmar inyecta
+            el capital necesario para escalar. Sin intermediarios, sin burocracia: financiación directa para las
+            startups que nacen en nuestra factoría.
+        </p>
+
+        <div class="concept-box">
+            "Tu socio tecnológico y financiero."
+        </div>
+
+        <div style="margin-top: 4rem;">
+            <a href="dashboard.html" class="cta-button"
+                style="background: transparent; border: 1px solid #fff; color: #fff;">
+                Aplicar al Fondo Anmar
+            </a>
+        </div>
+    </section>
+
+    <!-- SECTION 5: PREGUNTAS (FAQ) -->
+    <section class="content-section" id="preguntas" style="padding-bottom: 8rem;">
+        <h2 class="section-header" style="margin-bottom: 3rem; font-size: 2.5rem; text-align: left;">Preguntas
+            Frecuentes.</h2>
+
+        <div class="faq-grid"
+            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 3rem; text-align: left;">
+
+            <div class="faq-item">
+                <h3 style="color: #fff; font-size: 1.1rem; margin-bottom: 0.8rem; font-weight: 600;">¿Anmar retiene mi
+                    propiedad intelectual?</h3>
+                <p style="color: rgba(255,255,255,0.6); font-size: 0.9rem; line-height: 1.6;">
+                    No. Todo lo que construyes es 100% tuyo desde el día uno. Nosotros operamos como co-fundadores
+                    estratégicos durante la fase de construcción.
+                </p>
+            </div>
+
+            <div class="faq-item">
+                <h3 style="color: #fff; font-size: 1.1rem; margin-bottom: 0.8rem; font-weight: 600;">¿Qué tan rápido
+                    puedo lanzar?</h3>
+                <p style="color: rgba(255,255,255,0.6); font-size: 0.9rem; line-height: 1.6;">
+                    Semanas, no meses. Gracias a nuestro motor Supra IA, reducimos el tiempo de desarrollo en un 90%. Lo
+                    que antes tomaba un equipo de 10 personas en 6 meses, Anmar lo hace en 3 semanas.
+                </p>
+            </div>
+
+            <div class="faq-item">
+                <h3 style="color: #fff; font-size: 1.1rem; margin-bottom: 0.8rem; font-weight: 600;">¿Cómo funciona la
+                    financiación?</h3>
+                <p style="color: rgba(255,255,255,0.6); font-size: 0.9rem; line-height: 1.6;">
+                    Una vez tu producto está en vivo y mostrando tracción, activamos nuestro comité de inversión. Si los
+                    números cuadran, inyectamos capital semilla directamente.
+                </p>
+            </div>
+
+            <div class="faq-item">
+                <h3 style="color: #fff; font-size: 1.1rem; margin-bottom: 0.8rem; font-weight: 600;">¿Necesito saber
+                    programar?</h3>
+                <p style="color: rgba(255,255,255,0.6); font-size: 0.9rem; line-height: 1.6;">
+                    Absolutamente no. Esa es la belleza de Anmar. Tú traes la visión de negocio, nosotros ponemos toda
+                    la ingeniería y el stack tecnológico.
+                </p>
+            </div>
+
+        </div>
+    </section>
+
+
+    <!-- INTERACTIVE PARTICLES CANVAS -->
+    <canvas id="gravityCanvas"
+        style="position:fixed; top:0; left:0; width:100%; height:100%; z-index:-40; pointer-events:none;"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gravityCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let particlesArray;
+        let signalsArray = []; // To store traveling signals
+
+        // Mouse interaction
+        let mouse = {
+            x: null,
+            y: null,
+            radius: (canvas.height / 60) * (canvas.width / 60)
+        }
+
+        window.addEventListener('mousemove', function (event) {
+            mouse.x = event.x;
+            mouse.y = event.y;
+        });
+
+        window.addEventListener('resize', function () {
+            canvas.width = innerWidth;
+            canvas.height = innerHeight;
+            mouse.radius = ((canvas.height / 60) * (canvas.height / 60));
+            init();
+        });
+
+        class Particle {
+            constructor(x, y, directionX, directionY, size, color) {
+                this.x = x;
+                this.y = y;
+                this.directionX = directionX;
+                this.directionY = directionY;
+                this.size = size;
+                this.baseSize = size;
+                this.color = color;
+                this.angle = Math.random() * 6.2;
+            }
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2, false);
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = "rgba(255, 255, 255, 0.6)";
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+            update() {
+                if (this.x > canvas.width || this.x < 0) this.directionX = -this.directionX;
+                if (this.y > canvas.height || this.y < 0) this.directionY = -this.directionY;
+
+                // Mouse interaction
+                let dx = mouse.x - this.x;
+                let dy = mouse.y - this.y;
+                let distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance < mouse.radius + this.size) {
+                    if (mouse.x < this.x && this.x < canvas.width - this.size * 10) this.x += 2;
+                    if (mouse.x > this.x && this.x > this.size * 10) this.x -= 2;
+                    if (mouse.y < this.y && this.y < canvas.height - this.size * 10) this.y += 2;
+                    if (mouse.y > this.y && this.y > this.size * 10) this.y -= 2;
+                    this.size = Math.min(this.baseSize * 3, 6);
+                } else {
+                    this.angle += 0.05;
+                    this.size = this.baseSize + Math.sin(this.angle) * 0.5;
+                    if (this.size < 0.5) this.size = 0.5;
+                }
+                this.x += this.directionX;
+                this.y += this.directionY;
+                this.draw();
+            }
+        }
+
+        class Signal {
+            constructor(startX, startY, endX, endY) {
+                this.x = startX;
+                this.y = startY;
+                this.targetX = endX;
+                this.targetY = endY;
+                this.speed = 0.08;
+                this.progress = 0;
+                this.dead = false;
+            }
+            update() {
+                this.progress += this.speed;
+                if (this.progress >= 1) this.dead = true;
+            }
+            draw() {
+                if (this.dead) return;
+                let curX = this.x + (this.targetX - this.x) * this.progress;
+                let curY = this.y + (this.targetY - this.y) * this.progress;
+                ctx.beginPath();
+                ctx.arc(curX, curY, 2, 0, Math.PI * 2, false);
+                ctx.fillStyle = '#fff';
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = '#fff';
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+        }
+
+        function init() {
+            particlesArray = [];
+            let numberOfParticles = (canvas.height * canvas.width) / 6000;
+            for (let i = 0; i < numberOfParticles; i++) {
+                let size = (Math.random() * 2) + 0.5;
+                let x = (Math.random() * ((innerWidth - size * 2) - (size * 2)) + size * 2);
+                let y = (Math.random() * ((innerHeight - size * 2) - (size * 2)) + size * 2);
+                let directionX = (Math.random() * 0.4) - 0.2;
+                let directionY = (Math.random() * 0.4) - 0.2;
+                let color = 'rgba(255, 255, 255, 0.8)';
+                particlesArray.push(new Particle(x, y, directionX, directionY, size, color));
+            }
+        }
+
+        function connect() {
+            let opacityValue = 1;
+            for (let a = 0; a < particlesArray.length; a++) {
+                for (let b = a; b < particlesArray.length; b++) {
+                    let distance = ((particlesArray[a].x - particlesArray[b].x) * (particlesArray[a].x - particlesArray[b].x)) +
+                        ((particlesArray[a].y - particlesArray[b].y) * (particlesArray[a].y - particlesArray[b].y));
+
+                    if (distance < (canvas.width / 7) * (canvas.height / 7)) {
+                        opacityValue = 1 - (distance / 20000);
+                        ctx.strokeStyle = 'rgba(255, 255, 255,' + opacityValue * 0.15 + ')';
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.moveTo(particlesArray[a].x, particlesArray[a].y);
+                        ctx.lineTo(particlesArray[b].x, particlesArray[b].y);
+                        ctx.stroke();
+
+                        if (Math.random() < 0.0005 && opacityValue > 0.2) {
+                            signalsArray.push(new Signal(particlesArray[a].x, particlesArray[a].y, particlesArray[b].x, particlesArray[b].y));
+                        }
+                    }
+                }
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            ctx.clearRect(0, 0, innerWidth, innerHeight);
+
+            for (let i = 0; i < particlesArray.length; i++) {
+                particlesArray[i].update();
+            }
+            connect();
+
+            for (let i = signalsArray.length - 1; i >= 0; i--) {
+                signalsArray[i].update();
+                signalsArray[i].draw();
+                if (signalsArray[i].dead) signalsArray.splice(i, 1);
+            }
+        }
+
+        init();
+        animate();
+
+        const currentUserRaw = localStorage.getItem('currentUser');
+        let currentUser = null;
+        try {
+            currentUser = currentUserRaw ? JSON.parse(currentUserRaw) : null;
+        } catch (_) {
+            localStorage.removeItem('currentUser');
+        }
+
+        if (currentUser && currentUser.email) {
+            document.querySelectorAll('.js-auth-link').forEach((el) => {
+                el.setAttribute('href', 'dashboard.html');
+            });
+            const navAuthLink = document.getElementById('navAuthLink');
+            if (navAuthLink) navAuthLink.innerHTML = '<i class="fas fa-table-columns"></i> Ir al Dashboard';
+            const navStartLink = document.getElementById('navStartLink');
+            if (navStartLink) navStartLink.textContent = 'Continuar';
+            const heroCtaLink = document.getElementById('heroCtaLink');
+            if (heroCtaLink) heroCtaLink.textContent = 'Continuar mi Proyecto';
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ANMAR Internal Ops</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    :root {
+      --bg-0: #06080d;
+      --bg-1: #0b111c;
+      --panel: rgba(10, 15, 24, 0.78);
+      --panel-2: rgba(14, 21, 34, 0.86);
+      --border: rgba(148, 163, 184, 0.22);
+      --text: #e5edf8;
+      --muted: #8ea2be;
+      --accent: #3b82f6;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --radius: 14px;
+      --shadow: 0 16px 44px rgba(0, 0, 0, 0.45);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: 'Inter', system-ui, sans-serif;
+      background:
+        radial-gradient(1200px 500px at 10% -5%, rgba(59,130,246,0.20), transparent 65%),
+        radial-gradient(900px 450px at 100% 0%, rgba(16,185,129,0.11), transparent 70%),
+        linear-gradient(160deg, var(--bg-0), var(--bg-1));
+      overflow: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(148,163,184,0.055) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(148,163,184,0.055) 1px, transparent 1px);
+      background-size: 52px 52px;
+      opacity: 0.25;
+    }
+
+    .app {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      height: 100vh;
+      gap: 14px;
+      padding: 14px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+    }
+
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(59,130,246,0.12), rgba(59,130,246,0));
+    }
+
+    .brand-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      letter-spacing: 0.2px;
+    }
+
+    .brand-title i { color: #93c5fd; }
+
+    .badge {
+      font-size: 0.68rem;
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(16,185,129,0.45);
+      color: #6ee7b7;
+      background: rgba(16,185,129,0.12);
+    }
+
+    .filters {
+      padding: 12px;
+      border-bottom: 1px solid var(--border);
+      display: grid;
+      gap: 8px;
+    }
+
+    select, input[type="text"], textarea {
+      width: 100%;
+      background: rgba(15, 23, 36, 0.86);
+      color: #e2e8f0;
+      border: 1px solid rgba(148,163,184,0.28);
+      border-radius: 10px;
+      padding: 9px 10px;
+      font: inherit;
+      outline: none;
+    }
+
+    select:focus, input:focus, textarea:focus {
+      border-color: rgba(59,130,246,0.65);
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.17);
+    }
+
+    .btn-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    button {
+      border: 1px solid rgba(148,163,184,0.28);
+      border-radius: 10px;
+      padding: 9px 10px;
+      background: rgba(17, 26, 39, 0.92);
+      color: #e2e8f0;
+      font-weight: 700;
+      cursor: pointer;
+      transition: 0.15s;
+    }
+
+    button:hover { transform: translateY(-1px); border-color: rgba(59,130,246,0.65); }
+
+    .btn-primary {
+      background: linear-gradient(180deg, #3b82f6, #2563eb);
+      border-color: rgba(147,197,253,0.42);
+      color: #fff;
+    }
+
+    .btn-success {
+      background: linear-gradient(180deg, #10b981, #059669);
+      border-color: rgba(110,231,183,0.45);
+      color: #002618;
+    }
+
+    .btn-warning {
+      background: linear-gradient(180deg, #f59e0b, #d97706);
+      border-color: rgba(252,211,77,0.52);
+      color: #2b1600;
+    }
+
+    .queue {
+      flex: 1;
+      overflow: auto;
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+      min-height: 0;
+    }
+
+    .ticket-item {
+      border: 1px solid rgba(148,163,184,0.24);
+      background: rgba(15, 22, 34, 0.92);
+      border-radius: 12px;
+      padding: 12px;
+      cursor: pointer;
+      transition: 0.15s;
+    }
+
+    .ticket-item:hover { border-color: rgba(59,130,246,0.62); }
+    .ticket-item.active { border-color: rgba(16,185,129,0.65); box-shadow: 0 0 0 2px rgba(16,185,129,0.16) inset; }
+
+    .ticket-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.74rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .status-pill {
+      font-size: 0.67rem;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      border-radius: 999px;
+      padding: 3px 8px;
+      border: 1px solid rgba(148,163,184,0.32);
+    }
+
+    .status-pending { color: #93c5fd; border-color: rgba(59,130,246,0.45); background: rgba(59,130,246,0.13); }
+    .status-accepted, .status-developing { color: #6ee7b7; border-color: rgba(16,185,129,0.52); background: rgba(16,185,129,0.14); }
+    .status-blocked { color: #fcd34d; border-color: rgba(245,158,11,0.52); background: rgba(245,158,11,0.14); }
+    .status-completed { color: #d1fae5; border-color: rgba(52,211,153,0.50); background: rgba(16,185,129,0.18); }
+
+    .main {
+      min-height: 0;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      overflow: hidden;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(59,130,246,0.10), rgba(59,130,246,0));
+    }
+
+    .title {
+      font-weight: 800;
+      letter-spacing: 0.2px;
+      font-size: 1rem;
+    }
+
+    .stats {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .workspace {
+      min-height: 0;
+      overflow: auto;
+      padding: 14px;
+      display: grid;
+      gap: 14px;
+      grid-template-columns: 1.15fr 1fr;
+    }
+
+    .card {
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+    }
+
+    .card h3 {
+      margin: 0 0 10px;
+      font-size: 0.82rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #93a7c3;
+    }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .muted { color: var(--muted); }
+
+    .term {
+      height: 200px;
+      overflow: auto;
+      border-radius: 10px;
+      border: 1px solid rgba(148,163,184,0.26);
+      background: #070b12;
+      padding: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      color: #cbd5e1;
+    }
+
+    .term-input {
+      margin-top: 8px;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      align-items: stretch;
+      border: 1px solid rgba(148,163,184,0.28);
+      border-radius: 10px;
+      overflow: hidden;
+      background: rgba(12, 18, 29, 0.9);
+    }
+
+    .term-prefix {
+      padding: 10px;
+      background: rgba(59,130,246,0.18);
+      color: #bfdbfe;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 0.77rem;
+    }
+
+    .term-input input {
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+    }
+
+    .history {
+      max-height: 210px;
+      overflow: auto;
+      border: 1px solid rgba(148,163,184,0.24);
+      border-radius: 10px;
+      background: rgba(8, 12, 20, 0.82);
+      padding: 10px;
+      font-size: 0.78rem;
+      color: #9fb0c8;
+      line-height: 1.5;
+    }
+
+    .iframe-wrap {
+      border: 1px solid rgba(148,163,184,0.26);
+      border-radius: 12px;
+      overflow: hidden;
+      background: #0a101a;
+      min-height: 280px;
+    }
+
+    iframe {
+      width: 100%;
+      height: 360px;
+      border: 0;
+      background: #fff;
+    }
+
+    .empty {
+      padding: 40px 20px;
+      text-align: center;
+      color: #6f83a1;
+      border: 1px dashed rgba(148,163,184,0.3);
+      border-radius: 12px;
+      background: rgba(8, 12, 20, 0.75);
+    }
+
+    @media (max-width: 1250px) {
+      .app { grid-template-columns: 300px 1fr; }
+      .workspace { grid-template-columns: 1fr; }
+      iframe { height: 320px; }
+    }
+
+    @media (max-width: 980px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { max-height: 42vh; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar panel">
+      <div class="brand">
+        <div class="brand-title"><i class="fas fa-satellite-dish"></i> ANMAR Internal</div>
+        <span class="badge">LIVE</span>
+      </div>
+
+      <div class="filters">
+        <select id="engineerSelect">
+          <option value="Maria P.">Maria P.</option>
+          <option value="Juan">Juan</option>
+        </select>
+        <select id="queueMode">
+          <option value="mine">My Queue + Unassigned</option>
+          <option value="all">All Queue</option>
+        </select>
+        <select id="statusFilter">
+          <option value="all">All Status</option>
+          <option value="pending">Pending</option>
+          <option value="accepted">Accepted</option>
+          <option value="developing">Developing</option>
+          <option value="blocked">Blocked</option>
+          <option value="completed">Completed</option>
+        </select>
+        <select id="priorityFilter">
+          <option value="all">All Priority</option>
+          <option value="high">High</option>
+          <option value="medium">Medium</option>
+          <option value="low">Low</option>
+        </select>
+        <div class="btn-row">
+          <button onclick="autoAssign(1)"><i class="fas fa-wand-magic-sparkles"></i> Auto x1</button>
+          <button onclick="autoAssign(3)"><i class="fas fa-bolt"></i> Auto x3</button>
+        </div>
+        <div id="dispatchLog" class="muted" style="font-size:0.76rem; min-height:16px;"></div>
+      </div>
+
+      <div class="queue" id="projectList"></div>
+      <div style="padding:10px 12px; border-top:1px solid var(--border); font-size:0.8rem; color:#8ea2be;">
+        Operador: <strong id="operatorName">Maria P.</strong>
+      </div>
+    </aside>
+
+    <main class="main panel">
+      <div class="topbar">
+        <div class="title" id="headerTitle">Internal Operations</div>
+        <div class="stats" id="statusIndicator">Queue: 0 | Pending: 0 | SLA Overdue: 0</div>
+      </div>
+
+      <div id="workspace" class="workspace">
+        <div class="empty">
+          <i class="fas fa-folder-open" style="font-size:2.4rem; margin-bottom:10px;"></i>
+          <div>Selecciona una orden para operar el proyecto.</div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    let projects = [];
+    let currentProject = null;
+    let lastCount = 0;
+    let currentEngineer = 'Maria P.';
+    let currentQueueMode = 'mine';
+    let currentStatusFilter = 'all';
+    let currentPriorityFilter = 'all';
+    let historyCache = {};
+
+    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+
+    function statusClass(status) {
+      const s = String(status || 'pending').toLowerCase();
+      if (s === 'accepted' || s === 'developing') return 'status-accepted';
+      if (s === 'blocked') return 'status-blocked';
+      if (s === 'completed') return 'status-completed';
+      return 'status-pending';
+    }
+
+    function defaultPreviewUrl(projectName) {
+      return `/projects/${projectName}/index.html`;
+    }
+
+    function shortTime(value) {
+      try {
+        return new Date(value || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      } catch (_) {
+        return '--:--';
+      }
+    }
+
+    async function fetchProjects() {
+      try {
+        const query = new URLSearchParams({
+          engineer: currentEngineer,
+          mode: currentQueueMode,
+          status: currentStatusFilter,
+          priority: currentPriorityFilter
+        });
+        const res = await fetch(`/api/internal-queue?${query.toString()}`);
+        const payload = await res.json();
+        if (!res.ok) throw new Error(payload.error || `HTTP ${res.status}`);
+
+        const data = payload.items || [];
+        if (data.length > lastCount && lastCount > 0) {
+          audio.play().catch(() => {});
+        }
+        lastCount = data.length;
+        projects = data;
+
+        const meta = payload.meta || {};
+        document.getElementById('statusIndicator').textContent = `Queue: ${meta.total || 0} | Pending: ${meta.pending || 0} | SLA Overdue: ${meta.overdue || 0}`;
+
+        renderList();
+        refreshCurrentProjectView();
+      } catch (e) {
+        document.getElementById('dispatchLog').textContent = `Queue error: ${e.message}`;
+      }
+    }
+
+    function renderList() {
+      const list = document.getElementById('projectList');
+      list.innerHTML = '';
+
+      if (!projects.length) {
+        list.innerHTML = '<div class="empty" style="padding:20px;">No hay órdenes en esta vista.</div>';
+        return;
+      }
+
+      projects.forEach((p) => {
+        const status = String(p.status || 'pending').toLowerCase();
+        const priority = String(p.priority || 'medium').toUpperCase();
+        const isActive = currentProject && currentProject.id === p.id;
+
+        const item = document.createElement('div');
+        item.className = `ticket-item ${isActive ? 'active' : ''}`;
+        item.onclick = () => loadProject(p);
+
+        const lastEvent = (p.events && p.events.length) ? p.events[p.events.length - 1].message : '';
+        item.innerHTML = `
+          <div class="ticket-meta">
+            <span>${p.id || 'TKT'}</span>
+            <span>${shortTime(p.updated_at || p.timestamp)}</span>
+          </div>
+          <div style="font-weight:700; margin-bottom:7px;">${p.project_name}</div>
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:7px;">
+            <span class="status-pill ${statusClass(status)}">${status}</span>
+            <span style="font-size:0.72rem; color:${priority === 'HIGH' ? '#fca5a5' : priority === 'LOW' ? '#86efac' : '#fcd34d'}">${priority}</span>
+          </div>
+          <div style="font-size:0.78rem; color:#9cb0cc; line-height:1.4;">${p.summary || 'Sin resumen'}</div>
+          <div style="font-size:0.72rem; color:#7388a6; margin-top:6px;">${lastEvent || ''}</div>
+        `;
+        list.appendChild(item);
+      });
+    }
+
+    function refreshCurrentProjectView() {
+      if (!currentProject || !currentProject.id) return;
+      const fresh = projects.find((p) => p.id === currentProject.id);
+      if (!fresh) return;
+      currentProject = fresh;
+      loadProject(fresh);
+    }
+
+    function loadProject(p) {
+      currentProject = p;
+      renderList();
+      document.getElementById('headerTitle').textContent = `${p.project_name} // ${String(p.status || 'pending').toUpperCase()}`;
+
+      const workspace = document.getElementById('workspace');
+      const status = String(p.status || 'pending').toLowerCase();
+      if (status === 'pending') {
+        renderPendingState(p, workspace);
+      } else {
+        renderActiveState(p, workspace);
+      }
+
+      fetchOrderHistory(p);
+    }
+
+    function renderPendingState(p, container) {
+      const brief = p.engineer_brief || {};
+      const features = (brief.must_have_features || []).slice(0, 5);
+
+      container.innerHTML = `
+        <section class="card" style="grid-column:1 / -1; max-width:880px; width:100%; margin:0 auto;">
+          <h3>Solicitud Nueva</h3>
+          <div class="grid-2">
+            <div>
+              <div class="muted" style="font-size:0.78rem;">Cliente</div>
+              <div style="font-weight:700; margin-top:3px;">${p.client_email || p.client || 'N/D'}</div>
+            </div>
+            <div>
+              <div class="muted" style="font-size:0.78rem;">Proyecto</div>
+              <div style="font-weight:700; margin-top:3px;">${p.project_name}</div>
+            </div>
+          </div>
+
+          <div style="margin-top:12px; border:1px solid rgba(148,163,184,0.25); border-radius:10px; padding:10px; background:rgba(8,13,21,0.75);">
+            <div class="muted" style="font-size:0.76rem; margin-bottom:4px;">Resumen del cliente</div>
+            <div>${p.summary || 'Sin resumen'}</div>
+          </div>
+
+          <div style="margin-top:10px; border:1px solid rgba(148,163,184,0.25); border-radius:10px; padding:10px; background:rgba(8,13,21,0.75);">
+            <div class="muted" style="font-size:0.76rem; margin-bottom:4px;">Brief técnico</div>
+            <div style="font-size:0.85rem; color:#c9d6ea; line-height:1.5;">
+              Audience: ${brief.target_audience || 'N/D'}<br>
+              Business model: ${brief.business_model || 'N/D'}<br>
+              Timeline: ${brief.timeline || 'N/D'}
+            </div>
+            <div style="margin-top:8px; font-size:0.82rem; color:#a9bbd4;">${features.length ? features.map(f => `• ${f}`).join('<br>') : '• Sin features detectadas'}</div>
+          </div>
+
+          <div style="display:flex; gap:10px; margin-top:14px;">
+            <button class="btn-primary" style="flex:1;" onclick="acceptProject('${p.id}')">
+              <i class="fas fa-play"></i> Tomar Proyecto (${currentEngineer})
+            </button>
+            <button onclick="openPreview('${p.project_name}')">
+              <i class="fas fa-eye"></i> Abrir Preview
+            </button>
+          </div>
+
+          <div id="historyPanel" class="history" style="margin-top:12px;"></div>
+        </section>
+      `;
+    }
+
+    function renderActiveState(p, container) {
+      const preview = p.preview_url || defaultPreviewUrl(p.project_name);
+      const note = p.delivery_note || '';
+
+      container.innerHTML = `
+        <section class="card">
+          <h3>Cliente & Orden</h3>
+          <div style="display:grid; gap:8px; font-size:0.9rem;">
+            <div><span class="muted">Cliente:</span> <strong>${p.client_email || p.client || 'N/D'}</strong></div>
+            <div><span class="muted">Proyecto:</span> <strong>${p.project_name}</strong></div>
+            <div><span class="muted">Estado:</span> <strong>${String(p.status || 'pending').toUpperCase()}</strong></div>
+            <div><span class="muted">Prioridad:</span> <strong>${String(p.priority || 'medium').toUpperCase()}</strong></div>
+          </div>
+
+          <div style="margin-top:10px; border:1px solid rgba(148,163,184,0.24); border-radius:10px; padding:10px; background:rgba(8,13,21,0.75);">
+            <div class="muted" style="font-size:0.75rem; margin-bottom:4px;">Resumen pedido</div>
+            <div style="font-size:0.9rem; color:#cbd8eb;">${p.summary || 'Sin resumen'}</div>
+          </div>
+
+          <h3 style="margin-top:12px;">Antigravity Terminal</h3>
+          <div class="term" id="termOutput">
+            <div style="color:#7f95b5;"># Connected to ${p.project_name}</div>
+            <div style="color:#7f95b5;"># Ready for instructions...</div>
+          </div>
+          <div class="term-input">
+            <div class="term-prefix">AGENT ></div>
+            <input id="termInput" type="text" placeholder="Instruction..." onkeypress="handleCommand(event, '${p.project_name}')" />
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px;">
+            <button onclick="openPreview('${p.project_name}')"><i class="fas fa-up-right-from-square"></i> Open Live Preview</button>
+            <button onclick="copyPath('${p.project_name}')"><i class="fas fa-copy"></i> Copy Folder Path</button>
+          </div>
+        </section>
+
+        <section class="card">
+          <h3>Delivery Control</h3>
+
+          <label style="font-size:0.78rem; color:#93a7c3;">Preview URL</label>
+          <input id="previewUrlInput" type="text" value="${preview}" />
+
+          <label style="font-size:0.78rem; color:#93a7c3; margin-top:10px; display:block;">Nota de entrega / cambios</label>
+          <textarea id="deliveryNoteInput">${note}</textarea>
+
+          <div style="display:flex; align-items:center; gap:10px; margin-top:10px;">
+            <label style="display:flex; gap:8px; align-items:center; font-size:0.86rem;"><input type="checkbox" id="checkTests" /> Tests OK</label>
+            <label style="display:flex; gap:8px; align-items:center; font-size:0.86rem;"><input type="checkbox" id="checkReview" /> Code Reviewed</label>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px;">
+            <button class="btn-primary" onclick="saveProgress('${p.id}')"><i class="fas fa-save"></i> Guardar Avance</button>
+            <button class="btn-warning" onclick="markBlocked('${p.id}')"><i class="fas fa-circle-pause"></i> Bloquear</button>
+          </div>
+
+          <button class="btn-success" style="margin-top:8px; width:100%;" onclick="deliverProject('${p.id}')">
+            <i class="fas fa-check-double"></i> Entregar y Desplegar
+          </button>
+
+          <div class="iframe-wrap" style="margin-top:12px;">
+            <iframe id="previewFrame" src="${preview}"></iframe>
+          </div>
+
+          <div id="historyPanel" class="history" style="margin-top:12px;"></div>
+        </section>
+      `;
+    }
+
+    async function acceptProject(ticketId) {
+      try {
+        const res = await fetch('/api/accept-ticket', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ticket_id: ticketId, engineer: currentEngineer })
+        });
+        const data = await res.json();
+        if (!res.ok || data.error) throw new Error(data.error || `HTTP ${res.status}`);
+        await fetchProjects();
+      } catch (e) {
+        alert(`No se pudo tomar el proyecto: ${e.message}`);
+      }
+    }
+
+    async function autoAssign(limit) {
+      try {
+        const res = await fetch('/api/dispatch/auto-assign', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ limit, actor: currentEngineer })
+        });
+        const data = await res.json();
+        if (!res.ok || data.error) throw new Error(data.error || `HTTP ${res.status}`);
+        const assigned = data.assigned || [];
+        document.getElementById('dispatchLog').textContent = assigned.length
+          ? `Assigned: ${assigned.map(a => `${a.project_id}→${a.engineer}`).join(' | ')}`
+          : 'No pending tickets to assign.';
+        await fetchProjects();
+      } catch (e) {
+        document.getElementById('dispatchLog').textContent = `Dispatch error: ${e.message}`;
+      }
+    }
+
+    async function saveProgress(ticketId) {
+      try {
+        const previewUrl = (document.getElementById('previewUrlInput')?.value || '').trim();
+        const deliveryNote = (document.getElementById('deliveryNoteInput')?.value || '').trim();
+        const res = await fetch('/api/admin/update-ticket', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ticket_id: ticketId,
+            engineer: currentEngineer,
+            status: 'developing',
+            preview_url: previewUrl,
+            delivery_note: deliveryNote
+          })
+        });
+        const data = await res.json();
+        if (!res.ok || data.error) throw new Error(data.error || `HTTP ${res.status}`);
+        await fetchProjects();
+        alert('Avance guardado y sincronizado con cliente.');
+      } catch (e) {
+        alert(`No se pudo guardar avance: ${e.message}`);
+      }
+    }
+
+    async function markBlocked(ticketId) {
+      try {
+        const previewUrl = (document.getElementById('previewUrlInput')?.value || '').trim();
+        const deliveryNote = (document.getElementById('deliveryNoteInput')?.value || '').trim();
+        const res = await fetch('/api/admin/update-ticket', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ticket_id: ticketId,
+            engineer: currentEngineer,
+            status: 'blocked',
+            preview_url: previewUrl,
+            delivery_note: deliveryNote || 'Bloqueado temporalmente por dependencia pendiente.'
+          })
+        });
+        const data = await res.json();
+        if (!res.ok || data.error) throw new Error(data.error || `HTTP ${res.status}`);
+        await fetchProjects();
+        alert('Orden marcada como bloqueada.');
+      } catch (e) {
+        alert(`No se pudo bloquear: ${e.message}`);
+      }
+    }
+
+    async function deliverProject(ticketId) {
+      if (!document.getElementById('checkTests')?.checked) {
+        return alert('Debes confirmar Tests OK.');
+      }
+      if (!document.getElementById('checkReview')?.checked) {
+        return alert('Debes confirmar Code Reviewed.');
+      }
+
+      const previewUrl = (document.getElementById('previewUrlInput')?.value || '').trim();
+      const deliveryNote = (document.getElementById('deliveryNoteInput')?.value || '').trim();
+      if (!previewUrl) {
+        return alert('Debes definir Preview URL antes de entregar.');
+      }
+
+      if (!confirm('¿Confirmar entrega al cliente?')) return;
+
+      try {
+        const res = await fetch('/api/admin/update-ticket', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ticket_id: ticketId,
+            engineer: currentEngineer,
+            status: 'completed',
+            preview_url: previewUrl,
+            delivery_note: deliveryNote
+          })
+        });
+        const data = await res.json();
+        if (!res.ok || data.error) throw new Error(data.error || `HTTP ${res.status}`);
+        await fetchProjects();
+        alert('Proyecto entregado y desplegado.');
+      } catch (e) {
+        alert(`No se pudo entregar: ${e.message}`);
+      }
+    }
+
+    function openPreview(projectName) {
+      const custom = (document.getElementById('previewUrlInput')?.value || '').trim();
+      const target = custom || defaultPreviewUrl(projectName);
+      window.open(target, '_blank');
+    }
+
+    function copyPath(projectName) {
+      const path = `/generated_projects/${projectName}`;
+      navigator.clipboard.writeText(path).then(() => alert(`Copied: ${path}`)).catch(() => alert(path));
+    }
+
+    async function handleCommand(event, projectId) {
+      if (event.key !== 'Enter') return;
+      const input = event.target;
+      const cmd = input.value.trim();
+      if (!cmd) return;
+
+      const term = document.getElementById('termOutput');
+      term.innerHTML += `<div><span style="color:#60a5fa;">➜</span> ${cmd}</div>`;
+      input.value = '';
+      term.innerHTML += `<div style="color:#facc15;">Processing...</div>`;
+
+      try {
+        const fRes = await fetch(`/api/engineer/file?project_id=${encodeURIComponent(projectId)}&filename=index.html`);
+        const fData = await fRes.json().catch(() => ({}));
+
+        const res = await fetch('/api/engineer/ai-assist', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            project_id: projectId,
+            instruction: cmd,
+            target_file: 'index.html',
+            file_content: fData.content || ''
+          })
+        });
+        const data = await res.json();
+        if (!res.ok || data.error) throw new Error(data.error || `HTTP ${res.status}`);
+
+        term.lastElementChild.innerHTML = `<div># Thought: ${data.thought || 'Applied changes.'}</div>`;
+
+        if (data.code) {
+          const writeRes = await fetch('/api/engineer/file', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ project_id: projectId, filename: 'index.html', content: data.code })
+          });
+          const writeData = await writeRes.json().catch(() => ({}));
+          if (!writeRes.ok || writeData.error) throw new Error(writeData.error || `HTTP ${writeRes.status}`);
+          term.innerHTML += `<div style="color:#34d399;">✔ Applied changes to index.html</div>`;
+
+          if (currentProject && currentProject.id) {
+            await fetch('/api/admin/update-ticket', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                ticket_id: currentProject.id,
+                engineer: currentEngineer,
+                status: 'developing',
+                preview_url: defaultPreviewUrl(projectId),
+                delivery_note: 'Cambio aplicado desde terminal interno.'
+              })
+            });
+          }
+        }
+      } catch (e) {
+        term.innerHTML += `<div style="color:#f87171;">Error: ${e.message}</div>`;
+      }
+
+      term.scrollTop = term.scrollHeight;
+    }
+
+    async function fetchOrderHistory(project) {
+      if (!project) return;
+      const key = `${project.project_name}|${project.client_email || project.client || ''}`;
+      try {
+        const q = new URLSearchParams({
+          project_name: project.project_name || '',
+          client_email: project.client_email || project.client || ''
+        });
+        const res = await fetch(`/api/internal/order-history?${q.toString()}`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+        historyCache[key] = data;
+        renderHistoryPanel(data);
+      } catch (_) {
+        const cached = historyCache[key];
+        if (cached) renderHistoryPanel(cached);
+      }
+    }
+
+    function renderHistoryPanel(payload) {
+      const panel = document.getElementById('historyPanel');
+      if (!panel) return;
+      const orders = payload?.orders || [];
+      const projectStatus = payload?.project_status || {};
+      const recentOrders = orders.slice(0, 5);
+      const logs = (projectStatus.logs || []).slice(-5).reverse();
+
+      panel.innerHTML = `
+        <div style="font-weight:700; color:#d6e3f8; margin-bottom:6px;">Historial de órdenes (${payload?.meta?.total_orders || 0})</div>
+        <div style="margin-bottom:8px;">
+          ${recentOrders.length ? recentOrders.map(r => `• ${r.project_name} [${String(r.status || '').toUpperCase()}]`).join('<br>') : 'Sin historial de órdenes.'}
+        </div>
+        <div style="font-weight:700; color:#d6e3f8; margin-bottom:6px;">Cambios registrados</div>
+        <div>
+          ${logs.length ? logs.map(l => `• ${l.message}`).join('<br>') : 'Sin cambios registrados.'}
+        </div>
+      `;
+    }
+
+    document.getElementById('engineerSelect').addEventListener('change', (e) => {
+      currentEngineer = e.target.value;
+      document.getElementById('operatorName').textContent = currentEngineer;
+      fetchProjects();
+    });
+
+    document.getElementById('queueMode').addEventListener('change', (e) => {
+      currentQueueMode = e.target.value;
+      fetchProjects();
+    });
+
+    document.getElementById('statusFilter').addEventListener('change', (e) => {
+      currentStatusFilter = e.target.value;
+      fetchProjects();
+    });
+
+    document.getElementById('priorityFilter').addEventListener('change', (e) => {
+      currentPriorityFilter = e.target.value;
+      fetchProjects();
+    });
+
+    fetchProjects();
+    setInterval(fetchProjects, 5000);
+  </script>
+</body>
+</html>
