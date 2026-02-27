@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function checkUserCredits() {
         if (!userTokensEl) return;
         try {
-            const res = await fetch(`http://127.0.0.1:5001/api/user-stats?email=${currentUser.email}`);
+            const res = await fetch(`/api/user-stats?email=${currentUser.email}`);
             const data = await res.json();
             if (data.tokens !== undefined) {
                 userTokensEl.innerHTML = `<i class="fas fa-coins" style="color:#fbbf24; margin-right:5px;"></i> ${data.tokens} Créditos`;
@@ -570,7 +570,7 @@ document.addEventListener('DOMContentLoaded', () => {
         await new Promise(r => setTimeout(r, 2000));
 
         try {
-            const response = await fetch('http://127.0.0.1:5001/create-blueprint', {
+            const response = await fetch('/create-blueprint', {
                 method: 'POST', body: JSON.stringify({ idea: fullContext }),
                 headers: { 'Content-Type': 'application/json' }
             });
@@ -685,7 +685,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function saveMemoryNow() {
         if (!currentUser?.email || !currentProjectName) return;
         try {
-            await fetch('http://127.0.0.1:5001/api/chat-memory', {
+            await fetch('/api/chat-memory', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -716,7 +716,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         try {
-            const res = await fetch(`http://127.0.0.1:5001/api/chat-memory?email=${encodeURIComponent(currentUser.email)}&project_name=${encodeURIComponent(currentProjectName)}`);
+            const res = await fetch(`/api/chat-memory?email=${encodeURIComponent(currentUser.email)}&project_name=${encodeURIComponent(currentProjectName)}`);
             if (!res.ok) return;
             const data = await res.json();
             const memory = data.memory || {};
@@ -821,7 +821,7 @@ document.addEventListener('DOMContentLoaded', () => {
         resetContextBtn.addEventListener('click', async () => {
             setLoading(true);
             try {
-                await fetch('http://127.0.0.1:5001/api/chat-memory/reset', {
+                await fetch('/api/chat-memory/reset', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -843,7 +843,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function handleIdeaAnalysis(userInput, imageDataUrl = '') {
         if (isResetIntent(userInput)) {
             try {
-                await fetch('http://127.0.0.1:5001/api/chat-memory/reset', {
+                await fetch('/api/chat-memory/reset', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -864,7 +864,7 @@ document.addEventListener('DOMContentLoaded', () => {
             showThinking("Consultando Núcleo Supra...");
 
             try {
-                const res = await fetch('http://127.0.0.1:5001/analyze-idea', {
+                const res = await fetch('/analyze-idea', {
                     method: 'POST', body: JSON.stringify({ idea: userInput, image_data_url: imageDataUrl, engine: selectedEngine, user_email: currentUser.email, project_name: currentProjectName }),
                     headers: { 'Content-Type': 'application/json' }
                 });
@@ -910,7 +910,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const timeoutId = setTimeout(() => controller.abort(), 35000);
 
             try {
-                const res = await fetch('http://127.0.0.1:5001/api/continue-chat', {
+                const res = await fetch('/api/continue-chat', {
                     method: 'POST',
                     body: JSON.stringify({
                         history: conversationHistory,
@@ -999,7 +999,7 @@ document.addEventListener('DOMContentLoaded', () => {
         showThinking("Transmitiendo a Central Anmar...");
 
         try {
-            const res = await fetch('http://127.0.0.1:5001/api/create-ticket', {
+            const res = await fetch('/api/create-ticket', {
                 method: 'POST', body: JSON.stringify({ history: conversationHistory, user_email: currentUser.email, project_name: currentProjectName }),
                 headers: { 'Content-Type': 'application/json' }
             });
@@ -1052,8 +1052,8 @@ document.addEventListener('DOMContentLoaded', () => {
         pollInterval = setInterval(async () => {
             try {
                 const statusUrl = currentTicketProjectId
-                    ? `http://127.0.0.1:5001/api/project-status?project_id=${encodeURIComponent(currentTicketProjectId)}`
-                    : 'http://127.0.0.1:5001/api/project-status';
+                    ? `/api/project-status?project_id=${encodeURIComponent(currentTicketProjectId)}`
+                    : '/api/project-status';
                 const res = await fetch(statusUrl);
                 const status = await res.json();
                 const deployedUrl = status.deployed_url || '';
@@ -1153,7 +1153,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function handleGeneratePlan(idea) {
         addLog(`Iniciando secuencia de construcción...`, 'info');
 
-        const response = await fetch('http://127.0.0.1:5001/generate-plan', {
+        const response = await fetch('/generate-plan', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ idea: idea })
@@ -1183,7 +1183,7 @@ document.addEventListener('DOMContentLoaded', () => {
         await new Promise(r => setTimeout(r, 1000));
         showThinking("Diseñando interfaz (Tailwind)...");
 
-        const response = await fetch('http://127.0.0.1:5001/create-project', {
+        const response = await fetch('/create-project', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -1231,7 +1231,7 @@ document.addEventListener('DOMContentLoaded', () => {
         showThinking(`IA intentando aplicar: "${instruction}"...`);
 
         try {
-            const response = await fetch('http://127.0.0.1:5001/edit-project', {
+            const response = await fetch('/edit-project', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -1293,7 +1293,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function submitTicketInBackground(request) {
         try {
-            const res = await fetch('http://127.0.0.1:5001/api/submit-ticket', {
+            const res = await fetch('/api/submit-ticket', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -1401,7 +1401,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         setPreviewOverlay(`Cargando previsualización de ${name}...`, 'fa-spinner');
-        const url = `http://127.0.0.1:5001/projects/${name}/index.html?v=${Date.now()}`; // cache-bust
+        const url = `/projects/${name}/index.html?v=${Date.now()}`; // cache-bust
         previewLockedByReview = false;
         livePreviewFrame.src = url;
 
@@ -1531,7 +1531,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!projectName || !projectName.trim()) return;
 
         try {
-            const res = await fetch('http://127.0.0.1:5001/api/create-empty-project', {
+            const res = await fetch('/api/create-empty-project', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ project_name: projectName.trim() })
@@ -1561,7 +1561,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!ok) return;
 
         try {
-            const res = await fetch('http://127.0.0.1:5001/api/delete-all-projects', {
+            const res = await fetch('/api/delete-all-projects', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({})
@@ -1591,7 +1591,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadProjects() {
         try {
-            const response = await fetch('http://127.0.0.1:5001/list-projects'); // FIXED PORT
+            const response = await fetch('/list-projects'); // FIXED PORT
             const projects = await response.json();
 
             projectList.innerHTML = '';
@@ -1623,7 +1623,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     setInteractionMode('strategy');
                     await loadChatMemory();
                     loadProjectPreview(project); // Ensure loadProjectPreview is accessible or define logic here
-                    const previewUrl = `http://127.0.0.1:5001/projects/${project}/index.html?v=${Date.now()}`;
+                    const previewUrl = `/projects/${project}/index.html?v=${Date.now()}`;
                     const iframe = document.getElementById('livePreviewFrame');
                     if (iframe) iframe.src = previewUrl;
 
@@ -1643,7 +1643,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     e.stopPropagation(); // Prevent opening the project
                     if (confirm(`¿Estás seguro de ELIMINAR "${project}"? Esta acción es irreversible.`)) {
                         try {
-                            const res = await fetch('http://127.0.0.1:5001/delete-project', {
+                            const res = await fetch('/delete-project', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ project_name: project })
@@ -1710,7 +1710,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         const okDelete = confirm(`¿Eliminar el proyecto "${project}"? Esta acción no se puede deshacer.`);
                         if (!okDelete) return;
                         try {
-                            const res = await fetch('http://127.0.0.1:5001/delete-project', {
+                            const res = await fetch('/delete-project', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ project_name: project })
@@ -1783,7 +1783,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         try {
-            const response = await fetch('http://127.0.0.1:5001/list-projects');
+            const response = await fetch('/list-projects');
             const projects = await response.json();
             if (Array.isArray(projects) && projects.includes(lastProject)) {
                 currentProjectName = lastProject;
@@ -1821,7 +1821,7 @@ document.addEventListener('DOMContentLoaded', () => {
         await new Promise(r => setTimeout(r, 2000));
 
         try {
-            const res = await fetch('http://127.0.0.1:5001/api/generate-marketing', {
+            const res = await fetch('/api/generate-marketing', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ project_name: currentProjectName, focus: goal })
@@ -1964,7 +1964,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 3. ACTUAL BUILD CALL
         try {
-            const res = await fetch('http://127.0.0.1:5001/create-project', {
+            const res = await fetch('/create-project', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -2007,7 +2007,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Serve via backend static file server
                     // Assuming the iframe is inside the preview container
                     const projectFolder = data.path.split('/').pop(); // get the last folder name
-                    iframe.src = `http://127.0.0.1:5001/projects/${projectFolder}/index.html?v=${Date.now()}`;
+                    iframe.src = `/projects/${projectFolder}/index.html?v=${Date.now()}`;
                     iframe.style.opacity = '1';
                 }
 
@@ -2071,7 +2071,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const currentUser = JSON.parse(localStorage.getItem('currentUser'));
             if (!currentUser) { alert("Error de sesión"); return; }
 
-            const res = await fetch('http://127.0.0.1:5001/api/recharge-tokens', {
+            const res = await fetch('/api/recharge-tokens', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email: currentUser.email, plan_id: planId })

@@ -340,6 +340,42 @@ def login():
     else:
         return jsonify({"error": "Credenciales inválidas"}), 401
 
+@app.route('/api/social-login', methods=['POST'])
+def social_login():
+    data = request.json
+    email = data.get('email')
+    name = data.get('name')
+    provider = data.get('provider') # 'Google' or 'Apple'
+
+    if not email:
+        return jsonify({"error": "Faltan datos de la red social"}), 400
+
+    conn = get_db_connection()
+    user = conn.execute('SELECT * FROM users WHERE email = ?', (email,)).fetchone()
+
+    if not user:
+        # User doesn't exist, create automatically using social info
+        import secrets
+        random_password = secrets.token_urlsafe(16)  # Generate a long placeholder password
+        hashed_pw = generate_password_hash(random_password)
+        try:
+            conn.execute('INSERT INTO users (name, email, password) VALUES (?, ?, ?)', (name, email, hashed_pw))
+            conn.commit()
+            user_data = {"name": name, "email": email}
+        except Exception as e:
+            conn.close()
+            return jsonify({"error": str(e)}), 500
+    else:
+        # User exists, log them in
+        user_data = {"name": user['name'], "email": user['email']}
+        
+    conn.close()
+
+    return jsonify({
+        "message": f"Autenticado con {provider} exitosamente",
+        "user": user_data
+    })
+
 def _normalize_project_name(project_name):
     return str(project_name or "").strip().lower()
 

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Anmar Enterprises | Supra AI Builder</title>
+    <title>anmarenterprices.com | Supra AI Builder</title>
     <!-- Use same fonts as landing -->
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700&family=JetBrains+Mono:wght@400;700&display=swap"
@@ -718,7 +718,7 @@
     <header class="global-header" style="justify-content: space-between;">
         <!-- LEFT: LOGO -->
         <div style="width:250px;">
-            <a href="index.html" class="logo">Anmar Enterprises</a>
+            <a href="index.html" class="logo">anmarenterprices.com</a>
         </div>
 
         <!-- CENTER: TABS -->
@@ -762,8 +762,8 @@
                 style="margin-bottom:30px; cursor:pointer; color:#fff; font-size:1.2rem; transition:0.3s;"><i
                     class="fas fa-folder-tree"></i></div>
             <div class="nav-icon" onclick="switchTab('build')" id="nav-build" title="Construcción"
-                style="margin-bottom:30px; cursor:pointer; color:rgba(255,255,255,0.4); font-size:1.2rem; transition:0.3s;"><i
-                    class="fas fa-hammer"></i></div>
+                style="margin-bottom:30px; cursor:pointer; color:rgba(255,255,255,0.4); font-size:1.2rem; transition:0.3s;">
+                <i class="fas fa-hammer"></i></div>
             <div class="nav-icon" onclick="switchTab('market')" id="nav-market" title="Marketing"
                 style="margin-bottom:30px; cursor:pointer; color:rgba(255,255,255,0.4); font-size:1.2rem; transition:0.3s;">
                 <i class="fas fa-bullhorn"></i>
@@ -781,18 +781,18 @@
         <div style="flex-grow:1; position:relative; width:calc(100% - 70px);">
 
             <!-- SECTION 1: CONSTRUCCIÓN (Build) -->
-            <div id="section-build" class="section-view"
-                style="padding:20px; height:100%; box-sizing:border-box;">
+            <div id="section-build" class="section-view" style="padding:20px; height:100%; box-sizing:border-box;">
 
                 <!-- LEFT: AI CHAT -->
                 <div class="left-pane"
                     style="width: 44%; min-width: 520px; max-width: 620px; display: flex; flex-direction: column; gap: 12px; margin-bottom: 0;">
                     <!-- NEW: ACTIVE TIMELINE -->
-                    <div id="status-timeline"
-                        style="margin-bottom: 8px; display:none; flex-direction:column; gap:8px;">
+                    <div id="status-timeline" style="margin-bottom: 8px; display:none; flex-direction:column; gap:8px;">
                         <span
-                            style="font-family:'Inter'; font-size:0.75rem; font-weight:700; color:#fff; letter-spacing:1px; text-transform:uppercase;">Estado de Entrega Interna</span>
-                        <span style="font-size:0.7rem; color:rgba(255,255,255,0.65);">Se activa cuando envías el ticket a ingeniería.</span>
+                            style="font-family:'Inter'; font-size:0.75rem; font-weight:700; color:#fff; letter-spacing:1px; text-transform:uppercase;">Estado
+                            de Entrega Interna</span>
+                        <span style="font-size:0.7rem; color:rgba(255,255,255,0.65);">Se activa cuando envías el ticket
+                            a ingeniería.</span>
                         <div
                             style="display:flex; justify-content:space-between; align-items:center; position:relative; padding:0 10px;">
                             <!-- Line -->
@@ -841,17 +841,27 @@
 
                     <div id="briefStatePanel"
                         style="margin-bottom: 15px; border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:12px; background:rgba(0,0,0,0.35);">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                            <span style="font-size:0.72rem; letter-spacing:1px; text-transform:uppercase; opacity:0.8;">Estado del Brief</span>
-                            <span id="briefScoreText" style="font-size:0.78rem; color:#93c5fd; font-weight:700;">0%</span>
+                        <div
+                            style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <span
+                                style="font-size:0.72rem; letter-spacing:1px; text-transform:uppercase; opacity:0.8;">Estado
+                                del Brief</span>
+                            <span id="briefScoreText"
+                                style="font-size:0.78rem; color:#93c5fd; font-weight:700;">0%</span>
                         </div>
-                        <div style="height:6px; border-radius:999px; background:rgba(255,255,255,0.12); overflow:hidden; margin-bottom:10px;">
-                            <div id="briefScoreBar" style="height:100%; width:0%; background:linear-gradient(90deg,#3b82f6,#10b981); transition:width 0.3s;"></div>
+                        <div
+                            style="height:6px; border-radius:999px; background:rgba(255,255,255,0.12); overflow:hidden; margin-bottom:10px;">
+                            <div id="briefScoreBar"
+                                style="height:100%; width:0%; background:linear-gradient(90deg,#3b82f6,#10b981); transition:width 0.3s;">
+                            </div>
                         </div>
                         <div style="font-size:0.75rem; opacity:0.8; margin-bottom:6px;">Faltantes críticos</div>
-                        <div id="briefMissingList" style="font-size:0.75rem; line-height:1.45; color:#d1d5db;">summary, audience, business_model, timeline, features</div>
+                        <div id="briefMissingList" style="font-size:0.75rem; line-height:1.45; color:#d1d5db;">summary,
+                            audience, business_model, timeline, features</div>
                         <div style="font-size:0.75rem; opacity:0.8; margin:10px 0 6px;">Resumen vivo</div>
-                        <div id="briefSummaryText" style="font-size:0.8rem; line-height:1.45; color:#e5e7eb; min-height:36px;">Esperando conversación...</div>
+                        <div id="briefSummaryText"
+                            style="font-size:0.8rem; line-height:1.45; color:#e5e7eb; min-height:36px;">Esperando
+                            conversación...</div>
                     </div>
 
                     <section class="ai-console">
@@ -930,8 +940,7 @@
                                         </button>
                                     </div>
 
-                                    <select id="engineSelector" class="theme-selector"
-                                        title="Selecciona motor de IA">
+                                    <select id="engineSelector" class="theme-selector" title="Selecciona motor de IA">
                                         <option value="antigravity">Motor: Antigravity</option>
                                         <option value="openai_codex">Motor: Codex</option>
                                     </select>
@@ -997,92 +1006,96 @@
 
             </div>
 
-        <!-- SECTION 2: PROYECTOS -->
-        <div id="section-projects" class="section-view active"
-            style="padding:40px; color:#fff; flex-direction:column; align-items:center; justify-content:center; height:100%;">
-            <div
-                style="background:rgba(59, 130, 246, 0.08); border:1px solid rgba(59, 130, 246, 0.3); padding:30px; border-radius:16px; text-align:left; width:min(1100px,92vw);">
-                <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
-                    <i class="fas fa-folder-tree" style="font-size:1.4rem; color:#3b82f6;"></i>
-                    <h2 style="color:#fff; margin:0;">Proyectos</h2>
+            <!-- SECTION 2: PROYECTOS -->
+            <div id="section-projects" class="section-view active"
+                style="padding:40px; color:#fff; flex-direction:column; align-items:center; justify-content:center; height:100%;">
+                <div
+                    style="background:rgba(59, 130, 246, 0.08); border:1px solid rgba(59, 130, 246, 0.3); padding:30px; border-radius:16px; text-align:left; width:min(1100px,92vw);">
+                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+                        <i class="fas fa-folder-tree" style="font-size:1.4rem; color:#3b82f6;"></i>
+                        <h2 style="color:#fff; margin:0;">Proyectos</h2>
+                    </div>
+                    <p style="opacity:0.7; margin-top:0;">Cada idea vive como proyecto independiente. Selecciona una
+                        carpeta para abrir la previsualización y continuar iterando.</p>
+                    <div style="display:flex; gap:10px; margin: 8px 0 20px 0;">
+                        <button onclick="createNewProject()"
+                            style="background:#3b82f6; color:#fff; border:none; padding:10px 14px; border-radius:8px; cursor:pointer; font-weight:600;">
+                            <i class="fas fa-plus"></i> Nuevo Proyecto
+                        </button>
+                        <button onclick="deleteAllProjects()"
+                            style="background:rgba(239,68,68,0.15); color:#fecaca; border:1px solid rgba(239,68,68,0.4); padding:10px 14px; border-radius:8px; cursor:pointer; font-weight:600;">
+                            <i class="fas fa-trash"></i> Borrar Todos
+                        </button>
+                    </div>
+                    <div id="projectsFolderGrid"
+                        style="margin-top:20px; display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:12px;">
+                    </div>
                 </div>
-                <p style="opacity:0.7; margin-top:0;">Cada idea vive como proyecto independiente. Selecciona una carpeta para abrir la previsualización y continuar iterando.</p>
-                <div style="display:flex; gap:10px; margin: 8px 0 20px 0;">
-                    <button onclick="createNewProject()"
-                        style="background:#3b82f6; color:#fff; border:none; padding:10px 14px; border-radius:8px; cursor:pointer; font-weight:600;">
-                        <i class="fas fa-plus"></i> Nuevo Proyecto
+            </div>
+
+            <!-- SECTION 3: MARKETING (Placeholder) -->
+            <div id="section-market" class="section-view"
+                style="padding:40px; color:#fff; flex-direction:column; align-items:center; justify-content:center; height:100%;">
+                <div
+                    style="background:rgba(59, 130, 246, 0.1); border:1px solid rgba(59, 130, 246, 0.3); padding:40px; border-radius:16px; text-align:center;">
+                    <i class="fas fa-bullhorn" style="font-size:3rem; color:#3b82f6; margin-bottom:20px;"></i>
+                    <h2 style="color:#fff; margin-top:0;">Supra Marketing Engine</h2>
+                    <p style="opacity:0.6; max-width:400px; line-height:1.6;">
+                        Genera campañas, copys y assets visuales optimizados por IA.<br>
+                        <span style="font-size:0.8rem; color:#3b82f6;">PRÓXIMAMENTE v2.1</span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- SECTION 4: GROWTH (Placeholder) -->
+            <div id="section-growth" class="section-view"
+                style="padding:40px; color:#fff; flex-direction:column; align-items:center; justify-content:center; height:100%;">
+                <div
+                    style="background:rgba(245, 158, 11, 0.1); border:1px solid rgba(245, 158, 11, 0.3); padding:40px; border-radius:16px; text-align:center;">
+                    <i class="fas fa-chart-line" style="font-size:3rem; color:#f59e0b; margin-bottom:20px;"></i>
+                    <h2 style="color:#fff; margin-top:0;">Fondo de Inversión Anmar</h2>
+                    <p style="opacity:0.6; max-width:400px; line-height:1.6;">
+                        Solicita capital semilla y monitoriza el crecimiento de tu activo.<br>
+                        <span style="font-size:0.8rem; color:#f59e0b;">PRÓXIMAMENTE v2.1</span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- SECTION 5: PROFILE -->
+            <div id="section-profile" class="section-view"
+                style="padding:40px; color:#fff; flex-direction:column; align-items:center; justify-content:center; height:100%;">
+                <div
+                    style="background:rgba(255, 255, 255, 0.04); border:1px solid rgba(255, 255, 255, 0.15); padding:40px; border-radius:16px; text-align:left; width:min(720px,92vw);">
+                    <div style="display:flex; align-items:center; gap:16px; margin-bottom:20px;">
+                        <div
+                            style="width:52px; height:52px; border-radius:50%; background:rgba(16,185,129,0.15); display:flex; align-items:center; justify-content:center;">
+                            <i class="fas fa-user" style="color:#10b981;"></i>
+                        </div>
+                        <div>
+                            <h2 id="profileName" style="margin:0;">Usuario Anmar</h2>
+                            <div id="profileEmail" style="opacity:0.75; font-size:0.9rem;"></div>
+                        </div>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:24px;">
+                        <div style="padding:14px; border:1px solid rgba(255,255,255,0.12); border-radius:10px;">
+                            <div style="opacity:0.65; font-size:0.8rem;">Membresía</div>
+                            <div id="profileMemberSince" style="margin-top:6px; font-weight:600;">Activo en Anmar</div>
+                        </div>
+                        <div style="padding:14px; border:1px solid rgba(255,255,255,0.12); border-radius:10px;">
+                            <div style="opacity:0.65; font-size:0.8rem;">Créditos disponibles</div>
+                            <div id="profileCredits" style="margin-top:6px; font-weight:600;">-</div>
+                        </div>
+                    </div>
+
+                    <button id="logoutBtn"
+                        style="background:rgba(239,68,68,0.18); color:#fecaca; border:1px solid rgba(239,68,68,0.4); padding:10px 16px; border-radius:8px; cursor:pointer; font-weight:600;">
+                        <i class="fas fa-right-from-bracket"></i> Cerrar sesión
                     </button>
-                    <button onclick="deleteAllProjects()"
-                        style="background:rgba(239,68,68,0.15); color:#fecaca; border:1px solid rgba(239,68,68,0.4); padding:10px 14px; border-radius:8px; cursor:pointer; font-weight:600;">
-                        <i class="fas fa-trash"></i> Borrar Todos
-                    </button>
                 </div>
-                <div id="projectsFolderGrid" style="margin-top:20px; display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:12px;"></div>
             </div>
-        </div>
 
-        <!-- SECTION 3: MARKETING (Placeholder) -->
-        <div id="section-market" class="section-view"
-            style="padding:40px; color:#fff; flex-direction:column; align-items:center; justify-content:center; height:100%;">
-            <div
-                style="background:rgba(59, 130, 246, 0.1); border:1px solid rgba(59, 130, 246, 0.3); padding:40px; border-radius:16px; text-align:center;">
-                <i class="fas fa-bullhorn" style="font-size:3rem; color:#3b82f6; margin-bottom:20px;"></i>
-                <h2 style="color:#fff; margin-top:0;">Supra Marketing Engine</h2>
-                <p style="opacity:0.6; max-width:400px; line-height:1.6;">
-                    Genera campañas, copys y assets visuales optimizados por IA.<br>
-                    <span style="font-size:0.8rem; color:#3b82f6;">PRÓXIMAMENTE v2.1</span>
-                </p>
-            </div>
-        </div>
-
-        <!-- SECTION 4: GROWTH (Placeholder) -->
-        <div id="section-growth" class="section-view"
-            style="padding:40px; color:#fff; flex-direction:column; align-items:center; justify-content:center; height:100%;">
-            <div
-                style="background:rgba(245, 158, 11, 0.1); border:1px solid rgba(245, 158, 11, 0.3); padding:40px; border-radius:16px; text-align:center;">
-                <i class="fas fa-chart-line" style="font-size:3rem; color:#f59e0b; margin-bottom:20px;"></i>
-                <h2 style="color:#fff; margin-top:0;">Fondo de Inversión Anmar</h2>
-                <p style="opacity:0.6; max-width:400px; line-height:1.6;">
-                    Solicita capital semilla y monitoriza el crecimiento de tu activo.<br>
-                    <span style="font-size:0.8rem; color:#f59e0b;">PRÓXIMAMENTE v2.1</span>
-                </p>
-            </div>
-        </div>
-
-        <!-- SECTION 5: PROFILE -->
-        <div id="section-profile" class="section-view"
-            style="padding:40px; color:#fff; flex-direction:column; align-items:center; justify-content:center; height:100%;">
-            <div
-                style="background:rgba(255, 255, 255, 0.04); border:1px solid rgba(255, 255, 255, 0.15); padding:40px; border-radius:16px; text-align:left; width:min(720px,92vw);">
-                <div style="display:flex; align-items:center; gap:16px; margin-bottom:20px;">
-                    <div style="width:52px; height:52px; border-radius:50%; background:rgba(16,185,129,0.15); display:flex; align-items:center; justify-content:center;">
-                        <i class="fas fa-user" style="color:#10b981;"></i>
-                    </div>
-                    <div>
-                        <h2 id="profileName" style="margin:0;">Usuario Anmar</h2>
-                        <div id="profileEmail" style="opacity:0.75; font-size:0.9rem;"></div>
-                    </div>
-                </div>
-
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:24px;">
-                    <div style="padding:14px; border:1px solid rgba(255,255,255,0.12); border-radius:10px;">
-                        <div style="opacity:0.65; font-size:0.8rem;">Membresía</div>
-                        <div id="profileMemberSince" style="margin-top:6px; font-weight:600;">Activo en Anmar</div>
-                    </div>
-                    <div style="padding:14px; border:1px solid rgba(255,255,255,0.12); border-radius:10px;">
-                        <div style="opacity:0.65; font-size:0.8rem;">Créditos disponibles</div>
-                        <div id="profileCredits" style="margin-top:6px; font-weight:600;">-</div>
-                    </div>
-                </div>
-
-                <button id="logoutBtn"
-                    style="background:rgba(239,68,68,0.18); color:#fecaca; border:1px solid rgba(239,68,68,0.4); padding:10px 16px; border-radius:8px; cursor:pointer; font-weight:600;">
-                    <i class="fas fa-right-from-bracket"></i> Cerrar sesión
-                </button>
-            </div>
-        </div>
-
-    </div> <!-- Close Main Content Wrapper -->
+        </div> <!-- Close Main Content Wrapper -->
     </div> <!-- Close App Layout -->
 
     <!-- Hidden Modals preserved from original -->
