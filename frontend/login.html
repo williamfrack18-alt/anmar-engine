@@ -308,7 +308,7 @@
 
             <div class="input-group">
                 <label class="input-label">EMAIL CORPORATIVO</label>
-                <input type="email" id="email" class="input-field" placeholder="user@anmar.enterprises" required>
+                <input type="email" id="email" class="input-field" placeholder="user@anmarenterprice.com" required>
             </div>
 
             <div class="input-group">
@@ -459,7 +459,7 @@
             }
 
             const name = externalName || `${provider} User`;
-            const email = externalEmail || `${provider.toLowerCase()}@anmar.enterprises`;
+            const email = externalEmail || `${provider.toLowerCase()}@anmarenterprice.com`;
 
             const btn = document.getElementById('submitBtn');
             const el = document.getElementById('statusMsg');
@@ -527,7 +527,7 @@
             AppleID.auth.init({
                 clientId: 'com.anmarenterprises.web',
                 scope: 'name email',
-                redirectURI: 'https://anmar.enterprises/api/apple-callback',
+                redirectURI: 'https://anmarenterprice.com/api/apple-callback',
                 state: 'init',
                 usePopup: true
             });
