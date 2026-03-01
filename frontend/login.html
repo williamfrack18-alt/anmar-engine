@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>anmarenterprices.com | Secure Login</title>
+    <title>Anmar Enterprises | Secure Login</title>
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700&family=JetBrains+Mono:wght@400;700&display=swap"
         rel="stylesheet">
@@ -289,7 +289,7 @@
 
     <!-- CARD -->
     <div class="login-card">
-        <div class="brand-logo">anmarenterprices.com</div>
+        <div class="brand-logo">Anmar Enterprises</div>
         <div class="brand-subtitle">Portal de Acceso Seguro</div>
 
         <!-- TABS -->
@@ -308,7 +308,7 @@
 
             <div class="input-group">
                 <label class="input-label">EMAIL CORPORATIVO</label>
-                <input type="email" id="email" class="input-field" placeholder="user@anmarenterprices.com" required>
+                <input type="email" id="email" class="input-field" placeholder="user@anmar.enterprises" required>
             </div>
 
             <div class="input-group">
@@ -342,7 +342,7 @@
         </div>
 
         <div style="margin-top: 2rem; font-size: 0.7rem; color: rgba(255,255,255,0.3);">
-            © 2026 anmarenterprices.com. Secure Gateway v2.4
+            © 2026 Anmar Enterprises. Secure Gateway v2.4
         </div>
     </div>
 
@@ -459,7 +459,7 @@
             }
 
             const name = externalName || `${provider} User`;
-            const email = externalEmail || `${provider.toLowerCase()}@anmarenterprices.com`;
+            const email = externalEmail || `${provider.toLowerCase()}@anmar.enterprises`;
 
             const btn = document.getElementById('submitBtn');
             const el = document.getElementById('statusMsg');
@@ -525,9 +525,9 @@
         document.addEventListener('DOMContentLoaded', () => {
             // Esta llave es de ejemplo. Para funcionar en prod requieres un ClientID real de developer.apple.com
             AppleID.auth.init({
-                clientId: 'com.anmarenterprices.web',
+                clientId: 'com.anmarenterprises.web',
                 scope: 'name email',
-                redirectURI: 'https://anmarenterprices.com/api/apple-callback',
+                redirectURI: 'https://anmar.enterprises/api/apple-callback',
                 state: 'init',
                 usePopup: true
             });
