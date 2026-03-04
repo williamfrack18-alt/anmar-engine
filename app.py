@@ -3869,4 +3869,52 @@ def analyze_turn_endpoint():
         existing_memory = None
         if user_email:
             stored = get_chat_memory(user_email, project_name=project_name) or {}
-            existi
+            existing_memory = stored.get("agent_memory") if isinstance(stored, dict) else None
+
+        analysis = analyze_turn_state(full_history, current_input, existing_memory=existing_memory)
+        # Safe payload for debug/inspection.
+        return jsonify({
+            "summary": analysis.get("summary"),
+            "missing_fields": analysis.get("missing_fields"),
+            "ready_by_data": analysis.get("ready_by_data"),
+            "ready_to_build": analysis.get("ready_to_build"),
+            "brief_score": compute_brief_score(analysis.get("missing_fields", [])),
+            "next_question": analysis.get("next_question"),
+            "memory": analysis.get("memory"),
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/ai-health', methods=['GET'])
+def ai_health():
+    # Optional ping via query param: /api/ai-health?ping=1
+    do_ping = str(request.args.get("ping", "")).lower() in ("1", "true", "yes")
+    if do_ping:
+        probe = call_ai_text("Responde solo con: ok")
+        if not probe:
+            return jsonify({
+                "connected": False,
+                "model_name": AI_RUNTIME.get("model_name"),
+                "last_error": AI_RUNTIME.get("last_error"),
+                "last_check_at": AI_RUNTIME.get("last_check_at"),
+            }), 503
+
+    return jsonify({
+        "connected": bool(AI_RUNTIME.get("connected")),
+        "model_name": AI_RUNTIME.get("model_name"),
+        "candidate_models": AI_RUNTIME.get("candidate_models", []),
+        "last_error": AI_RUNTIME.get("last_error"),
+        "last_check_at": AI_RUNTIME.get("last_check_at"),
+        "attempts": AI_RUNTIME.get("attempts", 0),
+    })
+
+
+if __name__ == '__main__':
+    print(f"🔥 Server starting at http://localhost:5001")
+    print(f"📁 Serving Frontend from: {frontend_path}")
+    print(f"📦 Projects Directory: {projects_base_dir}")
+    print(f"🔑 API Key Active: {GOOGLE_API_KEY[:8]}... (starts with)")
+    print(f"🤖 AI Connected: {AI_RUNTIME.get('connected')} | Model: {AI_RUNTIME.get('model_name')}")
+    # Create alerts dir if not exists
+    os.makedirs(os.path.join(BASE_DIR, 'backend'), exist_ok=True)
+    app.run(debug=True, port=5001)
