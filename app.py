@@ -2608,7 +2608,8 @@ def get_internal_order_history():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-HUMAN_CHATS_FILE = os.path.join(base_dir, 'backend', 'human_chats.json')
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+HUMAN_CHATS_FILE = os.path.join(BASE_DIR, 'backend', 'human_chats.json')
 
 def load_human_chats():
     if not os.path.exists(HUMAN_CHATS_FILE):
