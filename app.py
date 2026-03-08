@@ -2608,6 +2608,67 @@ def get_internal_order_history():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+HUMAN_CHATS_FILE = os.path.join(base_dir, 'backend', 'human_chats.json')
+
+def load_human_chats():
+    if not os.path.exists(HUMAN_CHATS_FILE):
+        return {}
+    try:
+        with open(HUMAN_CHATS_FILE, 'r') as f:
+            return json.load(f)
+    except:
+        return {}
+
+def save_human_chats(data):
+    try:
+        os.makedirs(os.path.dirname(HUMAN_CHATS_FILE), exist_ok=True)
+        with open(HUMAN_CHATS_FILE, 'w') as f:
+            json.dump(data, f, indent=2)
+    except Exception as e:
+        print(f"Error saving human chats: {e}")
+
+@app.route('/api/human-chat/send', methods=['POST'])
+def send_human_chat():
+    try:
+        data = request.json or {}
+        project_name = data.get('project_name')
+        role = data.get('role', 'human') # 'human' or 'client'
+        content = data.get('content', '').strip()
+        actor = data.get('actor', '') 
+        
+        if not project_name or not content:
+            return jsonify({"error": "Missing parameters"}), 400
+            
+        chats = load_human_chats()
+        if project_name not in chats:
+            chats[project_name] = []
+            
+        chats[project_name].append({
+            "id": str(uuid.uuid4()),
+            "role": role,
+            "content": content,
+            "actor": actor,
+            "timestamp": datetime.now().isoformat()
+        })
+        
+        save_human_chats(chats)
+        return jsonify({"status": "success"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/human-chat/history', methods=['GET'])
+def get_human_chat_history():
+    try:
+        project_name = request.args.get('project_name')
+        if not project_name:
+            return jsonify({"error": "Missing project_name"}), 400
+            
+        chats = load_human_chats()
+        history = chats.get(project_name, [])
+        return jsonify({"history": history})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/api/dispatch/auto-assign', methods=['POST'])
 def auto_assign_dispatch():
     try:

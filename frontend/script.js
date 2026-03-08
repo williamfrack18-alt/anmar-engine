@@ -35,6 +35,54 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Session Management ---
     let currentUser = JSON.parse(localStorage.getItem('currentUser'));
 
+    // --- Human Chat Polling ---
+    let humanChatInterval = null;
+    let lastHumanChatCount = 0;
+
+    async function pollHumanChat() {
+        if (!currentProjectName) return;
+        try {
+            const res = await fetch(`/api/human-chat/history?project_name=${encodeURIComponent(currentProjectName)}`);
+            const data = await res.json();
+            if (data.history && data.history.length > lastHumanChatCount) {
+                lastHumanChatCount = data.history.length;
+                renderHumanChat(data.history);
+                // IF we are not actively viewing the human tab, show a red badge
+                if (typeof isHumanChatActive !== 'undefined' && !isHumanChatActive) {
+                    const badge = document.getElementById('humanUnreadBadge');
+                    if (badge) badge.style.display = 'block';
+                }
+            }
+        } catch (e) { console.error('Error polling human chat:', e); }
+    }
+
+    function renderHumanChat(history) {
+        const container = document.getElementById('humanChatContent');
+        if (!container) return;
+        let html = '';
+        history.forEach(msg => {
+            const isClient = msg.role === 'client';
+            const cls1 = isClient ? 'user' : 'ai';
+            const cls2 = isClient ? 'user-msg' : 'ai-msg';
+            const bgText = !isClient ? `<strong>[${msg.actor || 'Ingeniero'}]</strong><br>` : '';
+            html += `<div class="msg-row ${cls1}"><div class="${cls2}">${bgText}${msg.content}</div></div>`;
+        });
+        container.innerHTML = html;
+        const log = document.getElementById('humanLog');
+        if (log) log.scrollTop = log.scrollHeight;
+    }
+
+    // React to Tab switch
+    document.addEventListener('chatTabSwitched', (e) => {
+        if (e.detail === 'Human') {
+            chatInput.placeholder = "Escribe a nuestro equipo de ingenieros para solicitar ayuda o cambios manuales...";
+        } else {
+            chatInput.placeholder = interactionMode === 'edit'
+                ? "Describe qué quieres editar en el proyecto..."
+                : "Describe tu idea... (ej. 'Un SaaS para gestión con Stripe')";
+        }
+    });
+
     if (!currentUser) {
         window.location.href = 'login.html'; // Protect Dashboard
         return;
@@ -479,9 +527,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // New Function for the Button
     window.triggerHumanRefinement = function () {
-        const instruction = prompt("Describe qué aspectos deseas que nuestro equipo pula o mejore (ej: 'Mejorar animaciones', 'Integrar pasarela de pagos', 'Optimizar SEO'):");
-        if (instruction) {
-            handleEditProject(instruction); // Reuses the hybrid ticket logic
+        if (typeof switchChatTab === 'function') {
+            switchChatTab('Human');
+            const chatBox = document.getElementById('chatInput');
+            if (chatBox) chatBox.focus();
+        } else {
+            const instruction = prompt("Describe qué aspectos deseas que nuestro equipo pula o mejore (ej: 'Mejorar animaciones', 'Integrar pasarela de pagos', 'Optimizar SEO'):");
+            if (instruction) {
+                handleEditProject(instruction); // Reuses the hybrid ticket logic
+            }
         }
     }
 
@@ -495,6 +549,36 @@ document.addEventListener('DOMContentLoaded', () => {
             switchTab('projects');
             return;
         }
+
+        // --- NEW: HUMAN CHAT FLOW ---
+        if (typeof isHumanChatActive !== 'undefined' && isHumanChatActive) {
+            const messageToSend = text;
+            chatInput.value = '';
+            const msgRow = document.createElement('div');
+            msgRow.className = 'msg-row user';
+            msgRow.innerHTML = `<div class="user-msg">${messageToSend}</div>`;
+            const container = document.getElementById('humanChatContent');
+            if (container) container.appendChild(msgRow);
+            const log = document.getElementById('humanLog');
+            if (log) log.scrollTop = log.scrollHeight;
+            lastHumanChatCount++; // optimistic update
+
+            try {
+                await fetch('/api/human-chat/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        project_name: currentProjectName,
+                        role: 'client',
+                        content: messageToSend,
+                        actor: currentUser.name || 'Cliente'
+                    })
+                });
+                pollHumanChat();
+            } catch (e) { console.error(e); }
+            return;
+        }
+        // --- END HUMAN CHAT FLOW ---
 
         const imageToSend = pendingImageDataUrl;
         const imageNameToSend = pendingImageName;
@@ -1166,6 +1250,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Sanitize project name
         currentProjectName = data.project_name.toLowerCase().replace(/[^a-z0-9_]/g, '_');
+        currentTicketProjectId = data.project_id || '';
+
+        // Reset and trigger human chat polling 
+        lastHumanChatCount = 0;
+        if (humanChatInterval) clearInterval(humanChatInterval);
+        humanChatInterval = setInterval(pollHumanChat, 3000);
         queueMemorySave();
 
         addLog(`Plan generado: ${currentProjectName}`, 'success');
@@ -1542,8 +1632,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             currentProjectName = data.project_name;
+            currentTicketProjectId = data.project_id || '';
+            chatStage = 'construction_mode';
+
+            // Reset and trigger human chat polling 
+            lastHumanChatCount = 0;
+            if (humanChatInterval) clearInterval(humanChatInterval);
+            humanChatInterval = setInterval(pollHumanChat, 3000);
             persistCurrentProject();
-            await resetContext(false);
             setInteractionMode('strategy');
             await loadChatMemory();
             loadProjectPreview(currentProjectName);
@@ -1619,6 +1715,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 nameSpan.style.flexGrow = '1';
                 nameSpan.onclick = async () => {
                     currentProjectName = project;
+                    chatStage = 'construction_mode';
+
+                    // Start polling human chat mapping
+                    lastHumanChatCount = 0;
+                    if (humanChatInterval) clearInterval(humanChatInterval);
+                    humanChatInterval = setInterval(pollHumanChat, 3000);
+                    pollHumanChat();
                     persistCurrentProject();
                     setInteractionMode('strategy');
                     await loadChatMemory();

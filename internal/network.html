@@ -1,12 +1,15 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ANMAR Internal Ops</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap"
+    rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <style>
     :root {
@@ -25,7 +28,9 @@
       --shadow: 0 16px 44px rgba(0, 0, 0, 0.45);
     }
 
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
 
     body {
       margin: 0;
@@ -33,8 +38,8 @@
       color: var(--text);
       font-family: 'Inter', system-ui, sans-serif;
       background:
-        radial-gradient(1200px 500px at 10% -5%, rgba(59,130,246,0.20), transparent 65%),
-        radial-gradient(900px 450px at 100% 0%, rgba(16,185,129,0.11), transparent 70%),
+        radial-gradient(1200px 500px at 10% -5%, rgba(59, 130, 246, 0.20), transparent 65%),
+        radial-gradient(900px 450px at 100% 0%, rgba(16, 185, 129, 0.11), transparent 70%),
         linear-gradient(160deg, var(--bg-0), var(--bg-1));
       overflow: hidden;
     }
@@ -45,8 +50,8 @@
       inset: 0;
       pointer-events: none;
       background-image:
-        linear-gradient(rgba(148,163,184,0.055) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(148,163,184,0.055) 1px, transparent 1px);
+        linear-gradient(rgba(148, 163, 184, 0.055) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(148, 163, 184, 0.055) 1px, transparent 1px);
       background-size: 52px 52px;
       opacity: 0.25;
     }
@@ -82,7 +87,7 @@
       justify-content: space-between;
       padding: 16px;
       border-bottom: 1px solid var(--border);
-      background: linear-gradient(180deg, rgba(59,130,246,0.12), rgba(59,130,246,0));
+      background: linear-gradient(180deg, rgba(59, 130, 246, 0.12), rgba(59, 130, 246, 0));
     }
 
     .brand-title {
@@ -93,15 +98,17 @@
       letter-spacing: 0.2px;
     }
 
-    .brand-title i { color: #93c5fd; }
+    .brand-title i {
+      color: #93c5fd;
+    }
 
     .badge {
       font-size: 0.68rem;
       padding: 4px 8px;
       border-radius: 999px;
-      border: 1px solid rgba(16,185,129,0.45);
+      border: 1px solid rgba(16, 185, 129, 0.45);
       color: #6ee7b7;
-      background: rgba(16,185,129,0.12);
+      background: rgba(16, 185, 129, 0.12);
     }
 
     .filters {
@@ -111,20 +118,24 @@
       gap: 8px;
     }
 
-    select, input[type="text"], textarea {
+    select,
+    input[type="text"],
+    textarea {
       width: 100%;
       background: rgba(15, 23, 36, 0.86);
       color: #e2e8f0;
-      border: 1px solid rgba(148,163,184,0.28);
+      border: 1px solid rgba(148, 163, 184, 0.28);
       border-radius: 10px;
       padding: 9px 10px;
       font: inherit;
       outline: none;
     }
 
-    select:focus, input:focus, textarea:focus {
-      border-color: rgba(59,130,246,0.65);
-      box-shadow: 0 0 0 3px rgba(59,130,246,0.17);
+    select:focus,
+    input:focus,
+    textarea:focus {
+      border-color: rgba(59, 130, 246, 0.65);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.17);
     }
 
     .btn-row {
@@ -134,7 +145,7 @@
     }
 
     button {
-      border: 1px solid rgba(148,163,184,0.28);
+      border: 1px solid rgba(148, 163, 184, 0.28);
       border-radius: 10px;
       padding: 9px 10px;
       background: rgba(17, 26, 39, 0.92);
@@ -144,23 +155,26 @@
       transition: 0.15s;
     }
 
-    button:hover { transform: translateY(-1px); border-color: rgba(59,130,246,0.65); }
+    button:hover {
+      transform: translateY(-1px);
+      border-color: rgba(59, 130, 246, 0.65);
+    }
 
     .btn-primary {
       background: linear-gradient(180deg, #3b82f6, #2563eb);
-      border-color: rgba(147,197,253,0.42);
+      border-color: rgba(147, 197, 253, 0.42);
       color: #fff;
     }
 
     .btn-success {
       background: linear-gradient(180deg, #10b981, #059669);
-      border-color: rgba(110,231,183,0.45);
+      border-color: rgba(110, 231, 183, 0.45);
       color: #002618;
     }
 
     .btn-warning {
       background: linear-gradient(180deg, #f59e0b, #d97706);
-      border-color: rgba(252,211,77,0.52);
+      border-color: rgba(252, 211, 77, 0.52);
       color: #2b1600;
     }
 
@@ -174,7 +188,7 @@
     }
 
     .ticket-item {
-      border: 1px solid rgba(148,163,184,0.24);
+      border: 1px solid rgba(148, 163, 184, 0.24);
       background: rgba(15, 22, 34, 0.92);
       border-radius: 12px;
       padding: 12px;
@@ -182,8 +196,14 @@
       transition: 0.15s;
     }
 
-    .ticket-item:hover { border-color: rgba(59,130,246,0.62); }
-    .ticket-item.active { border-color: rgba(16,185,129,0.65); box-shadow: 0 0 0 2px rgba(16,185,129,0.16) inset; }
+    .ticket-item:hover {
+      border-color: rgba(59, 130, 246, 0.62);
+    }
+
+    .ticket-item.active {
+      border-color: rgba(16, 185, 129, 0.65);
+      box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.16) inset;
+    }
 
     .ticket-meta {
       display: flex;
@@ -200,13 +220,33 @@
       letter-spacing: 0.4px;
       border-radius: 999px;
       padding: 3px 8px;
-      border: 1px solid rgba(148,163,184,0.32);
+      border: 1px solid rgba(148, 163, 184, 0.32);
     }
 
-    .status-pending { color: #93c5fd; border-color: rgba(59,130,246,0.45); background: rgba(59,130,246,0.13); }
-    .status-accepted, .status-developing { color: #6ee7b7; border-color: rgba(16,185,129,0.52); background: rgba(16,185,129,0.14); }
-    .status-blocked { color: #fcd34d; border-color: rgba(245,158,11,0.52); background: rgba(245,158,11,0.14); }
-    .status-completed { color: #d1fae5; border-color: rgba(52,211,153,0.50); background: rgba(16,185,129,0.18); }
+    .status-pending {
+      color: #93c5fd;
+      border-color: rgba(59, 130, 246, 0.45);
+      background: rgba(59, 130, 246, 0.13);
+    }
+
+    .status-accepted,
+    .status-developing {
+      color: #6ee7b7;
+      border-color: rgba(16, 185, 129, 0.52);
+      background: rgba(16, 185, 129, 0.14);
+    }
+
+    .status-blocked {
+      color: #fcd34d;
+      border-color: rgba(245, 158, 11, 0.52);
+      background: rgba(245, 158, 11, 0.14);
+    }
+
+    .status-completed {
+      color: #d1fae5;
+      border-color: rgba(52, 211, 153, 0.50);
+      background: rgba(16, 185, 129, 0.18);
+    }
 
     .main {
       min-height: 0;
@@ -221,7 +261,7 @@
       align-items: center;
       padding: 14px 16px;
       border-bottom: 1px solid var(--border);
-      background: linear-gradient(180deg, rgba(59,130,246,0.10), rgba(59,130,246,0));
+      background: linear-gradient(180deg, rgba(59, 130, 246, 0.10), rgba(59, 130, 246, 0));
     }
 
     .title {
@@ -262,14 +302,21 @@
       color: #93a7c3;
     }
 
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .muted { color: var(--muted); }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
 
     .term {
       height: 200px;
       overflow: auto;
       border-radius: 10px;
-      border: 1px solid rgba(148,163,184,0.26);
+      border: 1px solid rgba(148, 163, 184, 0.26);
       background: #070b12;
       padding: 10px;
       font-family: 'JetBrains Mono', monospace;
@@ -282,7 +329,7 @@
       display: grid;
       grid-template-columns: auto 1fr;
       align-items: stretch;
-      border: 1px solid rgba(148,163,184,0.28);
+      border: 1px solid rgba(148, 163, 184, 0.28);
       border-radius: 10px;
       overflow: hidden;
       background: rgba(12, 18, 29, 0.9);
@@ -290,7 +337,7 @@
 
     .term-prefix {
       padding: 10px;
-      background: rgba(59,130,246,0.18);
+      background: rgba(59, 130, 246, 0.18);
       color: #bfdbfe;
       font-family: 'JetBrains Mono', monospace;
       font-weight: 700;
@@ -308,7 +355,7 @@
     .history {
       max-height: 210px;
       overflow: auto;
-      border: 1px solid rgba(148,163,184,0.24);
+      border: 1px solid rgba(148, 163, 184, 0.24);
       border-radius: 10px;
       background: rgba(8, 12, 20, 0.82);
       padding: 10px;
@@ -318,7 +365,7 @@
     }
 
     .iframe-wrap {
-      border: 1px solid rgba(148,163,184,0.26);
+      border: 1px solid rgba(148, 163, 184, 0.26);
       border-radius: 12px;
       overflow: hidden;
       background: #0a101a;
@@ -336,23 +383,37 @@
       padding: 40px 20px;
       text-align: center;
       color: #6f83a1;
-      border: 1px dashed rgba(148,163,184,0.3);
+      border: 1px dashed rgba(148, 163, 184, 0.3);
       border-radius: 12px;
       background: rgba(8, 12, 20, 0.75);
     }
 
     @media (max-width: 1250px) {
-      .app { grid-template-columns: 300px 1fr; }
-      .workspace { grid-template-columns: 1fr; }
-      iframe { height: 320px; }
+      .app {
+        grid-template-columns: 300px 1fr;
+      }
+
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+
+      iframe {
+        height: 320px;
+      }
     }
 
     @media (max-width: 980px) {
-      .app { grid-template-columns: 1fr; }
-      .sidebar { max-height: 42vh; }
+      .app {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        max-height: 42vh;
+      }
     }
   </style>
 </head>
+
 <body>
   <div class="app">
     <aside class="sidebar panel">
@@ -642,6 +703,20 @@
             <iframe id="previewFrame" src="${preview}"></iframe>
           </div>
 
+          <!-- Human Chat Panel -->
+          <div id="humanChatPanel" class="history" style="margin-top:12px; height: 350px; display: flex; flex-direction: column; background:rgba(12,18,29,0.95); border:1px solid rgba(59,130,246,0.3);">
+            <div style="font-weight:700; color:#93c5fd; border-bottom:1px solid rgba(148,163,184,0.2); padding-bottom:8px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+              <span><i class="fas fa-comments"></i> Chat con Cliente</span>
+            </div>
+            <div id="humanChatMessages" style="flex:1; overflow-y:auto; padding-right:5px; font-size:0.85rem; line-height:1.5; display:flex; flex-direction:column; gap:8px;">
+                <div style="color:var(--muted); text-align:center; padding:10px;">Cargando mensajes...</div>
+            </div>
+            <div class="term-input" style="margin-top:10px; display:grid; grid-template-columns:1fr auto; background:rgba(6,8,13,0.8); border:1px solid rgba(148,163,184,0.3); border-radius:8px; overflow:hidden;">
+              <input id="humanChatInput" type="text" placeholder="Escribir mensaje al cliente..." onkeypress="if(event.key==='Enter') sendHumanChatMessage('${p.project_name}')" style="padding:10px 14px; border:none; background:transparent; color:#fff; font-family:'Inter', sans-serif;" />
+              <button onclick="sendHumanChatMessage('${p.project_name}')" style="background:#3b82f6; color:#fff; border:none; padding:0 16px; border-radius:0; cursor:pointer;"><i class="fas fa-paper-plane"></i></button>
+            </div>
+          </div>
+
           <div id="historyPanel" class="history" style="margin-top:12px;"></div>
         </section>
       `;
@@ -777,6 +852,79 @@
       navigator.clipboard.writeText(path).then(() => alert(`Copied: ${path}`)).catch(() => alert(path));
     }
 
+    let humanChatInterval = null;
+
+    async function loadHumanChat(projectName) {
+      const messagesContainer = document.getElementById('humanChatMessages');
+      if (!messagesContainer) return;
+      try {
+        const res = await fetch(`/api/human-chat/history?project_name=${encodeURIComponent(projectName)}`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Error fetching chat');
+        
+        const history = data.history || [];
+        if (history.length === 0) {
+          messagesContainer.innerHTML = '<div style="color:var(--muted); text-align:center; padding:10px;">Aún no hay mensajes. Envía uno para abrir el canal de comunicación humana.</div>';
+          return;
+        }
+
+        let html = '';
+        history.forEach(msg => {
+          const isHuman = msg.role === 'human';
+          const align = isHuman ? 'flex-end' : 'flex-start';
+          const bg = isHuman ? 'rgba(59,130,246,0.2)' : 'rgba(16,185,129,0.15)';
+          const border = isHuman ? 'rgba(59,130,246,0.5)' : 'rgba(16,185,129,0.4)';
+          const name = isHuman ? (msg.actor || 'Ingeniero') : 'Cliente';
+          
+          html += `
+            <div style="display:flex; flex-direction:column; align-items:${align}; margin-bottom:4px;">
+              <span style="font-size:0.65rem; color:var(--muted); margin-bottom:2px;">${name} - ${new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+              <div style="background:${bg}; border:1px solid ${border}; padding:8px 12px; border-radius:8px; max-width:85%; color:#e2e8f0;">
+                ${msg.content}
+              </div>
+            </div>
+          `;
+        });
+        messagesContainer.innerHTML = html;
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function sendHumanChatMessage(projectName) {
+      const input = document.getElementById('humanChatInput');
+      const content = input.value.trim();
+      if (!content) return;
+      
+      input.value = 'Enviando...';
+      input.disabled = true;
+
+      try {
+        const res = await fetch('/api/human-chat/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            project_name: projectName,
+            role: 'human',
+            content: content,
+            actor: currentEngineer
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        
+        input.value = '';
+        await loadHumanChat(projectName);
+      } catch (e) {
+        alert('Error al enviar mensaje: ' + e.message);
+        input.value = content;
+      } finally {
+        input.disabled = false;
+        input.focus();
+      }
+    }
+
     async function handleCommand(event, projectId) {
       if (event.key !== 'Enter') return;
       const input = event.target;
@@ -841,6 +989,12 @@
     async function fetchOrderHistory(project) {
       if (!project) return;
       const key = `${project.project_name}|${project.client_email || project.client || ''}`;
+      
+      // Load chat history side by side
+      loadHumanChat(project.project_name);
+      if (humanChatInterval) clearInterval(humanChatInterval);
+      humanChatInterval = setInterval(() => loadHumanChat(project.project_name), 3000);
+
       try {
         const q = new URLSearchParams({
           project_name: project.project_name || '',
@@ -902,4 +1056,5 @@
     setInterval(fetchProjects, 5000);
   </script>
 </body>
+
 </html>
