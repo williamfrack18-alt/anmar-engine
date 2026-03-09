@@ -297,6 +297,62 @@ def init_db():
 # Initialize or migrate DB on start
 init_db()
 
+import threading
+import uuid
+from datetime import datetime
+import json
+
+def notify_new_registration(name, email):
+    """
+    Función en segundo plano para manejar notificaciones asíncronas de nuevos registros.
+    Envía email (bienvenida al usuario y aviso interno) y registra un ticket base.
+    """
+    def background_task():
+        # 1. NOTIFICACIÓN INTERNA: Crear un ticket inicial en internal_alerts.json
+        try:
+            alerts_path = os.path.join(BASE_DIR, 'backend', 'internal_alerts.json')
+            os.makedirs(os.path.dirname(alerts_path), exist_ok=True)
+            
+            alerts = []
+            if os.path.exists(alerts_path):
+                with open(alerts_path, 'r') as f:
+                    alerts = json.load(f)
+                    
+            # Crear ticket tipo "NEW_USER" (o general) para que aparezca en Network
+            new_alert = {
+                "id": str(uuid.uuid4())[:8],
+                "project_name": "NUEVO CLIENTE / LEAD",
+                "client": name or email,
+                "summary": f"Registro completado. Email: {email}",
+                "viability": 100,
+                "complexity": "Bajo",
+                "timestamp": datetime.now().isoformat(),
+                "updated_at": datetime.now().isoformat(),
+                "status": "pending",
+                "priority": "high",
+                "sla_due_at": datetime.now().isoformat(), # Requeriría atención inmediata si es onboarding VIP
+                "events": [{
+                    "timestamp": datetime.now().isoformat(),
+                    "status": "pending",
+                    "actor": "system",
+                    "message": "Primera visita, usuario registrado exitosamente."
+                }]
+            }
+            alerts.insert(0, new_alert)
+            with open(alerts_path, 'w') as f:
+                json.dump(alerts, f, indent=2)
+                
+        except Exception as e:
+            print(f"Error generando ticket interno para nuevo usuario: {e}")
+
+        # 2. EMAIL NOTIFICATIONS PLACEHOLDER
+        # Aquí vamos a inyectar SMTPLib / Webhooks en el siguiente paso
+        print(f"[Sistema de Correos] Simulación: Correo de Bienvenida enviado a -> {email}")
+        print(f"[Sistema de Correos] Simulación: Alerta a Administración enviada para -> Nuevo Lead {email}")
+        
+    # Lanzar hilo asíncrono para no bloquear la página web del usuario registrándose
+    threading.Thread(target=background_task).start()
+
 # --- AUTH ROUTES ---
 @app.route('/api/register', methods=['POST'])
 def register():
@@ -316,6 +372,10 @@ def register():
                      (name, email, hashed_pw))
         conn.commit()
         conn.close()
+        
+        # ACTIVATE NOTIFICATIONS
+        notify_new_registration(name, email)
+        
         return jsonify({"message": "Usuario creado exitosamente"})
     except sqlite3.IntegrityError:
         return jsonify({"error": "El correo ya está registrado"}), 409
@@ -383,6 +443,10 @@ def social_login():
             conn.execute('INSERT INTO users (name, email, password) VALUES (?, ?, ?)', (name, email, hashed_pw))
             conn.commit()
             user_data = {"name": name, "email": email}
+            
+            # ACTIVATE NOTIFICATIONS FOR SOCIAL SIGNUP
+            notify_new_registration(name, email)
+            
         except Exception as e:
             conn.close()
             return jsonify({"error": str(e)}), 500
