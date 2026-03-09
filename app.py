@@ -345,10 +345,73 @@ def notify_new_registration(name, email):
         except Exception as e:
             print(f"Error generando ticket interno para nuevo usuario: {e}")
 
-        # 2. EMAIL NOTIFICATIONS PLACEHOLDER
-        # Aquí vamos a inyectar SMTPLib / Webhooks en el siguiente paso
-        print(f"[Sistema de Correos] Simulación: Correo de Bienvenida enviado a -> {email}")
-        print(f"[Sistema de Correos] Simulación: Alerta a Administración enviada para -> Nuevo Lead {email}")
+        # 2. EMAIL NOTIFICATIONS VIA GOOGLE WORKSPACE SMTPLIB
+        import smtplib
+        import os
+        from email.mime.text import MIMEText
+        from email.mime.multipart import MIMEMultipart
+
+        # IMPORTANTE: Configuraremos estas credenciales en el servidor usando variables de entorno
+        # o aquí mismo, pero NUNCA compartas la clave final expuesta públicamente.
+        SMTP_SERVER = "smtp.gmail.com"
+        SMTP_PORT = 587
+        
+        sender_email = os.environ.get("ANMAR_SMTP_USER", "tu_correo@tudominio.com") 
+        sender_password = os.environ.get("ANMAR_SMTP_PASS", "")
+        admin_email = os.environ.get("ANMAR_ADMIN_EMAIL", sender_email) # A quién le llega la alerta interna
+        
+        if sender_password:
+            try:
+                # CORREO PARA EL CLIENTE (Bienvenida)
+                msg_client = MIMEMultipart()
+                msg_client['From'] = f"Anmar Enterprises <{sender_email}>"
+                msg_client['To'] = email
+                msg_client['Subject'] = "¡Bienvenido a Anmar Enterprises!"
+                
+                name_str = name if name else 'Nuevo usuario'
+                body_client = f"""Hola {name_str},
+                
+¡Bienvenido a Anmar Enterprises! Tu cuenta en el motor Supra ha sido creada exitosamente.
+
+Ya puedes ingresar a tu ecosistema, describir tu visión en el chat y empezar a construir junto a nuestra Inteligencia Artificial y Red de Ingenieros.
+
+Inicia sesión ahora: https://anmarenterprices.com/
+
+Atentamente,
+El Equipo de Anmar Enterprises
+"""
+                msg_client.attach(MIMEText(body_client, 'plain'))
+                
+                # CORREO PARA LA ADMINISTRACIÓN (Alerta Interna)
+                msg_admin = MIMEMultipart()
+                msg_admin['From'] = f"Sistema Anmar <{sender_email}>"
+                msg_admin['To'] = admin_email
+                msg_admin['Subject'] = f"🚨 NUEVO LEAD REGISTRADO: {email}"
+                
+                body_admin = f"""Se acaba de registrar un nuevo usuario en la plataforma Anmar Engine.
+                
+Nombre Autorizado: {name_str}
+Email del Lead: {email}
+Hora de registro: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+El Ticket también ha sido creado en el Operations Network.
+"""
+                msg_admin.attach(MIMEText(body_admin, 'plain'))
+
+                # ENVIAR CORREOS A TRAVÉS DE GOOGLE
+                server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+                server.starttls()
+                server.login(sender_email, sender_password)
+                server.send_message(msg_client)   # Enviar bienvenida al lead
+                server.send_message(msg_admin)    # Enviar alerta a ti
+                server.quit()
+                
+                print(f"[Sistema de Correos] Emails reales enviados para {email} sin errores.")
+            except Exception as e:
+                print(f"[Sistema de Correos] Error crítico enviando email vía Google: {e}")
+        else:
+            print("[Sistema de Correos] Advertencia: Credenciales ANMAR_SMTP_PASS no configuradas.")
+            print(f"[Simulación] Bienvenida a: {email}")
         
     # Lanzar hilo asíncrono para no bloquear la página web del usuario registrándose
     threading.Thread(target=background_task).start()
