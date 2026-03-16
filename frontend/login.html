@@ -6,12 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>anmarenterprices.com | Secure Login</title>
     <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700&family=JetBrains+Mono:wght@400;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script type="text/javascript"
-        src="https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js"></script>
     <style>
         /* --- CORE VISUALS (Shared) --- */
         * {
@@ -25,7 +23,7 @@
             height: 100vh;
             width: 100vw;
             overflow: hidden;
-            font-family: 'Inter', sans-serif;
+            font-family: 'Space Grotesk', sans-serif;
             color: #fff;
             display: flex;
             justify-content: center;
@@ -52,7 +50,7 @@
             height: 100vh;
             transform: translate(-50%, -50%) scale(1.5);
             pointer-events: none;
-            opacity: 0.5;
+            opacity: 0.45;
         }
 
         /* Overlays */
@@ -74,26 +72,38 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(10, 20, 10, 0.6);
+            background: radial-gradient(circle at 20% 10%, rgba(16, 185, 129, 0.12), transparent 45%),
+                radial-gradient(circle at 80% 90%, rgba(34, 211, 238, 0.1), transparent 40%),
+                rgba(6, 12, 10, 0.8);
             z-index: -51;
             pointer-events: none;
         }
 
         /* --- LOGIN CARD --- */
         .login-card {
-            background: rgba(10, 10, 10, 0.85);
-            /* Darker backdrop */
-            backdrop-filter: blur(25px);
+            background: linear-gradient(180deg, rgba(9, 12, 12, 0.92), rgba(8, 10, 10, 0.86));
+            backdrop-filter: blur(28px);
             border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 24px;
-            padding: 3rem;
-            width: 420px;
-            max-width: 90%;
+            border-radius: 28px;
+            padding: 3.2rem;
+            width: 440px;
+            max-width: 92%;
             text-align: center;
-            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9);
+            box-shadow: 0 40px 90px rgba(0, 0, 0, 0.7);
             position: relative;
             z-index: 10;
-            animation: floatUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+            animation: floatUp 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
+            overflow: hidden;
+        }
+
+        .login-card::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 20% 0%, rgba(16, 185, 129, 0.18), transparent 55%),
+                radial-gradient(circle at 80% 100%, rgba(34, 211, 238, 0.12), transparent 50%);
+            opacity: 0.8;
+            pointer-events: none;
         }
 
         @keyframes floatUp {
@@ -109,11 +119,11 @@
         }
 
         .brand-logo {
-            font-size: 1.8rem;
+            font-size: 2rem;
             font-weight: 700;
             margin-bottom: 0.5rem;
-            letter-spacing: -0.5px;
-            background: linear-gradient(to right, #fff, #ccc);
+            letter-spacing: -0.8px;
+            background: linear-gradient(135deg, #ffffff, #c8f7e3 40%, #8de9ff);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
@@ -121,35 +131,16 @@
         .brand-subtitle {
             font-family: 'JetBrains Mono', monospace;
             font-size: 0.75rem;
-            color: #10b981;
-            margin-bottom: 2rem;
+            color: rgba(16, 185, 129, 0.9);
+            margin-bottom: 2.2rem;
             text-transform: uppercase;
-            letter-spacing: 1.5px;
+            letter-spacing: 2.2px;
             opacity: 0.8;
         }
 
         /* TABS */
         .auth-tabs {
-            display: flex;
-            margin-bottom: 2rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .tab-btn {
-            flex: 1;
-            background: none;
-            border: none;
-            color: rgba(255, 255, 255, 0.4);
-            padding: 10px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            transition: all 0.3s;
-            border-bottom: 2px solid transparent;
-        }
-
-        .tab-btn.active {
-            color: #fff;
-            border-bottom: 2px solid #10b981;
+            display: none;
         }
 
         /* INPUTS */

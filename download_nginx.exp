@@ -1,0 +1,5 @@
+#!/usr/bin/expect -f
+set timeout 30
+spawn scp -o StrictHostKeyChecking=no root@104.131.22.108:/etc/nginx/sites-available/anmar anmar_nginx.conf
+expect "password:" { send "wc+SxDhM?_L8?J\r" }
+expect eof
