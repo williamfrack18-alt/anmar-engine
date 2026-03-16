@@ -6,3 +6,7 @@ database.db
 *.log
 .DS_Store
 generated_projects/
+
+# Sensitive server artifacts
+/anmar_nginx.conf
+/download_nginx.exp
