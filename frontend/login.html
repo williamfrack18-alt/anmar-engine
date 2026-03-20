@@ -140,7 +140,26 @@
 
         /* TABS */
         .auth-tabs {
-            display: none;
+            display: flex;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .tab-btn {
+            flex: 1;
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.4);
+            padding: 10px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+            border-bottom: 2px solid transparent;
+        }
+
+        .tab-btn.active {
+            color: #fff;
+            border-bottom: 2px solid #10b981;
         }
 
         /* INPUTS */
@@ -320,8 +339,18 @@
             <div class="brand-logo">Anmar Enterprises</div>
             <div class="brand-subtitle">Portal de Acceso Seguro</div>
 
+            <!-- TABS -->
+            <div class="auth-tabs">
+                <button class="tab-btn active" id="tabLogin" onclick="switchTab('login')">Ingresar</button>
+                <button class="tab-btn" id="tabRegister" onclick="switchTab('register')">Registrarse</button>
+            </div>
+
             <!-- FORM -->
             <form id="authForm" onsubmit="handleAuth(event)">
+                <div class="input-group" id="nameGroup" style="display:none;">
+                    <label class="input-label">NOMBRE COMPLETO</label>
+                    <input type="text" id="name" class="input-field" placeholder="John Doe">
+                </div>
                 <div class="input-group">
                     <label class="input-label">EMAIL CORPORATIVO</label>
                     <input type="email" id="email" class="input-field" placeholder="user@anmarenterprices.com" required>
@@ -364,6 +393,7 @@
 
     <script>
         // --- AUTH LOGIC ---
+        let mode = 'login'; // 'login' or 'register'
         const API_URL = '/api'; // Ensure this matches running port
         const urlParams = new URLSearchParams(window.location.search);
 
@@ -379,10 +409,22 @@
             }
         }
 
+        function switchTab(newMode) {
+            mode = newMode;
+            document.getElementById('tabLogin').classList.toggle('active', mode === 'login');
+            document.getElementById('tabRegister').classList.toggle('active', mode === 'register');
+
+            document.getElementById('nameGroup').style.display = mode === 'register' ? 'block' : 'none';
+            document.getElementById('name').required = mode === 'register';
+            document.getElementById('btnText').textContent = mode === 'register' ? 'Crear Cuenta' : 'Acceder';
+            showStatus('', '');
+        }
+
         async function handleAuth(e) {
             e.preventDefault();
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
+            const name = document.getElementById('name').value;
             const btn = document.getElementById('submitBtn');
 
             // UI Loading
@@ -391,8 +433,9 @@
             showStatus('', '');
 
             try {
-                let endpoint = '/login';
+                let endpoint = mode === 'register' ? '/register' : '/login';
                 let payload = { email, password };
+                if (mode === 'register') payload.name = name;
 
                 const res = await fetch(API_URL + endpoint, {
                     method: 'POST',
@@ -414,14 +457,21 @@
                     btn.innerHTML = '<i class="fas fa-check"></i> Éxito';
                     btn.style.background = '#10b981';
 
-                    // Redirect to Dashboard
-                    setTimeout(() => window.location.href = 'dashboard.html', 1000);
+                    if (mode === 'login') {
+                        setTimeout(() => window.location.href = 'dashboard.html', 1000);
+                    } else {
+                        setTimeout(() => {
+                            switchTab('login');
+                            document.getElementById('email').value = email;
+                            btn.disabled = false;
+                        }, 1500);
+                    }
 
                 } else {
                     // ERROR
                     showStatus(data.error || "Error desconocido", 'error');
                     btn.disabled = false;
-                    btn.innerHTML = '<i class="fas fa-fingerprint"></i> <span id="btnText">Acceder</span>';
+                    btn.innerHTML = '<i class="fas fa-fingerprint"></i> <span id="btnText">' + (mode === 'register' ? 'Crear Cuenta' : 'Acceder') + '</span>';
                 }
 
             } catch (err) {

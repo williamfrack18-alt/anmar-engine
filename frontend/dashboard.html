@@ -31,9 +31,9 @@
         }
 
         :root {
-            --ui-scale: 0.86;
-            --build-left-col: minmax(420px, 42%);
-            --build-right-col: minmax(620px, 1fr);
+            --ui-scale: 0.92;
+            --build-left-col: minmax(460px, 44%);
+            --build-right-col: minmax(520px, 1fr);
         }
 
         /* Video Background */
@@ -164,14 +164,14 @@
         .ai-console {
             flex: 1;
             /* Takes 50% or so */
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(6, 6, 6, 0.68);
             backdrop-filter: blur(25px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 18px;
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 14px 46px rgba(0, 0, 0, 0.55);
         }
 
         .console-header {
@@ -225,12 +225,12 @@
         /* Terminal/Chat Logic Match */
         .terminal-wrapper {
             flex-grow: 1;
-            padding: 1.5rem;
+            padding: 1.6rem;
             overflow-y: auto;
             /* Change base font to clean sans-serif like Gemini */
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            font-size: 0.94rem;
-            line-height: 1.5;
+            font-size: 0.96rem;
+            line-height: 1.6;
             display: flex;
             flex-direction: column;
             gap: 1.5rem;
@@ -252,8 +252,8 @@
         }
 
         .ai-msg {
-            max-width: 85%;
-            color: #ececec;
+            max-width: 90%;
+            color: rgba(255, 255, 255, 0.92);
             /* Almost white like Gemini */
             line-height: 1.6;
             font-weight: 400;
@@ -262,7 +262,8 @@
 
         /* Make user messages look like chat bubbles */
         .msg-row.user>div {
-            background: #2a2a2a;
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.25);
             padding: 10px 18px;
             border-radius: 18px 18px 2px 18px;
             color: #fff;
@@ -328,9 +329,9 @@
 
         /* Input Area */
         .chat-input-area {
-            padding: 1.5rem;
+            padding: 1.2rem 1.4rem;
             border-top: 1px solid rgba(255, 255, 255, 0.1);
-            background: rgba(0, 0, 0, 0.2);
+            background: rgba(6, 6, 6, 0.65);
         }
 
         .input-glass {
@@ -349,14 +350,14 @@
             color: #fff;
             padding: 10px;
             font-family: 'Inter', sans-serif;
-            font-size: 1.02rem;
+            font-size: 1rem;
             outline: none;
             resize: none;
-            height: 66px;
+            height: 72px;
         }
 
         textarea::placeholder {
-            color: rgba(255, 255, 255, 0.3);
+            color: rgba(255, 255, 255, 0.45);
         }
 
         .action-bar {
@@ -379,21 +380,23 @@
         }
 
         .send-btn {
-            background: #fff;
-            color: #000;
+            background: #10b981;
+            color: #00140f;
             border: none;
-            width: 36px;
-            height: 36px;
-            border-radius: 8px;
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
             cursor: pointer;
             display: flex;
             justify-content: center;
             align-items: center;
-            transition: transform 0.2s;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 8px 18px rgba(16, 185, 129, 0.25);
         }
 
         .send-btn:hover {
-            transform: scale(1.1);
+            transform: translateY(-1px);
+            box-shadow: 0 12px 22px rgba(16, 185, 129, 0.35);
         }
 
 
@@ -401,10 +404,10 @@
         .preview-panel {
             flex: 1.2;
             /* Slightly wider */
-            background: rgba(10, 10, 10, 0.9);
+            background: rgba(6, 6, 6, 0.88);
             /* Opaque for accurate color reading */
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
+            border-radius: 18px;
             overflow: hidden;
             display: flex;
             flex-direction: column;
@@ -412,7 +415,7 @@
         }
 
         .browser-toolbar {
-            height: 50px;
+            height: 56px;
             background: rgba(255, 255, 255, 0.05);
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
             display: flex;
@@ -462,8 +465,8 @@
             display: flex;
             gap: 5px;
             background: rgba(255, 255, 255, 0.05);
-            padding: 4px;
-            border-radius: 8px;
+            padding: 6px;
+            border-radius: 10px;
             border: 1px solid rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
         }
@@ -472,11 +475,11 @@
             background: transparent;
             border: none;
             color: rgba(255, 255, 255, 0.6);
-            padding: 8px 16px;
-            border-radius: 6px;
+            padding: 10px 18px;
+            border-radius: 8px;
             cursor: pointer;
             font-family: 'Inter', sans-serif;
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             font-weight: 600;
             letter-spacing: 1px;
             text-transform: uppercase;
@@ -494,7 +497,7 @@
         .tab-btn.active {
             background: #fff;
             color: #000;
-            box-shadow: 0 2px 10px rgba(255, 255, 255, 0.1);
+            box-shadow: 0 2px 12px rgba(255, 255, 255, 0.18);
         }
 
         /* SECTIONS VISIBILITY */
@@ -551,7 +554,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0 3rem;
+            padding: 0 4vw;
             z-index: 1000;
             background: linear-gradient(to bottom, #000 40%, rgba(0, 0, 0, 0));
         }

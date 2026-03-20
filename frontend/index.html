@@ -23,15 +23,12 @@
             margin: 0;
             padding: 0;
             overflow-x: hidden;
-            /* Check for horizontal scroll */
             overflow-y: auto;
-            /* Enable Vertical Scroll */
             min-height: 100vh;
-            /* Allow body to grow */
             width: 100%;
             font-family: 'Inter', sans-serif;
             color: #fff;
-            zoom: 0.9;
+            zoom: 1;
         }
 
         /* --- CONTENT STYLE UPDATES --- */
@@ -45,17 +42,14 @@
         }
 
         .concept-box {
-            /* Centered Style */
-            border-top: 1px solid rgba(255, 255, 255, 0.4);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+            border-top: 1px solid rgba(255, 255, 255, 0.32);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.32);
             border-left: none;
-            /* Remove asymmetry */
-            padding: 1.5rem 0;
+            padding: 1.2rem 0;
             margin: 2rem auto;
-            /* Auto margin for centering */
             font-family: 'Merriweather', serif;
             font-style: italic;
-            font-size: 1.5rem;
+            font-size: 1.35rem;
             color: rgba(255, 255, 255, 0.95);
             max-width: 700px;
             width: 100%;
@@ -138,28 +132,30 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 1.5rem 3rem;
+            padding: 1.75rem 4vw;
             z-index: 100;
+            backdrop-filter: blur(6px);
         }
 
         .logo {
             font-weight: 700;
-            font-size: 1.2rem;
-            letter-spacing: -0.5px;
+            font-size: 1.3rem;
+            letter-spacing: -0.6px;
             color: #fff;
             text-decoration: none;
         }
 
         nav {
             display: flex;
-            gap: 2rem;
+            gap: 1.6rem;
         }
 
         nav a {
             text-decoration: none;
             color: rgba(255, 255, 255, 0.7);
             font-size: 0.9rem;
-            font-weight: 400;
+            font-weight: 500;
+            letter-spacing: 0.2px;
             transition: color 0.3s;
         }
 
@@ -185,13 +181,13 @@
         .btn-start {
             background: #fff;
             color: #000;
-            padding: 0.6rem 1.2rem;
-            border-radius: 4px;
-            /* Square/slightly rounded like image */
-            font-weight: 600;
+            padding: 0.7rem 1.3rem;
+            border-radius: 8px;
+            font-weight: 700;
             font-size: 0.9rem;
             text-decoration: none;
-            transition: transform 0.2s;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
         }
 
         .btn-start:hover {
@@ -200,28 +196,26 @@
 
         /* --- HERO SELECTION center-left --- */
         .hero-container {
-            height: 100vh;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: flex-start;
             /* LEFT ALIGN */
             text-align: left;
-            padding-left: 10vw;
-            /* EDITORIAL SPACING */
-            padding-right: 5vw;
+            padding-left: 8vw;
+            padding-right: 6vw;
             position: relative;
             z-index: 10;
         }
 
         h1.main-title {
-            font-size: 3.5rem;
-            line-height: 1.1;
+            font-size: 4.2rem;
+            line-height: 1.08;
             font-weight: 500;
-            /* Cleaner look */
-            letter-spacing: -1px;
-            margin-bottom: 1.5rem;
-            max-width: 800px;
+            letter-spacing: -2px;
+            margin-bottom: 1.4rem;
+            max-width: 900px;
         }
 
         h1.main-title strong {
@@ -231,32 +225,54 @@
         }
 
         p.hero-subtitle {
-            font-size: 1.1rem;
-            color: rgba(255, 255, 255, 0.7);
-            max-width: 600px;
-            margin-bottom: 2.5rem;
-            line-height: 1.5;
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.95);
+            max-width: 760px;
+            margin-bottom: 2.2rem;
+            line-height: 1.7;
+            text-shadow: 0 8px 22px rgba(0, 0, 0, 0.5);
         }
 
         /* MAIN CTA BUTTON */
         .cta-button {
             background: #fff;
-            /* Solid White */
             color: #000;
             font-weight: 700;
             font-size: 1rem;
-            padding: 1rem 2rem;
+            padding: 1rem 2.2rem;
             text-decoration: none;
-            border-radius: 2px;
-            /* Minimal border radius */
+            border-radius: 8px;
             display: inline-block;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
         }
 
         .cta-button:hover {
-            transform: scale(1.02);
-            box-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 16px 36px rgba(255, 255, 255, 0.2);
+        }
+
+        .cta-button:active {
+            transform: translateY(0);
+        }
+
+        .cta-secondary {
+            background: transparent;
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+        }
+
+        .cta-secondary:hover {
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+        }
+
+        .cta-row {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
         }
 
         /* --- SCROLL MOUSE INDICATOR --- */
@@ -297,17 +313,102 @@
 
         /* --- CONTENT SECTIONS (GENESIS) --- */
         .content-section {
-            min-height: 100vh;
+            min-height: 90vh;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             text-align: center;
-            padding: 4rem 2rem;
+            padding: 5rem 2rem;
             position: relative;
             z-index: 10;
             /* Fade bg as user scrolls for readability */
             background: linear-gradient(to bottom, transparent, rgba(5, 5, 5, 0.8));
+        }
+
+        .info-strip {
+            width: min(980px, 92vw);
+            margin: 2.5rem auto 3.5rem;
+            padding: 1.6rem 2.2rem;
+            border-radius: 18px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(5, 8, 8, 0.55);
+            backdrop-filter: blur(8px);
+            text-align: left;
+            box-shadow: 0 18px 45px rgba(0, 0, 0, 0.4);
+        }
+
+        .info-strip h3 {
+            margin: 0 0 0.6rem 0;
+            font-size: 1.1rem;
+            letter-spacing: 0.5px;
+        }
+
+        .info-strip p {
+            margin: 0;
+            color: rgba(255, 255, 255, 0.75);
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+        .plans-grid,
+        .testimonial-grid {
+            width: min(1120px, 92vw);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem auto 0;
+        }
+
+        .plan-card,
+        .testimonial-card {
+            padding: 1.8rem;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(6, 8, 8, 0.58);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 18px 42px rgba(0, 0, 0, 0.35);
+            text-align: left;
+        }
+
+        .plan-card h4 {
+            margin: 0 0 0.6rem 0;
+            font-size: 1.1rem;
+        }
+
+        .plan-card ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            color: rgba(255, 255, 255, 0.75);
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .plan-card ul li::before {
+            content: "• ";
+            color: rgba(16, 185, 129, 0.8);
+        }
+
+        .plan-tag {
+            display: inline-block;
+            margin-top: 0.8rem;
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+            color: rgba(255, 255, 255, 0.6);
+            text-transform: uppercase;
+        }
+
+        .testimonial-card p {
+            color: rgba(255, 255, 255, 0.75);
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin: 0 0 1rem 0;
+        }
+
+        .testimonial-card span {
+            color: rgba(255, 255, 255, 0.55);
+            font-size: 0.85rem;
         }
 
         .step-badge {
@@ -340,20 +441,20 @@
         }
 
         h2.section-header {
-            font-size: 3rem;
+            font-size: 3.2rem;
             font-weight: 700;
-            margin-bottom: 2rem;
+            margin-bottom: 1.6rem;
             color: #fff;
-            letter-spacing: -1px;
+            letter-spacing: -1.2px;
             max-width: 900px;
         }
 
         p.section-body {
-            font-size: 1.25rem;
-            line-height: 1.7;
-            color: rgba(255, 255, 255, 0.85);
-            max-width: 800px;
-            margin-bottom: 3.5rem;
+            font-size: 1.22rem;
+            line-height: 1.75;
+            color: rgba(255, 255, 255, 0.82);
+            max-width: 840px;
+            margin-bottom: 3rem;
             font-weight: 300;
         }
 
@@ -361,7 +462,6 @@
         @media (max-width: 768px) {
             body {
                 zoom: 1;
-                /* Disable zoom on mobile */
             }
 
             header {
@@ -396,12 +496,12 @@
             }
 
             h1.main-title {
-                font-size: 2.2rem !important;
+                font-size: 2.8rem !important;
                 letter-spacing: -1px !important;
             }
 
             p.hero-subtitle {
-                font-size: 1rem !important;
+                font-size: 1.02rem !important;
                 text-align: center !important;
                 margin-left: auto !important;
                 margin-right: auto !important;
@@ -483,23 +583,24 @@
 
     <!-- SECTION 1: HERO -->
     <!-- SECTION 1: HERO -->
-    <div class="hero-container" style="align-items: flex-start; padding-left: 10vw; text-align: left;">
+    <div class="hero-container" style="align-items: flex-start; padding-left: 8vw; text-align: left;">
 
         <h1 class="main-title"
-            style="font-size: 4rem; line-height: 1.1; letter-spacing: -2.5px; font-weight: 500; max-width: 900px;">
+            style="font-size: 4.4rem; line-height: 1.08; letter-spacing: -2.2px; font-weight: 500; max-width: 900px;">
             Construye tu imperio<br>
             <span style="color: rgba(255,255,255,0.7);">a la velocidad de la luz.</span>
         </h1>
 
         <p class="hero-subtitle"
-            style="text-align: left; max-width: 650px; margin-left: 0; font-size: 1.1rem; opacity: 0.6; line-height: 1.6; font-weight: 300;">
-            Anmar es la Supra IA que transforma ideas crudas en startups rentables.
-            Nosotros ponemos el código, el marketing y el capital. Tú pones la visión.
+            style="text-align: left; max-width: 720px; margin-left: 0; font-size: 1.2rem; opacity: 0.98; line-height: 1.65; font-weight: 300; text-shadow: 0 8px 22px rgba(0,0,0,0.5);">
+            Anmar es la Supra IA que transforma ideas crudas en productos reales, combinando inteligencia artificial con
+            talento humano de élite. Tú chateas con ingenieros y marketers dentro de la plataforma; nosotros ponemos el
+            código, el crecimiento y el capital. Pagas solo por los mensajes que usas.
         </p>
 
         <a href="login.html" class="cta-button js-auth-link" id="heroCtaLink"
             style="margin-left: 0; padding: 1rem 2rem; letter-spacing: 0.5px; font-size: 1rem;">
-            Construye tu Imperio
+            Empezar ahora
         </a>
 
         <!-- MOUSE SCROLL located inside hero to indicate scroll -->
@@ -515,14 +616,17 @@
         <h2 class="section-header">Tu visión, construida por expertos.</h2>
 
         <p class="section-body">
-            Describe tu idea en lenguaje natural. Nuestra Supra IA genera instantáneamente el plano técnico, la
-            arquitectura y los requisitos. Una vez validado por ti, la orden pasa a nuestro equipo interno de ingenieros
-            de élite, quienes utilizan la IA para codear a una velocidad 10x, garantizando un producto final robusto,
-            seguro y escalable.
+            Describe tu idea en lenguaje natural. Nuestra Supra IA genera el plano técnico y el sistema lo ejecuta con
+            ingenieros de élite. Tú chateas con el equipo, ves la previsualización y pides cambios en tiempo real. El
+            resultado es un producto robusto, seguro y escalable.
         </p>
 
         <div class="concept-box">
             "La velocidad de la IA con la artesanía del mejor talento humano."
+        </div>
+
+        <div class="cta-row">
+            <a href="login.html" class="cta-button js-auth-link">Crear mi proyecto</a>
         </div>
     </section>
 
@@ -535,13 +639,17 @@
         <h2 class="section-header">Marketing de precisión humana.</h2>
 
         <p class="section-body">
-            No lanzamos contenido genérico. La Supra IA analiza el mercado y genera los activos base, pero son nuestros
-            directores creativos humanos quienes pulen cada video y cada anuncio. Lanzamos campañas reales diseñadas
-            para convertir usuarios en clientes desde el primer día.
+            Aquí es donde hacemos el marketing y te traemos más clientes. La Supra IA analiza el mercado y genera los
+            activos base, pero son nuestros estrategas humanos quienes los pulen. Chateas con el equipo de marketing,
+            apruebas campañas y ves métricas y previsualizaciones diseñadas para convertir desde el primer día.
         </p>
 
         <div class="concept-box">
             "Estrategias que respiran, ejecutadas por expertos."
+        </div>
+
+        <div class="cta-row">
+            <a href="login.html" class="cta-button js-auth-link">Activar marketing</a>
         </div>
     </section>
 
@@ -554,20 +662,92 @@
         <h2 class="section-header">Invertimos en lo que construimos.</h2>
 
         <p class="section-body">
-            Conocemos tu código porque nosotros lo escribimos. Si tu producto muestra tracción, el Fondo Anmar inyecta
-            el capital necesario para escalar. Sin intermediarios, sin burocracia: financiación directa para las
-            startups que nacen en nuestra factoría.
+            Conocemos tu producto porque nosotros lo construimos. Si hay tracción real, puedes recibir ofertas de
+            financiación: capital directo de Anmar, inversión de terceros o líneas de crédito. Sin intermediarios y sin
+            humo: solo se financia lo que funciona.
         </p>
 
         <div class="concept-box">
             "Tu socio tecnológico y financiero."
         </div>
 
-        <div style="margin-top: 4rem;">
-            <a href="dashboard.html" class="cta-button"
-                style="background: transparent; border: 1px solid #fff; color: #fff;">
-                Aplicar al Fondo Anmar
-            </a>
+        <div class="cta-row" style="margin-top: 2.5rem;">
+            <a href="login.html" class="cta-button js-auth-link">Solicitar financiación</a>
+            <a href="login.html" class="cta-button cta-secondary js-auth-link">Ver requisitos</a>
+        </div>
+    </section>
+
+    <!-- MODEL & PLANS -->
+    <section class="content-section" id="planes" style="min-height: auto; padding-top: 2rem; padding-bottom: 6rem;">
+        <h2 class="section-header" style="margin-bottom: 1.5rem;">Pago por uso, no por promesas.</h2>
+
+        <div class="info-strip">
+            <h3>¿Cómo funciona el cobro?</h3>
+            <p>Compras un paquete de tokens y los usas en los chats de Construcción y Marketing. Cada mensaje consume
+                tokens. Tú controlas el ritmo y el gasto.</p>
+        </div>
+
+        <div class="plans-grid">
+            <div class="plan-card">
+                <h4>Starter — $49/mes</h4>
+                <ul>
+                    <li>Ideal para negocios tradicionales</li>
+                    <li>Creación de web y presencia digital</li>
+                    <li>Tokens mensuales para chats</li>
+                </ul>
+                <div class="plan-tag">100 tokens mensuales</div>
+            </div>
+            <div class="plan-card">
+                <h4>Build — $149/mes</h4>
+                <ul>
+                    <li>MVP para emprendedores con idea</li>
+                    <li>Iteraciones rápidas por chat</li>
+                    <li>Tokens mensuales + prioridad</li>
+                </ul>
+                <div class="plan-tag">400 tokens mensuales</div>
+            </div>
+            <div class="plan-card">
+                <h4>Scale — $499/mes</h4>
+                <ul>
+                    <li>Marketing estratégico + crecimiento</li>
+                    <li>Panel de métricas y optimización</li>
+                    <li>Acceso a financiación si hay tracción</li>
+                </ul>
+                <div class="plan-tag">1,200 tokens mensuales</div>
+            </div>
+        </div>
+
+        <div class="cta-row" style="margin-top: 2.5rem;">
+            <a href="login.html" class="cta-button js-auth-link">Elegir plan</a>
+            <a href="#preguntas" class="cta-button cta-secondary">Preguntas frecuentes</a>
+        </div>
+    </section>
+
+    <!-- TESTIMONIALS -->
+    <section class="content-section" style="min-height: auto; padding-top: 2rem; padding-bottom: 6rem;">
+        <h2 class="section-header" style="margin-bottom: 1.5rem;">Casos piloto reales.</h2>
+        <p class="section-body" style="margin-bottom: 1.5rem;">
+            Empresas y emprendedores ya están construyendo con el modelo híbrido Anmar.
+        </p>
+        <div class="testimonial-grid">
+            <div class="testimonial-card">
+                <p>“Llegamos con una idea y salimos con un producto funcional en semanas. El chat con ingeniería fue
+                    brutal.”</p>
+                <span>Proyecto piloto • SaaS B2B</span>
+            </div>
+            <div class="testimonial-card">
+                <p>“El equipo de marketing convirtió nuestra web en un canal de adquisición real. Todo desde la misma
+                    plataforma.”</p>
+                <span>Negocio tradicional • Servicios</span>
+            </div>
+            <div class="testimonial-card">
+                <p>“Después de validar tracción, recibimos opciones de financiación sin salir del panel.”</p>
+                <span>Startup en crecimiento</span>
+            </div>
+        </div>
+
+        <div class="cta-row" style="margin-top: 2.5rem;">
+            <a href="login.html" class="cta-button js-auth-link">Crear cuenta</a>
         </div>
     </section>
 
@@ -607,11 +787,38 @@
             </div>
 
             <div class="faq-item">
-                <h3 style="color: #fff; font-size: 1.1rem; margin-bottom: 0.8rem; font-weight: 600;">¿Necesito saber
-                    programar?</h3>
+                <h3 style="color: #fff; font-size: 1.1rem; margin-bottom: 0.8rem; font-weight: 600;">¿Cómo se cobra el
+                    servicio?</h3>
                 <p style="color: rgba(255,255,255,0.6); font-size: 0.9rem; line-height: 1.6;">
-                    Absolutamente no. Esa es la belleza de Anmar. Tú traes la visión de negocio, nosotros ponemos toda
-                    la ingeniería y el stack tecnológico.
+                    No cobramos llamadas. Pagas por los mensajes que envías a ingeniería y marketing. Más tokens = más
+                    velocidad y profundidad en la ejecución.
+                </p>
+            </div>
+
+            <div class="faq-item">
+                <h3 style="color: #fff; font-size: 1.1rem; margin-bottom: 0.8rem; font-weight: 600;">¿Qué recibo en la
+                    fase de Construcción?</h3>
+                <p style="color: rgba(255,255,255,0.6); font-size: 0.9rem; line-height: 1.6;">
+                    Un producto funcional o web real con previsualización, iteraciones por chat y la base técnica lista
+                    para operar.
+                </p>
+            </div>
+
+            <div class="faq-item">
+                <h3 style="color: #fff; font-size: 1.1rem; margin-bottom: 0.8rem; font-weight: 600;">¿Qué pasa si no
+                    tengo la idea clara?</h3>
+                <p style="color: rgba(255,255,255,0.6); font-size: 0.9rem; line-height: 1.6;">
+                    El chat guía el brief paso a paso. Te ayudamos a definir el problema, el público y la solución antes
+                    de construir.
+                </p>
+            </div>
+
+            <div class="faq-item">
+                <h3 style="color: #fff; font-size: 1.1rem; margin-bottom: 0.8rem; font-weight: 600;">¿Cuándo puedo
+                    acceder a financiación?</h3>
+                <p style="color: rgba(255,255,255,0.6); font-size: 0.9rem; line-height: 1.6;">
+                    Cuando tu proyecto demuestra tracción real. Entonces puedes recibir ofertas de Anmar, inversionistas
+                    externos o líneas de crédito.
                 </p>
             </div>
 
