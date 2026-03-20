@@ -1035,67 +1035,29 @@
             <div id="section-projects" class="section-view active"
                 style="padding:40px; color:#fff; flex-direction:column; align-items:center; justify-content:center; height:100%;">
                 <div
-                    style="background:rgba(10, 12, 14, 0.75); border:1px solid rgba(59, 130, 246, 0.25); padding:36px; border-radius:20px; text-align:left; width:min(1120px,94vw); box-shadow:0 22px 48px rgba(0,0,0,0.45);">
-                    <div style="display:grid; grid-template-columns: minmax(280px, 38%) minmax(420px, 1fr); gap:28px; align-items:start;">
-                        <div>
-                            <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px;">
-                                <i class="fas fa-folder-tree" style="font-size:1.4rem; color:#3b82f6;"></i>
-                                <h2 style="color:#fff; margin:0;">Proyectos</h2>
-                            </div>
-                            <p style="opacity:0.78; margin-top:0; line-height:1.6;">
-                                Tu base de operaciones. Crea un proyecto y entra directo al chat de Construcción para
-                                empezar con el equipo.
-                            </p>
+                    style="background:rgba(10, 12, 14, 0.75); border:1px solid rgba(59, 130, 246, 0.25); padding:36px; border-radius:20px; text-align:left; width:min(980px,92vw); box-shadow:0 22px 48px rgba(0,0,0,0.45);">
+                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
+                        <i class="fas fa-folder-tree" style="font-size:1.4rem; color:#3b82f6;"></i>
+                        <h2 style="color:#fff; margin:0;">Proyectos</h2>
+                    </div>
+                    <p style="opacity:0.78; margin-top:0; line-height:1.6;">
+                        Crea tu proyecto (la carpeta principal) y automáticamente pasas a Construcción.
+                    </p>
 
-                            <div style="display:flex; flex-direction:column; gap:10px; margin: 16px 0 20px 0;">
-                                <div style="padding:10px 12px; border:1px solid rgba(255,255,255,0.12); border-radius:10px; background:rgba(0,0,0,0.3); font-size:0.85rem;">
-                                    <strong style="color:#93c5fd;">1.</strong> Crea tu proyecto
-                                </div>
-                                <div style="padding:10px 12px; border:1px solid rgba(255,255,255,0.12); border-radius:10px; background:rgba(0,0,0,0.3); font-size:0.85rem;">
-                                    <strong style="color:#10b981;">2.</strong> Construcción por chat
-                                </div>
-                                <div style="padding:10px 12px; border:1px solid rgba(255,255,255,0.12); border-radius:10px; background:rgba(0,0,0,0.3); font-size:0.85rem;">
-                                    <strong style="color:#3b82f6;">3.</strong> Marketing y métricas
-                                </div>
-                                <div style="padding:10px 12px; border:1px solid rgba(255,255,255,0.12); border-radius:10px; background:rgba(0,0,0,0.3); font-size:0.85rem;">
-                                    <strong style="color:#f59e0b;">4.</strong> Financiación si hay tracción
-                                </div>
-                            </div>
-
-                            <div style="display:flex; flex-direction:column; gap:10px;">
-                                <button onclick="createNewProject()"
-                                    style="background:#3b82f6; color:#fff; border:none; padding:12px 16px; border-radius:12px; cursor:pointer; font-weight:700; box-shadow:0 12px 26px rgba(59,130,246,0.35);">
-                                    <i class="fas fa-plus"></i> Nuevo Proyecto
-                                </button>
-                                <button onclick="createQuickProject('Demo Anmar')"
-                                    style="background:rgba(16,185,129,0.15); color:#d1fae5; border:1px solid rgba(16,185,129,0.4); padding:12px 16px; border-radius:12px; cursor:pointer; font-weight:700;">
-                                    <i class="fas fa-bolt"></i> Crear Demo
-                                </button>
-                                <button onclick="deleteAllProjects()"
-                                    style="background:rgba(239,68,68,0.15); color:#fecaca; border:1px solid rgba(239,68,68,0.4); padding:12px 16px; border-radius:12px; cursor:pointer; font-weight:700;">
-                                    <i class="fas fa-trash"></i> Borrar Todos
-                                </button>
-                            </div>
+                    <div style="display:flex; gap:12px; align-items:center; margin: 16px 0 22px 0; flex-wrap:wrap;">
+                        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; width:100%;">
+                            <input id="newProjectNameInput" type="text" placeholder="Nombre del proyecto"
+                                style="flex:1; min-width:240px; background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.2); color:#fff; padding:12px 14px; border-radius:12px; outline:none; font-size:0.95rem;">
+                            <button id="createProjectInlineBtn" onclick="createProjectFromInput()"
+                                style="background:#3b82f6; color:#fff; border:none; padding:12px 18px; border-radius:12px; cursor:pointer; font-weight:700; box-shadow:0 12px 26px rgba(59,130,246,0.35);">
+                                <i class="fas fa-plus"></i> Crear Proyecto
+                            </button>
                         </div>
+                        <span style="font-size:0.85rem; opacity:0.6;">Escribe el nombre y te llevamos directo al chat.</span>
+                    </div>
 
-                        <div>
-                            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:12px; margin-bottom:16px;">
-                                <div style="padding:14px; border:1px dashed rgba(255,255,255,0.2); border-radius:14px; background:rgba(0,0,0,0.25);">
-                                    <div style="font-size:0.8rem; letter-spacing:1px; text-transform:uppercase; color:#93c5fd; margin-bottom:6px;">Ejemplo</div>
-                                    <div style="font-weight:600; margin-bottom:6px;">Landing para Servicios</div>
-                                    <div style="font-size:0.85rem; opacity:0.7;">Sitio web con captación y chat de ventas.</div>
-                                </div>
-                                <div style="padding:14px; border:1px dashed rgba(255,255,255,0.2); border-radius:14px; background:rgba(0,0,0,0.25);">
-                                    <div style="font-size:0.8rem; letter-spacing:1px; text-transform:uppercase; color:#10b981; margin-bottom:6px;">Ejemplo</div>
-                                    <div style="font-weight:600; margin-bottom:6px;">SaaS B2B</div>
-                                    <div style="font-size:0.85rem; opacity:0.7;">Panel + login + pagos.</div>
-                                </div>
-                            </div>
-
-                            <div id="projectsFolderGrid"
-                                style="margin-top:4px; display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:12px;">
-                            </div>
-                        </div>
+                    <div id="projectsFolderGrid"
+                        style="margin-top:6px; display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:12px;">
                     </div>
                 </div>
             </div>

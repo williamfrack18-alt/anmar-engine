@@ -1619,7 +1619,6 @@ document.addEventListener('DOMContentLoaded', () => {
     window.createNewProject = async function () {
         const projectName = prompt("Nombre del nuevo proyecto:");
         if (!projectName || !projectName.trim()) return;
-
         await createProjectByName(projectName.trim());
     }
 
@@ -1660,6 +1659,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const safeName = (name || '').trim();
         if (!safeName) return;
         await createProjectByName(safeName);
+    }
+
+    window.createProjectFromInput = async function () {
+        const input = document.getElementById('newProjectNameInput');
+        if (!input) return;
+        const value = (input.value || '').trim();
+        if (!value) {
+            input.focus();
+            return;
+        }
+        await createProjectByName(value);
+        input.value = '';
     }
 
     window.deleteAllProjects = async function () {
