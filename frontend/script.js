@@ -1620,11 +1620,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const projectName = prompt("Nombre del nuevo proyecto:");
         if (!projectName || !projectName.trim()) return;
 
+        await createProjectByName(projectName.trim());
+    }
+
+    async function createProjectByName(name) {
         try {
             const res = await fetch('/api/create-empty-project', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ project_name: projectName.trim() })
+                body: JSON.stringify({ project_name: name })
             });
             const data = await res.json();
             if (!res.ok) {
@@ -1650,6 +1654,12 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error(e);
             alert('Error de conexión creando proyecto.');
         }
+    }
+
+    window.createQuickProject = async function (name) {
+        const safeName = (name || '').trim();
+        if (!safeName) return;
+        await createProjectByName(safeName);
     }
 
     window.deleteAllProjects = async function () {
