@@ -864,17 +864,12 @@
 
                     <section class="ai-console">
                         <div class="console-header" style="justify-content: space-between; padding: 0.75rem 1rem;">
-                            <!-- NEW CHAT TABS (LEFT) -->
+                            <!-- HUMAN CHAT ONLY -->
                             <div style="display:flex; gap:8px; flex-shrink: 0;">
-                                <button id="chatTabIA" onclick="switchChatTab('IA')"
-                                    style="background:#10b981; color:#000; border:none; padding:6px 14px; border-radius:20px; font-weight:700; cursor:pointer; font-size:0.75rem; transition:0.3s; white-space:nowrap;">
-                                    IA (Motor)
-                                </button>
-                                <button id="chatTabHuman" onclick="switchChatTab('Human')"
-                                    style="background:rgba(255,255,255,0.1); color:#fff; border:1px solid rgba(255,255,255,0.2); padding:6px 14px; border-radius:20px; font-weight:700; cursor:pointer; font-size:0.75rem; transition:0.3s; position:relative; white-space:nowrap;">
-                                    Soporte Humano <span id="humanUnreadBadge"
-                                        style="display:none; position:absolute; top:-4px; right:-4px; background:#ef4444; color:#fff; font-size:0.6rem; padding:2px 6px; border-radius:10px;">Nuevo</span>
-                                </button>
+                                <div id="chatTabHuman"
+                                    style="background:#3b82f6; color:#fff; border:1px solid rgba(59,130,246,0.6); padding:6px 14px; border-radius:20px; font-weight:700; font-size:0.75rem; white-space:nowrap;">
+                                    Soporte Humano
+                                </div>
                             </div>
 
                             <!-- RIGHT STATUS/TOKENS -->
@@ -925,11 +920,10 @@
                         <div class="terminal-wrapper" id="humanLog" style="display:none;">
                             <div class="msg-row ai">
                                 <div class="ai-msg">
-                                    > Red de Ingenieros Anmar NYC.<br>
-                                    Nuestro equipo humano está aquí para resolver requerimientos complejos o finalizar
-                                    integraciones.<br><br>
-                                    <span style="color:#3b82f6;">Escribe un mensaje abajo para hablar con un ingeniero
-                                        en tiempo real.</span>
+                                    > Soporte humano Anmar.<br>
+                                    Escribe tu primer mensaje y te asignamos un ingeniero.<br><br>
+                                    <span style="color:#3b82f6;">Ejemplo:</span> “Necesito una web para mi estudio y un
+                                    sistema de reservas.”
                                 </div>
                             </div>
                             <div id="humanChatContent" style="display:flex; flex-direction:column; gap:8px;"></div>
@@ -1129,48 +1123,22 @@
 
     <!-- Inline Script for Tab Switch (to avoid adding it to script.js right away) -->
     <script>
-        let isHumanChatActive = false;
+        let isHumanChatActive = true;
         function switchChatTab(tab) {
-            const btnIA = document.getElementById('chatTabIA');
-            const btnHuman = document.getElementById('chatTabHuman');
             const logIA = document.getElementById('terminalLog');
             const logHuman = document.getElementById('humanLog');
+            isHumanChatActive = true;
 
-            if (tab === 'IA') {
-                isHumanChatActive = false;
-                btnIA.style.background = '#10b981';
-                btnIA.style.color = '#000';
-                btnIA.style.border = 'none';
+            if (logIA) logIA.style.display = 'none';
+            if (logHuman) logHuman.style.display = 'flex';
 
-                btnHuman.style.background = 'rgba(255,255,255,0.1)';
-                btnHuman.style.color = '#fff';
-                btnHuman.style.border = '1px solid rgba(255,255,255,0.2)';
-
-                logIA.style.display = 'flex';
-                logHuman.style.display = 'none';
-            } else {
-                isHumanChatActive = true;
-                btnHuman.style.background = '#3b82f6';
-                btnHuman.style.color = '#fff';
-                btnHuman.style.border = 'none';
-
-                btnIA.style.background = 'rgba(255,255,255,0.1)';
-                btnIA.style.color = '#fff';
-                btnIA.style.border = '1px solid rgba(255,255,255,0.2)';
-
-                logIA.style.display = 'none';
-                logHuman.style.display = 'flex';
-
-                document.getElementById('humanUnreadBadge').style.display = 'none';
-
-                // Trigger scroll to bottom on switch
+            if (logHuman) {
                 setTimeout(() => {
                     logHuman.scrollTop = logHuman.scrollHeight;
                 }, 50);
             }
 
-            // Dispatch a custom event so script.js knows tab changed (to adjust input placeholder)
-            document.dispatchEvent(new CustomEvent('chatTabSwitched', { detail: tab }));
+            document.dispatchEvent(new CustomEvent('chatTabSwitched', { detail: 'Human' }));
         }
     </script>
 </body>

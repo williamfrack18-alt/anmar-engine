@@ -47,13 +47,20 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.history && data.history.length > lastHumanChatCount) {
                 lastHumanChatCount = data.history.length;
                 renderHumanChat(data.history);
-                // IF we are not actively viewing the human tab, show a red badge
-                if (typeof isHumanChatActive !== 'undefined' && !isHumanChatActive) {
-                    const badge = document.getElementById('humanUnreadBadge');
-                    if (badge) badge.style.display = 'block';
-                }
+                // Human-only chat: always visible
             }
         } catch (e) { console.error('Error polling human chat:', e); }
+    }
+
+    function addHumanSystemMessage(text) {
+        const container = document.getElementById('humanChatContent');
+        if (!container) return;
+        const msgRow = document.createElement('div');
+        msgRow.className = 'msg-row ai';
+        msgRow.innerHTML = `<div class="ai-msg">${text}</div>`;
+        container.appendChild(msgRow);
+        const log = document.getElementById('humanLog');
+        if (log) log.scrollTop = log.scrollHeight;
     }
 
     function renderHumanChat(history) {
@@ -86,6 +93,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!currentUser) {
         window.location.href = 'login.html'; // Protect Dashboard
         return;
+    }
+
+    if (typeof switchChatTab === 'function') {
+        switchChatTab('Human');
     }
 
     async function checkUserCredits() {
@@ -562,6 +573,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const log = document.getElementById('humanLog');
             if (log) log.scrollTop = log.scrollHeight;
             lastHumanChatCount++; // optimistic update
+
+            if (!window.__humanAssignedOnce) {
+                window.__humanAssignedOnce = true;
+                addHumanSystemMessage('Buscando ingeniero disponible...');
+                setTimeout(() => {
+                    addHumanSystemMessage('✅ William está conectado y listo para ayudarte.');
+                }, 1200);
+            }
 
             try {
                 await fetch('/api/human-chat/send', {
