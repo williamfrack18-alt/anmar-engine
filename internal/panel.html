@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ANMAR Internal Panel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    :root {
+      --bg: #0b0f14;
+      --panel: rgba(12, 16, 22, 0.85);
+      --panel-2: rgba(17, 24, 39, 0.9);
+      --border: rgba(148, 163, 184, 0.18);
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --accent: #3b82f6;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --radius: 16px;
+      --shadow: 0 18px 46px rgba(0,0,0,0.5);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(1200px 500px at 10% -10%, rgba(59,130,246,0.2), transparent 60%),
+                  radial-gradient(900px 450px at 100% 0%, rgba(16,185,129,0.12), transparent 70%),
+                  var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, sans-serif;
+    }
+    .app {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 16px;
+      padding: 16px;
+      height: 100vh;
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+      overflow: hidden;
+      min-height: 0;
+    }
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    .brand {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: linear-gradient(180deg, rgba(59,130,246,0.12), transparent);
+    }
+    .brand h1 {
+      font-size: 1rem;
+      margin: 0;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+    .filters {
+      padding: 12px;
+      border-bottom: 1px solid var(--border);
+      display: grid;
+      gap: 8px;
+    }
+    select, input, textarea {
+      width: 100%;
+      background: var(--panel-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 9px 10px;
+      font: inherit;
+      outline: none;
+    }
+    .queue {
+      flex: 1;
+      overflow: auto;
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+    }
+    .ticket {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      cursor: pointer;
+      transition: 0.15s;
+    }
+    .ticket:hover { border-color: rgba(59,130,246,0.5); }
+    .ticket.active { border-color: rgba(59,130,246,0.85); box-shadow: 0 0 0 1px rgba(59,130,246,0.3); }
+    .ticket .meta { font-size: 0.72rem; color: var(--muted); display: flex; justify-content: space-between; }
+    .ticket .title { font-weight: 700; margin: 6px 0; }
+    .status-pill {
+      font-size: 0.7rem;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      text-transform: uppercase;
+    }
+    .status-pending { color: #fbbf24; border-color: rgba(251,191,36,0.4); }
+    .status-developing { color: #60a5fa; border-color: rgba(96,165,250,0.4); }
+    .status-completed { color: #34d399; border-color: rgba(52,211,153,0.4); }
+    .status-blocked { color: #f87171; border-color: rgba(248,113,113,0.4); }
+    .workspace {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      height: 100%;
+      padding: 16px;
+    }
+    .card {
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      min-height: 0;
+    }
+    .card h2 { margin: 0 0 10px 0; font-size: 1rem; }
+    .muted { color: var(--muted); font-size: 0.82rem; }
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    button {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 9px 10px;
+      background: rgba(17, 26, 39, 0.92);
+      color: var(--text);
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-primary { background: linear-gradient(180deg, #3b82f6, #2563eb); color: #fff; }
+    .btn-success { background: linear-gradient(180deg, #10b981, #059669); color: #002618; }
+    .btn-warning { background: linear-gradient(180deg, #f59e0b, #d97706); color: #2b1600; }
+    .chat {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      gap: 10px;
+    }
+    .chat-log {
+      flex: 1;
+      overflow: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font-size: 0.9rem;
+    }
+    .msg {
+      padding: 8px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      max-width: 85%;
+    }
+    .msg.client { background: rgba(59,130,246,0.12); align-self: flex-start; }
+    .msg.engineer { background: rgba(16,185,129,0.12); align-self: flex-end; }
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="panel sidebar">
+      <div class="brand">
+        <h1>ANMAR Internal</h1>
+        <span class="muted" id="queueMeta">Queue 0</span>
+      </div>
+      <div class="filters">
+        <select id="engineerSelect">
+          <option>William</option>
+          <option>Julián</option>
+          <option>George</option>
+          <option>Marketing</option>
+        </select>
+        <select id="statusFilter">
+          <option value="all">Todos</option>
+          <option value="pending">Pendientes</option>
+          <option value="developing">En progreso</option>
+          <option value="completed">Listos</option>
+          <option value="blocked">Bloqueados</option>
+        </select>
+      </div>
+      <div class="queue" id="queue"></div>
+    </aside>
+
+    <main class="panel">
+      <div class="workspace">
+        <section class="card" id="orderCard">
+          <h2>Orden</h2>
+          <div class="muted">Selecciona una orden para ver detalles.</div>
+        </section>
+        <section class="card">
+          <h2>Chat con Cliente</h2>
+          <div class="chat">
+            <div class="chat-log" id="chatLog">
+              <div class="muted">Sin mensajes.</div>
+            </div>
+            <div class="toolbar">
+              <input id="chatInput" type="text" placeholder="Escribe al cliente..." />
+              <button id="sendBtn" class="btn-primary">Enviar</button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    let currentEngineer = 'William';
+    let currentStatus = 'all';
+    let currentOrder = null;
+    let lastChatCount = 0;
+    let chatInterval = null;
+
+    const queueEl = document.getElementById('queue');
+    const orderCard = document.getElementById('orderCard');
+    const chatLog = document.getElementById('chatLog');
+    const chatInput = document.getElementById('chatInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const queueMeta = document.getElementById('queueMeta');
+
+    document.getElementById('engineerSelect').addEventListener('change', (e) => {
+      currentEngineer = e.target.value;
+      fetchQueue();
+    });
+    document.getElementById('statusFilter').addEventListener('change', (e) => {
+      currentStatus = e.target.value;
+      fetchQueue();
+    });
+
+    function statusClass(status) {
+      const s = String(status || 'pending').toLowerCase();
+      if (s === 'developing') return 'status-developing';
+      if (s === 'completed') return 'status-completed';
+      if (s === 'blocked') return 'status-blocked';
+      return 'status-pending';
+    }
+
+    async function fetchQueue() {
+      const q = new URLSearchParams({
+        engineer: currentEngineer,
+        mode: 'all',
+        status: currentStatus
+      });
+      const res = await fetch(`/api/internal-queue?${q.toString()}`);
+      const data = await res.json();
+      const items = data.items || [];
+      queueMeta.textContent = `Queue ${items.length}`;
+      queueEl.innerHTML = '';
+      if (!items.length) {
+        queueEl.innerHTML = '<div class="muted" style="padding:10px;">Sin órdenes.</div>';
+        return;
+      }
+      items.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'ticket' + (currentOrder && currentOrder.id === item.id ? ' active' : '');
+        div.onclick = () => loadOrder(item);
+        div.innerHTML = `
+          <div class="meta"><span>${item.id || 'TKT'}</span><span>${(item.updated_at || '').slice(11,16)}</span></div>
+          <div class="title">${item.project_name || 'Sin nombre'}</div>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span class="status-pill ${statusClass(item.status)}">${item.status || 'pending'}</span>
+            <span class="muted">${item.client_email || item.client || ''}</span>
+          </div>
+        `;
+        queueEl.appendChild(div);
+      });
+    }
+
+    function loadOrder(item) {
+      currentOrder = item;
+      orderCard.innerHTML = `
+        <h2>${item.project_name || 'Orden'}</h2>
+        <div class="muted">Cliente: ${item.client_email || item.client || 'N/D'}</div>
+        <div class="muted">Estado: ${item.status || 'pending'}</div>
+        <div style="margin:10px 0; font-size:0.9rem;">${item.summary || 'Sin resumen'}</div>
+        <div class="actions">
+          <button class="btn-primary" onclick="takeOrder('${item.id}')">Tomar orden</button>
+          <button class="btn-warning" onclick="setStatus('${item.id}','blocked')">Bloquear</button>
+          <button class="btn-success" onclick="setStatus('${item.id}','completed')">Entregar</button>
+        </div>
+      `;
+      loadChat();
+      if (chatInterval) clearInterval(chatInterval);
+      chatInterval = setInterval(loadChat, 3000);
+    }
+
+    async function takeOrder(id) {
+      await fetch('/api/accept-ticket', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ticket_id: id, engineer: currentEngineer })
+      });
+      fetchQueue();
+    }
+
+    async function setStatus(id, status) {
+      await fetch('/api/admin/update-ticket', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ticket_id: id, engineer: currentEngineer, status })
+      });
+      fetchQueue();
+    }
+
+    async function loadChat() {
+      if (!currentOrder) return;
+      const res = await fetch(`/api/human-chat/history?project_name=${encodeURIComponent(currentOrder.project_name)}`);
+      const data = await res.json();
+      const history = data.history || [];
+      if (history.length === 0) {
+        chatLog.innerHTML = '<div class="muted">Sin mensajes.</div>';
+        return;
+      }
+      if (history.length === lastChatCount) return;
+      lastChatCount = history.length;
+      chatLog.innerHTML = history.map(msg => {
+        const role = msg.role === 'client' ? 'client' : 'engineer';
+        const name = msg.role === 'client' ? 'Cliente' : (msg.actor || currentEngineer);
+        return `<div class="msg ${role}"><strong>${name}:</strong> ${msg.content}</div>`;
+      }).join('');
+      chatLog.scrollTop = chatLog.scrollHeight;
+    }
+
+    async function sendChat() {
+      if (!currentOrder) return;
+      const content = (chatInput.value || '').trim();
+      if (!content) return;
+      chatInput.value = '';
+      await fetch('/api/human-chat/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          project_name: currentOrder.project_name,
+          role: 'human',
+          content,
+          actor: currentEngineer
+        })
+      });
+      loadChat();
+    }
+
+    sendBtn.addEventListener('click', sendChat);
+    chatInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') sendChat();
+    });
+
+    fetchQueue();
+    setInterval(fetchQueue, 8000);
+  </script>
+</body>
+</html>
