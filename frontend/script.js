@@ -31,6 +31,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const blueprintNowBtn = document.getElementById('blueprintNowBtn');
     const statusTimeline = document.getElementById('status-timeline');
     const emptyState = document.getElementById('emptyState');
+    const togglePreviewBtn = document.getElementById('togglePreviewBtn');
+    const previewPanel = document.getElementById('previewPanel');
+    const buildSection = document.getElementById('section-build');
 
     // --- Session Management ---
     let currentUser = JSON.parse(localStorage.getItem('currentUser'));
@@ -97,6 +100,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (typeof switchChatTab === 'function') {
         switchChatTab('Human');
+    }
+
+    if (togglePreviewBtn && previewPanel && buildSection) {
+        if (previewPanel.classList.contains('preview-hidden')) {
+            buildSection.classList.add('expand-chat');
+        }
+        togglePreviewBtn.addEventListener('click', () => {
+            const hidden = previewPanel.classList.toggle('preview-hidden');
+            buildSection.classList.toggle('expand-chat', hidden);
+            togglePreviewBtn.textContent = hidden ? 'Mostrar Preview' : 'Ocultar Preview';
+        });
     }
 
     async function checkUserCredits() {

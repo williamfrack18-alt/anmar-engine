@@ -583,7 +583,7 @@
 
         #section-build.section-view.active {
             display: grid !important;
-            grid-template-columns: var(--build-left-col) var(--build-right-col);
+            grid-template-columns: 1fr auto;
             gap: 22px;
             align-items: stretch;
         }
@@ -604,6 +604,14 @@
             width: auto !important;
             height: 100%;
             border-radius: 18px;
+        }
+
+        .preview-hidden {
+            display: none !important;
+        }
+
+        .expand-chat {
+            grid-template-columns: 1fr !important;
         }
 
         #briefStatePanel {
@@ -838,7 +846,7 @@
                     </div>
 
                     <div id="briefStatePanel"
-                        style="margin-bottom: 15px; border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:12px; background:rgba(0,0,0,0.35);">
+                        style="display:none; margin-bottom: 15px; border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:12px; background:rgba(0,0,0,0.35);">
                         <div
                             style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                             <span
@@ -874,6 +882,10 @@
 
                             <!-- RIGHT STATUS/TOKENS -->
                             <div style="display:flex; gap:8px; align-items:center; justify-content:flex-end;">
+                                <button id="togglePreviewBtn" type="button"
+                                    style="background:rgba(255,255,255,0.08); color:#fff; border:1px solid rgba(255,255,255,0.2); padding:6px 12px; border-radius:10px; cursor:pointer; font-weight:700; font-size:0.72rem;">
+                                    Mostrar Preview
+                                </button>
                                 <div id="userTokens" class="token-badge" style="position:static !important;">
                                     <i class="fas fa-circle-notch fa-spin"></i>
                                 </div>
@@ -939,43 +951,7 @@
                                 <div id="attachmentStatus"
                                     style="display:none; font-size:0.72rem; color:#93c5fd; padding:0 10px 2px 10px;">
                                 </div>
-                                <div style="display:flex; justify-content:flex-end; margin:0 10px 8px 10px;">
-                                    <button id="blueprintNowBtn" type="button"
-                                        style="display:none; background:#2563eb; color:#fff; border:none; border-radius:8px; padding:8px 12px; cursor:pointer; font-weight:700; font-size:0.74rem;">
-                                        <i class="fas fa-layer-group"></i> Generar Blueprint ahora
-                                    </button>
-                                </div>
-
-                                <div class="action-bar">
-                                    <div id="chatModeSwitch"
-                                        style="display:flex; gap:6px; align-items:center; margin-right:10px;">
-                                        <button id="modeStrategyBtn" type="button"
-                                            style="background:#10b981; color:#001b12; border:none; padding:6px 10px; border-radius:8px; cursor:pointer; font-size:0.75rem; font-weight:700;">
-                                            Estrategia
-                                        </button>
-                                        <button id="modeEditBtn" type="button"
-                                            style="background:rgba(255,255,255,0.08); color:#cbd5e1; border:1px solid rgba(255,255,255,0.15); padding:6px 10px; border-radius:8px; cursor:pointer; font-size:0.75rem; font-weight:700;">
-                                            Edición
-                                        </button>
-                                    </div>
-
-                                    <select id="engineSelector" class="theme-selector" title="Selecciona motor de IA">
-                                        <option value="antigravity">Motor: Antigravity</option>
-                                        <option value="openai_codex">Motor: Codex</option>
-                                    </select>
-
-                                    <button id="uploadImageBtn" type="button"
-                                        style="background:rgba(59,130,246,0.15); color:#bfdbfe; border:1px solid rgba(59,130,246,0.4); width:36px; height:36px; border-radius:8px; cursor:pointer; margin-right:8px;"
-                                        title="Adjuntar imagen">
-                                        <i class="fas fa-image"></i>
-                                    </button>
-
-                                    <button id="voiceInputBtn" type="button"
-                                        style="background:rgba(16,185,129,0.15); color:#a7f3d0; border:1px solid rgba(16,185,129,0.4); width:36px; height:36px; border-radius:8px; cursor:pointer; margin-right:8px;"
-                                        title="Dictado por voz">
-                                        <i class="fas fa-microphone"></i>
-                                    </button>
-
+                                <div class="action-bar" style="justify-content:flex-end;">
                                     <!-- ID: generateBtn preserved -->
                                     <button id="generateBtn" class="send-btn">
                                         <i class="fas fa-arrow-up"></i>
@@ -987,7 +963,8 @@
                 </div><!-- Close Left Pane -->
 
                 <!-- RIGHT: PREVIEW (Expanded) -->
-                <section class="preview-panel" style="flex-grow: 1; min-width: 520px; width: auto; max-width: none;">
+                <section class="preview-panel preview-hidden" id="previewPanel"
+                    style="flex-grow: 1; min-width: 520px; width: auto; max-width: none;">
                     <div class="browser-toolbar">
                         <div class="traffic-lights">
                             <div class="light red"></div>
