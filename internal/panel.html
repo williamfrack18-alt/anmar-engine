@@ -11,33 +11,32 @@
   <style>
     :root {
       --bg: #0b0f14;
-      --panel: rgba(12, 16, 22, 0.85);
-      --panel-2: rgba(17, 24, 39, 0.9);
-      --border: rgba(148, 163, 184, 0.18);
+      --panel: #0f141a;
+      --panel-2: #111827;
+      --panel-3: #0b1220;
+      --border: rgba(148, 163, 184, 0.16);
       --text: #e5e7eb;
-      --muted: #94a3b8;
+      --muted: #9aa7b8;
       --accent: #3b82f6;
       --success: #10b981;
       --warning: #f59e0b;
       --danger: #ef4444;
-      --radius: 16px;
-      --shadow: 0 18px 46px rgba(0,0,0,0.5);
+      --radius: 14px;
+      --shadow: 0 12px 32px rgba(0,0,0,0.35);
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
       min-height: 100vh;
-      background: radial-gradient(1200px 500px at 10% -10%, rgba(59,130,246,0.2), transparent 60%),
-                  radial-gradient(900px 450px at 100% 0%, rgba(16,185,129,0.12), transparent 70%),
-                  var(--bg);
+      background: var(--bg);
       color: var(--text);
       font-family: 'Inter', system-ui, sans-serif;
     }
     .app {
       display: grid;
-      grid-template-columns: 340px 1fr;
-      gap: 16px;
-      padding: 16px;
+      grid-template-columns: 320px 1fr;
+      gap: 12px;
+      padding: 12px;
       height: 100vh;
     }
     .panel {
@@ -45,9 +44,8 @@
       border: 1px solid var(--border);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
-      backdrop-filter: blur(10px);
-      overflow: hidden;
       min-height: 0;
+      overflow: hidden;
     }
     .sidebar {
       display: flex;
@@ -55,15 +53,15 @@
       min-height: 0;
     }
     .brand {
-      padding: 16px;
+      padding: 14px 16px;
       border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: linear-gradient(180deg, rgba(59,130,246,0.12), transparent);
+      background: var(--panel-2);
     }
     .brand h1 {
-      font-size: 1rem;
+      font-size: 0.95rem;
       margin: 0;
       font-weight: 700;
       letter-spacing: 0.3px;
@@ -73,10 +71,11 @@
       border-bottom: 1px solid var(--border);
       display: grid;
       gap: 8px;
+      background: var(--panel-2);
     }
     select, input, textarea {
       width: 100%;
-      background: var(--panel-2);
+      background: var(--panel-3);
       color: var(--text);
       border: 1px solid var(--border);
       border-radius: 10px;
@@ -92,16 +91,21 @@
       gap: 8px;
     }
     .ticket {
-      background: rgba(15, 23, 42, 0.8);
+      background: var(--panel-2);
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 12px;
+      padding: 10px;
       cursor: pointer;
       transition: 0.15s;
     }
     .ticket:hover { border-color: rgba(59,130,246,0.5); }
-    .ticket.active { border-color: rgba(59,130,246,0.85); box-shadow: 0 0 0 1px rgba(59,130,246,0.3); }
-    .ticket .meta { font-size: 0.72rem; color: var(--muted); display: flex; justify-content: space-between; }
+    .ticket.active { border-color: rgba(59,130,246,0.85); }
+    .ticket .meta {
+      font-size: 0.72rem;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+    }
     .ticket .title { font-weight: 700; margin: 6px 0; }
     .status-pill {
       font-size: 0.7rem;
@@ -116,19 +120,19 @@
     .status-blocked { color: #f87171; border-color: rgba(248,113,113,0.4); }
     .workspace {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 12px;
       height: 100%;
-      padding: 16px;
+      padding: 12px;
     }
     .card {
       background: var(--panel-2);
       border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 14px;
+      border-radius: 12px;
+      padding: 12px;
       min-height: 0;
     }
-    .card h2 { margin: 0 0 10px 0; font-size: 1rem; }
+    .card h2 { margin: 0 0 10px 0; font-size: 0.95rem; }
     .muted { color: var(--muted); font-size: 0.82rem; }
     .actions {
       display: grid;
@@ -140,14 +144,14 @@
       border: 1px solid var(--border);
       border-radius: 10px;
       padding: 9px 10px;
-      background: rgba(17, 26, 39, 0.92);
+      background: var(--panel-3);
       color: var(--text);
       font-weight: 700;
       cursor: pointer;
     }
-    .btn-primary { background: linear-gradient(180deg, #3b82f6, #2563eb); color: #fff; }
-    .btn-success { background: linear-gradient(180deg, #10b981, #059669); color: #002618; }
-    .btn-warning { background: linear-gradient(180deg, #f59e0b, #d97706); color: #2b1600; }
+    .btn-primary { background: #3b82f6; color: #fff; }
+    .btn-success { background: #10b981; color: #01261c; }
+    .btn-warning { background: #f59e0b; color: #2b1600; }
     .chat {
       display: flex;
       flex-direction: column;
@@ -170,11 +174,7 @@
     }
     .msg.client { background: rgba(59,130,246,0.12); align-self: flex-start; }
     .msg.engineer { background: rgba(16,185,129,0.12); align-self: flex-end; }
-    .toolbar {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }
+    .toolbar { display: flex; gap: 8px; align-items: center; }
   </style>
 </head>
 <body>
