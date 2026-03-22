@@ -10,25 +10,27 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <style>
     :root {
-      --bg: #0b0f14;
-      --panel: #0f141a;
-      --panel-2: #111827;
-      --panel-3: #0b1220;
-      --border: rgba(148, 163, 184, 0.16);
+      --bg: #05070b;
+      --panel: rgba(10, 12, 14, 0.75);
+      --panel-2: rgba(12, 16, 22, 0.88);
+      --panel-3: rgba(8, 12, 18, 0.9);
+      --border: rgba(148, 163, 184, 0.18);
       --text: #e5e7eb;
       --muted: #9aa7b8;
-      --accent: #3b82f6;
+      --accent: #10b981;
       --success: #10b981;
       --warning: #f59e0b;
       --danger: #ef4444;
-      --radius: 14px;
-      --shadow: 0 12px 32px rgba(0,0,0,0.35);
+      --radius: 16px;
+      --shadow: 0 18px 46px rgba(0,0,0,0.45);
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
       min-height: 100vh;
-      background: var(--bg);
+      background: radial-gradient(1200px 500px at 10% -10%, rgba(16,185,129,0.18), transparent 60%),
+                  radial-gradient(900px 450px at 100% 0%, rgba(59,130,246,0.12), transparent 70%),
+                  var(--bg);
       color: var(--text);
       font-family: 'Inter', system-ui, sans-serif;
     }
@@ -58,7 +60,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: var(--panel-2);
+      background: linear-gradient(180deg, rgba(16,185,129,0.12), transparent);
     }
     .brand h1 {
       font-size: 0.95rem;
@@ -72,6 +74,9 @@
       display: grid;
       gap: 8px;
       background: var(--panel-2);
+    }
+    .filters input[type="text"] {
+      font-size: 0.9rem;
     }
     select, input, textarea {
       width: 100%;
@@ -99,7 +104,7 @@
       transition: 0.15s;
     }
     .ticket:hover { border-color: rgba(59,130,246,0.5); }
-    .ticket.active { border-color: rgba(59,130,246,0.85); }
+    .ticket.active { border-color: rgba(16,185,129,0.7); box-shadow: 0 0 0 1px rgba(16,185,129,0.25); }
     .ticket .meta {
       font-size: 0.72rem;
       color: var(--muted);
@@ -120,7 +125,7 @@
     .status-blocked { color: #f87171; border-color: rgba(248,113,113,0.4); }
     .workspace {
       display: grid;
-      grid-template-columns: 1.1fr 1fr;
+      grid-template-columns: 1.2fr 1fr;
       gap: 12px;
       height: 100%;
       padding: 12px;
@@ -140,6 +145,9 @@
       gap: 8px;
       margin-top: 10px;
     }
+    .actions.wide {
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+    }
     button {
       border: 1px solid var(--border);
       border-radius: 10px;
@@ -149,7 +157,7 @@
       font-weight: 700;
       cursor: pointer;
     }
-    .btn-primary { background: #3b82f6; color: #fff; }
+    .btn-primary { background: #10b981; color: #001b12; }
     .btn-success { background: #10b981; color: #01261c; }
     .btn-warning { background: #f59e0b; color: #2b1600; }
     .chat {
@@ -175,6 +183,30 @@
     .msg.client { background: rgba(59,130,246,0.12); align-self: flex-start; }
     .msg.engineer { background: rgba(16,185,129,0.12); align-self: flex-end; }
     .toolbar { display: flex; gap: 8px; align-items: center; }
+    .topline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      background: var(--panel-2);
+    }
+    .badge {
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .row label {
+      font-size: 0.74rem;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 4px;
+    }
   </style>
 </head>
 <body>
@@ -198,11 +230,16 @@
           <option value="completed">Listos</option>
           <option value="blocked">Bloqueados</option>
         </select>
+        <input id="searchInput" type="text" placeholder="Buscar proyecto o cliente..." />
       </div>
       <div class="queue" id="queue"></div>
     </aside>
 
     <main class="panel">
+      <div class="topline">
+        <div style="font-weight:700;">Operaciones</div>
+        <div class="badge" id="activeOrderBadge">Sin orden activa</div>
+      </div>
       <div class="workspace">
         <section class="card" id="orderCard">
           <h2>Orden</h2>
@@ -230,6 +267,7 @@
     let currentOrder = null;
     let lastChatCount = 0;
     let chatInterval = null;
+    let lastQueue = [];
 
     const queueEl = document.getElementById('queue');
     const orderCard = document.getElementById('orderCard');
@@ -237,6 +275,8 @@
     const chatInput = document.getElementById('chatInput');
     const sendBtn = document.getElementById('sendBtn');
     const queueMeta = document.getElementById('queueMeta');
+    const searchInput = document.getElementById('searchInput');
+    const activeOrderBadge = document.getElementById('activeOrderBadge');
 
     document.getElementById('engineerSelect').addEventListener('change', (e) => {
       currentEngineer = e.target.value;
@@ -245,6 +285,9 @@
     document.getElementById('statusFilter').addEventListener('change', (e) => {
       currentStatus = e.target.value;
       fetchQueue();
+    });
+    searchInput.addEventListener('input', () => {
+      renderQueue(lastQueue);
     });
 
     function statusClass(status) {
@@ -264,13 +307,22 @@
       const res = await fetch(`/api/internal-queue?${q.toString()}`);
       const data = await res.json();
       const items = data.items || [];
+      lastQueue = items;
       queueMeta.textContent = `Queue ${items.length}`;
+      renderQueue(items);
+    }
+
+    function renderQueue(items) {
+      const q = (searchInput.value || '').trim().toLowerCase();
+      const filtered = q
+        ? items.filter(i => `${i.project_name || ''} ${i.client_email || i.client || ''}`.toLowerCase().includes(q))
+        : items;
       queueEl.innerHTML = '';
-      if (!items.length) {
+      if (!filtered.length) {
         queueEl.innerHTML = '<div class="muted" style="padding:10px;">Sin órdenes.</div>';
         return;
       }
-      items.forEach(item => {
+      filtered.forEach(item => {
         const div = document.createElement('div');
         div.className = 'ticket' + (currentOrder && currentOrder.id === item.id ? ' active' : '');
         div.onclick = () => loadOrder(item);
@@ -288,15 +340,36 @@
 
     function loadOrder(item) {
       currentOrder = item;
+      lastChatCount = 0;
+      chatLog.innerHTML = '<div class="muted">Cargando mensajes...</div>';
+      activeOrderBadge.textContent = `${item.project_name || 'Orden'} • ${String(item.status || 'pending').toUpperCase()}`;
+      const preview = item.preview_url || `/projects/${item.project_name}/index.html`;
+      const note = item.delivery_note || '';
       orderCard.innerHTML = `
         <h2>${item.project_name || 'Orden'}</h2>
         <div class="muted">Cliente: ${item.client_email || item.client || 'N/D'}</div>
         <div class="muted">Estado: ${item.status || 'pending'}</div>
         <div style="margin:10px 0; font-size:0.9rem;">${item.summary || 'Sin resumen'}</div>
-        <div class="actions">
+        <div class="row">
+          <div>
+            <label>Preview URL</label>
+            <input id="previewUrlInput" type="text" value="${preview}" />
+          </div>
+          <div>
+            <label>Nota de entrega</label>
+            <textarea id="deliveryNoteInput" rows="3">${note}</textarea>
+          </div>
+        </div>
+        <div class="actions wide" style="margin-top:10px;">
           <button class="btn-primary" onclick="takeOrder('${item.id}')">Tomar orden</button>
+          <button onclick="saveProgress('${item.id}')">Guardar avance</button>
+          <button onclick="setStatus('${item.id}','developing')">En progreso</button>
           <button class="btn-warning" onclick="setStatus('${item.id}','blocked')">Bloquear</button>
           <button class="btn-success" onclick="setStatus('${item.id}','completed')">Entregar</button>
+        </div>
+        <div class="actions" style="margin-top:8px;">
+          <button onclick="openPreview('${item.project_name}')">Abrir preview</button>
+          <button onclick="copyPath('${item.project_name}')">Copiar ruta</button>
         </div>
       `;
       loadChat();
@@ -314,10 +387,23 @@
     }
 
     async function setStatus(id, status) {
+      const previewUrl = (document.getElementById('previewUrlInput')?.value || '').trim();
+      const deliveryNote = (document.getElementById('deliveryNoteInput')?.value || '').trim();
       await fetch('/api/admin/update-ticket', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ticket_id: id, engineer: currentEngineer, status })
+        body: JSON.stringify({ ticket_id: id, engineer: currentEngineer, status, preview_url: previewUrl, delivery_note: deliveryNote })
+      });
+      fetchQueue();
+    }
+
+    async function saveProgress(id) {
+      const previewUrl = (document.getElementById('previewUrlInput')?.value || '').trim();
+      const deliveryNote = (document.getElementById('deliveryNoteInput')?.value || '').trim();
+      await fetch('/api/admin/update-ticket', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ticket_id: id, engineer: currentEngineer, status: 'developing', preview_url: previewUrl, delivery_note: deliveryNote })
       });
       fetchQueue();
     }
@@ -339,6 +425,16 @@
         return `<div class="msg ${role}"><strong>${name}:</strong> ${msg.content}</div>`;
       }).join('');
       chatLog.scrollTop = chatLog.scrollHeight;
+    }
+
+    function openPreview(projectName) {
+      const target = `/projects/${projectName}/index.html`;
+      window.open(target, '_blank');
+    }
+
+    function copyPath(projectName) {
+      const path = `/generated_projects/${projectName}`;
+      navigator.clipboard.writeText(path).catch(() => {});
     }
 
     async function sendChat() {
