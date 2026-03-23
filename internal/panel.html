@@ -170,7 +170,7 @@
     .status-blocked { color: #f87171; border-color: rgba(248,113,113,0.4); }
     .workspace {
       display: grid;
-      grid-template-columns: 1.2fr 1fr;
+      grid-template-columns: 0.95fr 1.35fr;
       gap: 12px;
       height: 100%;
       padding: 12px;
@@ -183,6 +183,7 @@
       min-height: 0;
     }
     .card h2 { margin: 0 0 10px 0; font-size: 0.95rem; }
+    .card h3 { margin: 0; font-size: 0.85rem; }
     .muted { color: var(--muted); font-size: 0.82rem; }
     .actions {
       display: grid;
@@ -278,6 +279,74 @@
       display: block;
       margin-bottom: 4px;
     }
+    .order-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .pill {
+      font-size: 0.7rem;
+      padding: 3px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      text-transform: uppercase;
+    }
+    details {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px 10px;
+      background: rgba(0,0,0,0.25);
+    }
+    details > summary {
+      cursor: pointer;
+      list-style: none;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    details > summary::-webkit-details-marker { display: none; }
+    .filters details {
+      border: 1px dashed rgba(255,255,255,0.2);
+      background: transparent;
+    }
+    .filters details summary {
+      font-size: 0.75rem;
+    }
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      backdrop-filter: blur(10px);
+    }
+    .modal.open { display: flex; }
+    .modal-content {
+      width: min(680px, 92vw);
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: var(--shadow);
+      display: grid;
+      gap: 10px;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-close {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
     .blueprint-box {
       margin-top: 10px;
       padding: 10px;
@@ -329,10 +398,6 @@
           <option>George</option>
           <option>Marketing</option>
         </select>
-        <select id="modeFilter">
-          <option value="all">Todas</option>
-          <option value="mine">Solo mías</option>
-        </select>
         <select id="statusFilter">
           <option value="all">Todos</option>
           <option value="pending">Pendientes</option>
@@ -340,12 +405,21 @@
           <option value="completed">Listos</option>
           <option value="blocked">Bloqueados</option>
         </select>
-        <select id="priorityFilter">
-          <option value="all">Todas prioridades</option>
-          <option value="high">Alta</option>
-          <option value="medium">Media</option>
-          <option value="low">Baja</option>
-        </select>
+        <details>
+          <summary>Filtros avanzados</summary>
+          <div style="display:grid; gap:8px; margin-top:8px;">
+            <select id="modeFilter">
+              <option value="all">Todas</option>
+              <option value="mine">Solo mías</option>
+            </select>
+            <select id="priorityFilter">
+              <option value="all">Todas prioridades</option>
+              <option value="high">Alta</option>
+              <option value="medium">Media</option>
+              <option value="low">Baja</option>
+            </select>
+          </div>
+        </details>
         <input id="searchInput" type="text" placeholder="Buscar proyecto o cliente..." />
       </div>
       <div class="queue" id="queue"></div>
@@ -377,6 +451,36 @@
         </section>
       </div>
     </main>
+  </div>
+
+  <div class="modal" id="blueprintModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div style="font-weight:700;">Blueprint</div>
+        <button class="modal-close" onclick="closeBlueprintModal()">Cerrar</button>
+      </div>
+      <div>
+        <label>Título</label>
+        <input id="bpTitle" type="text" placeholder="Ej: MVP + flujo de reservas" />
+      </div>
+      <div>
+        <label>Resumen</label>
+        <textarea id="bpSummary" rows="3" placeholder="Resumen claro de lo que se va a construir y cambiar."></textarea>
+      </div>
+      <div class="row">
+        <div>
+          <label>Alcance / pasos (1 por línea)</label>
+          <textarea id="bpSteps" rows="5" placeholder="Landing + formulario&#10;Panel de admin básico&#10;Integración pagos"></textarea>
+        </div>
+        <div>
+          <label>Entregables (1 por línea)</label>
+          <textarea id="bpDeliverables" rows="5" placeholder="Figma + Preview&#10;MVP desplegado&#10;Reporte de métricas"></textarea>
+        </div>
+      </div>
+      <div class="blueprint-actions">
+        <button class="btn-primary" onclick="sendBlueprint()">Enviar blueprint al cliente</button>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -498,60 +602,46 @@
       const note = item.delivery_note || '';
       const internalNotes = item.internal_notes || '';
       orderCard.innerHTML = `
-        <h2>${item.project_name || 'Orden'}</h2>
+        <div class="order-header">
+          <h2>${item.project_name || 'Orden'}</h2>
+          <span class="pill ${statusClass(item.status)}">${item.status || 'pending'}</span>
+        </div>
         <div class="muted">Cliente: ${item.client_email || item.client || 'N/D'}</div>
-        <div class="muted">Estado: ${item.status || 'pending'}</div>
-        <div style="margin:10px 0; font-size:0.9rem;">${item.summary || 'Sin resumen'}</div>
-        <div class="row">
-          <div>
-            <label>Preview URL</label>
-            <input id="previewUrlInput" type="text" value="${preview}" />
-          </div>
-          <div>
-            <label>Nota de entrega</label>
-            <textarea id="deliveryNoteInput" rows="3">${note}</textarea>
-          </div>
-        </div>
-        <div style="margin-top:8px;">
-          <label>Notas internas</label>
-          <textarea id="internalNotesInput" rows="3" placeholder="Notas internas (solo equipo)">${internalNotes}</textarea>
-        </div>
-        <div class="blueprint-box">
-          <div style="font-weight:700; font-size:0.78rem; letter-spacing:0.6px; text-transform:uppercase;">Blueprint</div>
-          <div>
-            <label>Título</label>
-            <input id="bpTitle" type="text" placeholder="Ej: MVP + flujo de reservas" />
-          </div>
-          <div>
-            <label>Resumen</label>
-            <textarea id="bpSummary" rows="3" placeholder="Resumen claro de lo que se va a construir y cambiar."></textarea>
-          </div>
-          <div class="row">
-            <div>
-              <label>Alcance / pasos (1 por línea)</label>
-              <textarea id="bpSteps" rows="4" placeholder="Landing + formulario&#10;Panel de admin básico&#10;Integración pagos"></textarea>
-            </div>
-            <div>
-              <label>Entregables (1 por línea)</label>
-              <textarea id="bpDeliverables" rows="4" placeholder="Figma + Preview&#10;MVP desplegado&#10;Reporte de métricas"></textarea>
-            </div>
-          </div>
-          <div class="blueprint-actions">
-            <button class="btn-primary" onclick="sendBlueprint()">Enviar blueprint al cliente</button>
-          </div>
-        </div>
-        <div class="actions wide" style="margin-top:10px;">
-          <button class="btn-primary" onclick="takeOrder('${item.id}')">Tomar orden</button>
-          <button onclick="saveProgress('${item.id}')">Guardar avance</button>
+        <div style="margin:8px 0; font-size:0.9rem;">${item.summary || 'Sin resumen'}</div>
+
+        <div class="actions wide" style="grid-template-columns: repeat(3, 1fr); margin-top:10px;">
+          <button class="btn-primary" onclick="takeOrder('${item.id}')">Tomar</button>
           <button onclick="setStatus('${item.id}','developing')">En progreso</button>
-          <button class="btn-warning" onclick="setStatus('${item.id}','blocked')">Bloquear</button>
           <button class="btn-success" onclick="setStatus('${item.id}','completed')">Entregar</button>
         </div>
-        <div class="actions" style="margin-top:8px;">
-          <button onclick="saveNotes('${item.id}')">Guardar nota</button>
-          <button onclick="openPreview('${item.project_name}')">Abrir preview</button>
+        <div class="actions" style="margin-top:8px; grid-template-columns: repeat(3, 1fr);">
+          <button onclick="openBlueprintModal()">Blueprint</button>
+          <button onclick="openPreview('${item.project_name}')">Preview</button>
           <button onclick="copyPath('${item.project_name}')">Copiar ruta</button>
         </div>
+
+        <details style="margin-top:10px;">
+          <summary>Detalles operativos</summary>
+          <div class="row" style="margin-top:10px;">
+            <div>
+              <label>Preview URL</label>
+              <input id="previewUrlInput" type="text" value="${preview}" />
+            </div>
+            <div>
+              <label>Nota de entrega</label>
+              <textarea id="deliveryNoteInput" rows="3">${note}</textarea>
+            </div>
+          </div>
+          <div style="margin-top:8px;">
+            <label>Notas internas</label>
+            <textarea id="internalNotesInput" rows="3" placeholder="Notas internas (solo equipo)">${internalNotes}</textarea>
+          </div>
+          <div class="actions" style="margin-top:8px;">
+            <button onclick="saveNotes('${item.id}')">Guardar nota</button>
+            <button class="btn-warning" onclick="setStatus('${item.id}','blocked')">Bloquear</button>
+            <button onclick="saveProgress('${item.id}')">Guardar avance</button>
+          </div>
+        </details>
       `;
       loadChat();
       if (chatInterval) clearInterval(chatInterval);
@@ -639,7 +729,18 @@
         const el = document.getElementById(id);
         if (el) el.value = '';
       });
+      closeBlueprintModal();
       loadChat();
+    }
+
+    function openBlueprintModal() {
+      const modal = document.getElementById('blueprintModal');
+      if (modal) modal.classList.add('open');
+    }
+
+    function closeBlueprintModal() {
+      const modal = document.getElementById('blueprintModal');
+      if (modal) modal.classList.remove('open');
     }
 
     async function loadChat() {
