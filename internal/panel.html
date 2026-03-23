@@ -182,7 +182,33 @@
     }
     .msg.client { background: rgba(59,130,246,0.12); align-self: flex-start; }
     .msg.engineer { background: rgba(16,185,129,0.12); align-self: flex-end; }
-    .toolbar { display: flex; gap: 8px; align-items: center; }
+    .toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .toolbar input { flex: 1 1 240px; }
+    .btn-ghost { background: transparent; border: 1px dashed rgba(148,163,184,0.4); color: var(--muted); }
+    .ai-suggestions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 6px;
+    }
+    .suggestion {
+      font-size: 0.74rem;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(59,130,246,0.08);
+      cursor: pointer;
+      color: var(--text);
+    }
+    .suggestion:hover { border-color: rgba(59,130,246,0.5); }
+    .unread-pill {
+      font-size: 0.65rem;
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: rgba(59,130,246,0.25);
+      color: #bfdbfe;
+      border: 1px solid rgba(59,130,246,0.35);
+    }
     .topline {
       display: flex;
       align-items: center;
@@ -223,12 +249,22 @@
           <option>George</option>
           <option>Marketing</option>
         </select>
+        <select id="modeFilter">
+          <option value="all">Todas</option>
+          <option value="mine">Solo mías</option>
+        </select>
         <select id="statusFilter">
           <option value="all">Todos</option>
           <option value="pending">Pendientes</option>
           <option value="developing">En progreso</option>
           <option value="completed">Listos</option>
           <option value="blocked">Bloqueados</option>
+        </select>
+        <select id="priorityFilter">
+          <option value="all">Todas prioridades</option>
+          <option value="high">Alta</option>
+          <option value="medium">Media</option>
+          <option value="low">Baja</option>
         </select>
         <input id="searchInput" type="text" placeholder="Buscar proyecto o cliente..." />
       </div>
@@ -254,7 +290,9 @@
             <div class="toolbar">
               <input id="chatInput" type="text" placeholder="Escribe al cliente..." />
               <button id="sendBtn" class="btn-primary">Enviar</button>
+              <button id="aiSuggestBtn" class="btn-ghost">IA sugerir</button>
             </div>
+            <div class="ai-suggestions" id="aiSuggestions"></div>
           </div>
         </section>
       </div>
@@ -264,10 +302,14 @@
   <script>
     let currentEngineer = 'William';
     let currentStatus = 'all';
+    let currentMode = 'all';
+    let currentPriority = 'all';
     let currentOrder = null;
     let lastChatCount = 0;
     let chatInterval = null;
     let lastQueue = [];
+    let lastUnreadTotal = 0;
+    let currentChatHistory = [];
     const notifyAudio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
 
     const queueEl = document.getElementById('queue');
@@ -275,9 +317,13 @@
     const chatLog = document.getElementById('chatLog');
     const chatInput = document.getElementById('chatInput');
     const sendBtn = document.getElementById('sendBtn');
+    const aiSuggestBtn = document.getElementById('aiSuggestBtn');
+    const aiSuggestions = document.getElementById('aiSuggestions');
     const queueMeta = document.getElementById('queueMeta');
     const searchInput = document.getElementById('searchInput');
     const activeOrderBadge = document.getElementById('activeOrderBadge');
+    const modeFilter = document.getElementById('modeFilter');
+    const priorityFilter = document.getElementById('priorityFilter');
 
     document.getElementById('engineerSelect').addEventListener('change', (e) => {
       currentEngineer = e.target.value;
@@ -285,6 +331,14 @@
     });
     document.getElementById('statusFilter').addEventListener('change', (e) => {
       currentStatus = e.target.value;
+      fetchQueue();
+    });
+    modeFilter.addEventListener('change', (e) => {
+      currentMode = e.target.value;
+      fetchQueue();
+    });
+    priorityFilter.addEventListener('change', (e) => {
+      currentPriority = e.target.value;
       fetchQueue();
     });
     searchInput.addEventListener('input', () => {
@@ -302,14 +356,20 @@
     async function fetchQueue() {
       const q = new URLSearchParams({
         engineer: currentEngineer,
-        mode: 'all',
-        status: currentStatus
+        mode: currentMode,
+        status: currentStatus,
+        priority: currentPriority
       });
       const res = await fetch(`/api/internal-queue?${q.toString()}`);
       const data = await res.json();
       const items = data.items || [];
       lastQueue = items;
-      queueMeta.textContent = `Queue ${items.length}`;
+      const unreadTotal = items.reduce((sum, item) => sum + (parseInt(item.unread_messages || 0, 10) || 0), 0);
+      queueMeta.textContent = unreadTotal ? `Queue ${items.length} • ${unreadTotal} nuevos` : `Queue ${items.length}`;
+      if (unreadTotal > lastUnreadTotal) {
+        notifyAudio.play().catch(() => {});
+      }
+      lastUnreadTotal = unreadTotal;
       renderQueue(items);
     }
 
@@ -328,6 +388,7 @@
         div.className = 'ticket' + (currentOrder && currentOrder.id === item.id ? ' active' : '');
         div.onclick = () => loadOrder(item);
         const hasUnread = item.unread_messages;
+        const unreadCount = parseInt(item.unread_messages || 0, 10) || 0;
         div.innerHTML = `
           <div class="meta"><span>${item.id || 'TKT'}</span><span>${(item.updated_at || '').slice(11,16)}</span></div>
           <div class="title">${item.project_name || 'Sin nombre'}</div>
@@ -335,6 +396,7 @@
             <span class="status-pill ${statusClass(item.status)}">${item.status || 'pending'}</span>
             <span class="muted">${item.client_email || item.client || ''}</span>
           </div>
+          ${unreadCount ? `<div style="margin-top:6px;"><span class="unread-pill">${unreadCount} nuevo${unreadCount > 1 ? 's' : ''}</span></div>` : ''}
         `;
         if (hasUnread && (!currentOrder || currentOrder.id !== item.id)) {
           div.style.borderColor = 'rgba(59,130,246,0.7)';
@@ -347,10 +409,14 @@
     function loadOrder(item) {
       currentOrder = item;
       lastChatCount = 0;
+      currentChatHistory = [];
+      aiSuggestions.innerHTML = '';
+      chatInput.value = '';
       chatLog.innerHTML = '<div class="muted">Cargando mensajes...</div>';
       activeOrderBadge.textContent = `${item.project_name || 'Orden'} • ${String(item.status || 'pending').toUpperCase()}`;
       const preview = item.preview_url || `/projects/${item.project_name}/index.html`;
       const note = item.delivery_note || '';
+      const internalNotes = item.internal_notes || '';
       orderCard.innerHTML = `
         <h2>${item.project_name || 'Orden'}</h2>
         <div class="muted">Cliente: ${item.client_email || item.client || 'N/D'}</div>
@@ -366,6 +432,10 @@
             <textarea id="deliveryNoteInput" rows="3">${note}</textarea>
           </div>
         </div>
+        <div style="margin-top:8px;">
+          <label>Notas internas</label>
+          <textarea id="internalNotesInput" rows="3" placeholder="Notas internas (solo equipo)">${internalNotes}</textarea>
+        </div>
         <div class="actions wide" style="margin-top:10px;">
           <button class="btn-primary" onclick="takeOrder('${item.id}')">Tomar orden</button>
           <button onclick="saveProgress('${item.id}')">Guardar avance</button>
@@ -374,6 +444,7 @@
           <button class="btn-success" onclick="setStatus('${item.id}','completed')">Entregar</button>
         </div>
         <div class="actions" style="margin-top:8px;">
+          <button onclick="saveNotes('${item.id}')">Guardar nota</button>
           <button onclick="openPreview('${item.project_name}')">Abrir preview</button>
           <button onclick="copyPath('${item.project_name}')">Copiar ruta</button>
         </div>
@@ -395,10 +466,11 @@
     async function setStatus(id, status) {
       const previewUrl = (document.getElementById('previewUrlInput')?.value || '').trim();
       const deliveryNote = (document.getElementById('deliveryNoteInput')?.value || '').trim();
+      const internalNotes = (document.getElementById('internalNotesInput')?.value || '').trim();
       await fetch('/api/admin/update-ticket', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ticket_id: id, engineer: currentEngineer, status, preview_url: previewUrl, delivery_note: deliveryNote })
+        body: JSON.stringify({ ticket_id: id, engineer: currentEngineer, status, preview_url: previewUrl, delivery_note: deliveryNote, internal_notes: internalNotes })
       });
       fetchQueue();
     }
@@ -406,10 +478,23 @@
     async function saveProgress(id) {
       const previewUrl = (document.getElementById('previewUrlInput')?.value || '').trim();
       const deliveryNote = (document.getElementById('deliveryNoteInput')?.value || '').trim();
+      const internalNotes = (document.getElementById('internalNotesInput')?.value || '').trim();
       await fetch('/api/admin/update-ticket', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ticket_id: id, engineer: currentEngineer, status: 'developing', preview_url: previewUrl, delivery_note: deliveryNote })
+        body: JSON.stringify({ ticket_id: id, engineer: currentEngineer, status: 'developing', preview_url: previewUrl, delivery_note: deliveryNote, internal_notes: internalNotes })
+      });
+      fetchQueue();
+    }
+
+    async function saveNotes(id) {
+      const previewUrl = (document.getElementById('previewUrlInput')?.value || '').trim();
+      const deliveryNote = (document.getElementById('deliveryNoteInput')?.value || '').trim();
+      const internalNotes = (document.getElementById('internalNotesInput')?.value || '').trim();
+      await fetch('/api/admin/update-ticket', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ticket_id: id, engineer: currentEngineer, preview_url: previewUrl, delivery_note: deliveryNote, internal_notes: internalNotes })
       });
       fetchQueue();
     }
@@ -419,6 +504,7 @@
       const res = await fetch(`/api/human-chat/history?project_name=${encodeURIComponent(currentOrder.project_name)}&mark_read=1`);
       const data = await res.json();
       const history = data.history || [];
+      currentChatHistory = history;
       if (history.length === 0) {
         chatLog.innerHTML = '<div class="muted">Sin mensajes.</div>';
         return;
@@ -451,6 +537,7 @@
       const content = (chatInput.value || '').trim();
       if (!content) return;
       chatInput.value = '';
+      aiSuggestions.innerHTML = '';
       await fetch('/api/human-chat/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -464,7 +551,54 @@
       loadChat();
     }
 
+    function renderAiSuggestions(items) {
+      if (!items || !items.length) {
+        aiSuggestions.innerHTML = '';
+        return;
+      }
+      aiSuggestions.innerHTML = '';
+      items.forEach(text => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'suggestion';
+        btn.textContent = text;
+        btn.addEventListener('click', () => applySuggestion(text));
+        aiSuggestions.appendChild(btn);
+      });
+    }
+
+    function applySuggestion(text) {
+      chatInput.value = text || '';
+      chatInput.focus();
+    }
+
+    async function requestAiSuggestions() {
+      if (!currentOrder) return;
+      aiSuggestBtn.disabled = true;
+      aiSuggestBtn.textContent = 'Generando...';
+      try {
+        const res = await fetch('/api/internal/ai-reply', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            project_name: currentOrder.project_name,
+            client_email: currentOrder.client_email || '',
+            status: currentOrder.status || '',
+            messages: currentChatHistory || []
+          })
+        });
+        const data = await res.json();
+        renderAiSuggestions(data.suggestions || []);
+      } catch (e) {
+        renderAiSuggestions([]);
+      } finally {
+        aiSuggestBtn.disabled = false;
+        aiSuggestBtn.textContent = 'IA sugerir';
+      }
+    }
+
     sendBtn.addEventListener('click', sendChat);
+    aiSuggestBtn.addEventListener('click', requestAiSuggestions);
     chatInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') sendChat();
     });

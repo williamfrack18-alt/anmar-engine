@@ -2594,6 +2594,10 @@ def admin_update_ticket():
         engineer = str(data.get('engineer') or '').strip()
         preview_input = data.get('preview_url')
         delivery_note = str(data.get('delivery_note') or '').strip()
+        internal_notes_raw = data.get('internal_notes')
+        internal_notes = None
+        if internal_notes_raw is not None:
+            internal_notes = str(internal_notes_raw).strip()
         actor = engineer or str(data.get('actor') or 'admin')
 
         alerts = load_alerts()
@@ -2617,6 +2621,14 @@ def admin_update_ticket():
             )
             if not updated:
                 return jsonify({"error": "Ticket not found"}), 404
+            if internal_notes is not None:
+                refreshed = load_alerts()
+                ticket_ref = next((t for t in refreshed if t.get('id') == ticket_id), None)
+                if ticket_ref:
+                    ticket_ref["internal_notes"] = internal_notes
+                    ticket_ref["updated_at"] = datetime.now().isoformat()
+                    save_alerts(refreshed)
+                    updated = ticket_ref
         else:
             # No status transition, just update operational fields.
             ticket = normalize_ticket_status(ticket)
@@ -2626,6 +2638,8 @@ def admin_update_ticket():
                 ticket["preview_url"] = normalized_preview
             if delivery_note:
                 ticket["delivery_note"] = delivery_note
+            if internal_notes is not None:
+                ticket["internal_notes"] = internal_notes
             ticket["updated_at"] = datetime.now().isoformat()
             append_ticket_event(
                 ticket,
@@ -2844,6 +2858,55 @@ def get_human_chat_history():
             except Exception as e:
                 print(f"Error marking chat read: {e}")
         return jsonify({"history": history})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/internal/ai-reply', methods=['POST'])
+def internal_ai_reply():
+    try:
+        data = request.json or {}
+        project_name = (data.get('project_name') or '').strip().lower()
+        client_email = (data.get('client_email') or '').strip().lower()
+        status = (data.get('status') or '').strip().lower()
+        messages = data.get('messages') or []
+
+        # Build short conversation context (last 8 messages).
+        convo_lines = []
+        for msg in messages[-8:]:
+            if not isinstance(msg, dict):
+                continue
+            role = (msg.get('role') or '').strip().lower()
+            label = "Cliente" if role == "client" else "Ingeniero"
+            content = str(msg.get('content') or '').strip()
+            if content:
+                convo_lines.append(f"{label}: {content}")
+        convo = "\n".join(convo_lines) if convo_lines else "Cliente: (sin mensajes previos)"
+
+        prompt = f"""
+Eres operador interno de ANMAR. Genera 3 posibles respuestas cortas para enviar al cliente.
+Reglas: español neutro, tono humano, máximo 2 frases por respuesta. Si falta información, incluye solo 1 pregunta.
+No prometas tiempos exactos ni menciones que eres IA.
+
+Proyecto: {project_name or 'N/D'}
+Estado: {status or 'pending'}
+Cliente: {client_email or 'N/D'}
+Conversación reciente:
+{convo}
+
+Devuelve 3 opciones, una por línea, sin numeración.
+""".strip()
+
+        text = call_ai_text(prompt, engine=ENGINE_ANTIGRAVITY) or ""
+        lines = [l.strip().lstrip("-•").strip() for l in text.splitlines() if l.strip()]
+        suggestions = lines[:3]
+        if not suggestions:
+            suggestions = [
+                "Gracias por el detalle. Ya lo revisé y te confirmo el siguiente paso en breve.",
+                "Perfecto, con eso avanzamos. ¿Hay algún ejemplo o referencia que quieras que tomemos en cuenta?",
+                "Entendido. Voy a preparar la primera propuesta y te la comparto para revisión."
+            ]
+
+        return jsonify({"suggestions": suggestions})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
