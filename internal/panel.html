@@ -10,29 +10,73 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <style>
     :root {
-      --bg: #05070b;
-      --panel: rgba(10, 12, 14, 0.75);
-      --panel-2: rgba(12, 16, 22, 0.88);
-      --panel-3: rgba(8, 12, 18, 0.9);
-      --border: rgba(148, 163, 184, 0.18);
+      --bg: #000;
+      --panel: rgba(6, 6, 6, 0.68);
+      --panel-2: rgba(6, 6, 6, 0.78);
+      --panel-3: rgba(6, 6, 6, 0.88);
+      --border: rgba(255, 255, 255, 0.12);
       --text: #e5e7eb;
-      --muted: #9aa7b8;
+      --muted: rgba(255, 255, 255, 0.55);
       --accent: #10b981;
       --success: #10b981;
       --warning: #f59e0b;
       --danger: #ef4444;
-      --radius: 16px;
-      --shadow: 0 18px 46px rgba(0,0,0,0.45);
+      --radius: 18px;
+      --shadow: 0 18px 46px rgba(0,0,0,0.55);
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
       min-height: 100vh;
-      background: radial-gradient(1200px 500px at 10% -10%, rgba(16,185,129,0.18), transparent 60%),
-                  radial-gradient(900px 450px at 100% 0%, rgba(59,130,246,0.12), transparent 70%),
-                  var(--bg);
+      background: var(--bg);
       color: var(--text);
       font-family: 'Inter', system-ui, sans-serif;
+      overflow: hidden;
+    }
+
+    .video-background {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -100;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .video-background iframe {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 100vw;
+      height: 100vh;
+      transform: translate(-50%, -50%) scale(1.5);
+      pointer-events: none;
+      opacity: 0.5;
+    }
+
+    .scanlines {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0) 50%, rgba(0, 0, 0, 0.2) 50%, rgba(0, 0, 0, 0.2));
+      background-size: 100% 4px;
+      z-index: -50;
+      pointer-events: none;
+    }
+
+    .green-tint {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(10, 20, 10, 0.5);
+      z-index: -51;
+      pointer-events: none;
     }
     .app {
       display: grid;
@@ -48,6 +92,7 @@
       box-shadow: var(--shadow);
       min-height: 0;
       overflow: hidden;
+      backdrop-filter: blur(24px);
     }
     .sidebar {
       display: flex;
@@ -60,7 +105,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: linear-gradient(180deg, rgba(16,185,129,0.12), transparent);
+      background: linear-gradient(180deg, rgba(16,185,129,0.18), transparent);
     }
     .brand h1 {
       font-size: 0.95rem;
@@ -233,9 +278,44 @@
       display: block;
       margin-bottom: 4px;
     }
+    .blueprint-box {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 12px;
+      border: 1px dashed rgba(59,130,246,0.4);
+      background: rgba(59,130,246,0.08);
+      display: grid;
+      gap: 8px;
+    }
+    .blueprint-box label {
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+    .blueprint-box input,
+    .blueprint-box textarea {
+      background: rgba(0,0,0,0.35);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 10px;
+      color: var(--text);
+      padding: 8px 10px;
+      font-size: 0.85rem;
+    }
+    .blueprint-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
   </style>
 </head>
 <body>
+  <div class="video-background">
+    <iframe
+      src="https://www.youtube.com/embed/Uc1NI4COG9k?autoplay=1&mute=1&loop=1&playlist=Uc1NI4COG9k&controls=0&showinfo=0&rel=0&iv_load_policy=3&disablekb=1&modestbranding=1&start=120"
+      title="Anmar Background" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+  </div>
+  <div class="green-tint"></div>
+  <div class="scanlines"></div>
+
   <div class="app">
     <aside class="panel sidebar">
       <div class="brand">
@@ -436,6 +516,30 @@
           <label>Notas internas</label>
           <textarea id="internalNotesInput" rows="3" placeholder="Notas internas (solo equipo)">${internalNotes}</textarea>
         </div>
+        <div class="blueprint-box">
+          <div style="font-weight:700; font-size:0.78rem; letter-spacing:0.6px; text-transform:uppercase;">Blueprint</div>
+          <div>
+            <label>Título</label>
+            <input id="bpTitle" type="text" placeholder="Ej: MVP + flujo de reservas" />
+          </div>
+          <div>
+            <label>Resumen</label>
+            <textarea id="bpSummary" rows="3" placeholder="Resumen claro de lo que se va a construir y cambiar."></textarea>
+          </div>
+          <div class="row">
+            <div>
+              <label>Alcance / pasos (1 por línea)</label>
+              <textarea id="bpSteps" rows="4" placeholder="Landing + formulario&#10;Panel de admin básico&#10;Integración pagos"></textarea>
+            </div>
+            <div>
+              <label>Entregables (1 por línea)</label>
+              <textarea id="bpDeliverables" rows="4" placeholder="Figma + Preview&#10;MVP desplegado&#10;Reporte de métricas"></textarea>
+            </div>
+          </div>
+          <div class="blueprint-actions">
+            <button class="btn-primary" onclick="sendBlueprint()">Enviar blueprint al cliente</button>
+          </div>
+        </div>
         <div class="actions wide" style="margin-top:10px;">
           <button class="btn-primary" onclick="takeOrder('${item.id}')">Tomar orden</button>
           <button onclick="saveProgress('${item.id}')">Guardar avance</button>
@@ -497,6 +601,45 @@
         body: JSON.stringify({ ticket_id: id, engineer: currentEngineer, preview_url: previewUrl, delivery_note: deliveryNote, internal_notes: internalNotes })
       });
       fetchQueue();
+    }
+
+    function parseLines(value) {
+      return String(value || '')
+        .split('\n')
+        .map(line => line.trim())
+        .filter(Boolean);
+    }
+
+    async function sendBlueprint() {
+      if (!currentOrder) return;
+      const title = (document.getElementById('bpTitle')?.value || '').trim();
+      const summary = (document.getElementById('bpSummary')?.value || '').trim();
+      const steps = parseLines(document.getElementById('bpSteps')?.value || '');
+      const deliverables = parseLines(document.getElementById('bpDeliverables')?.value || '');
+      const payload = {
+        title: title || `Blueprint ${currentOrder.project_name || ''}`.trim(),
+        summary,
+        steps,
+        deliverables
+      };
+      await fetch('/api/human-chat/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          project_name: currentOrder.project_name,
+          role: 'human',
+          content: summary || payload.title,
+          actor: currentEngineer,
+          kind: 'blueprint',
+          payload
+        })
+      });
+      const fields = ['bpTitle','bpSummary','bpSteps','bpDeliverables'];
+      fields.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+      loadChat();
     }
 
     async function loadChat() {

@@ -2778,6 +2778,8 @@ def send_human_chat():
         content = data.get('content', '').strip()
         actor = data.get('actor', '')
         client_email = (data.get('client_email') or '').strip().lower()
+        kind = (data.get('kind') or '').strip().lower()
+        payload = data.get('payload')
         
         if not project_name or not content:
             return jsonify({"error": "Missing parameters"}), 400
@@ -2786,13 +2788,18 @@ def send_human_chat():
         if project_name not in chats:
             chats[project_name] = []
             
-        chats[project_name].append({
+        message = {
             "id": str(uuid.uuid4()),
             "role": role,
             "content": content,
             "actor": actor,
             "timestamp": datetime.now().isoformat()
-        })
+        }
+        if kind:
+            message["kind"] = kind
+        if payload is not None:
+            message["payload"] = payload
+        chats[project_name].append(message)
         
         save_human_chats(chats)
         # Ensure an internal ticket exists and stays updated with unread counts.
@@ -2858,6 +2865,66 @@ def get_human_chat_history():
             except Exception as e:
                 print(f"Error marking chat read: {e}")
         return jsonify({"history": history})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/human-chat/accept-blueprint', methods=['POST'])
+def accept_blueprint():
+    try:
+        data = request.json or {}
+        project_name = (data.get('project_name') or '').strip().lower()
+        blueprint_id = str(data.get('blueprint_id') or '').strip()
+        actor = str(data.get('actor') or 'Cliente').strip()
+        client_email = (data.get('client_email') or '').strip().lower()
+        if not project_name or not blueprint_id:
+            return jsonify({"error": "Missing parameters"}), 400
+
+        chats = load_human_chats()
+        if project_name not in chats:
+            return jsonify({"error": "Project not found"}), 404
+
+        target = None
+        for msg in chats[project_name]:
+            if str(msg.get("id")) == blueprint_id:
+                target = msg
+                break
+
+        if not target or target.get("kind") != "blueprint":
+            return jsonify({"error": "Blueprint not found"}), 404
+
+        target["accepted"] = True
+        target["accepted_at"] = datetime.now().isoformat()
+        if client_email:
+            target["accepted_by"] = client_email
+
+        # Add confirmation message from client.
+        chats[project_name].append({
+            "id": str(uuid.uuid4()),
+            "role": "client",
+            "content": "✅ Blueprint aprobado. Pueden iniciar.",
+            "actor": actor,
+            "timestamp": datetime.now().isoformat(),
+            "kind": "blueprint_accept"
+        })
+        save_human_chats(chats)
+
+        # Update internal ticket status to developing (if exists) and mark unread.
+        try:
+            alerts = load_alerts()
+            ticket = next((t for t in alerts if str(t.get("project_name", "")).lower() == project_name), None)
+            if ticket:
+                set_ticket_status(ticket.get("id"), "developing", actor="client", engineer=ticket.get("engineer"))
+                refreshed = load_alerts()
+                ticket_ref = next((t for t in refreshed if str(t.get("project_name", "")).lower() == project_name), None)
+                if ticket_ref:
+                    ticket_ref["unread_messages"] = int(ticket_ref.get("unread_messages") or 0) + 1
+                    ticket_ref["updated_at"] = datetime.now().isoformat()
+                    append_ticket_event(ticket_ref, ticket_ref.get("status", "developing"), "Blueprint aprobado por el cliente.", actor=actor)
+                    save_alerts(refreshed)
+        except Exception as e:
+            print(f"Error updating ticket after blueprint accept: {e}")
+
+        return jsonify({"status": "ok"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

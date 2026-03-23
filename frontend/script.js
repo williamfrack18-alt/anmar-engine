@@ -66,20 +66,135 @@ document.addEventListener('DOMContentLoaded', () => {
         if (log) log.scrollTop = log.scrollHeight;
     }
 
+    function escapeHtml(text) {
+        return String(text || '').replace(/[&<>"']/g, (char) => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        }[char]));
+    }
+
+    function normalizeLines(value) {
+        if (Array.isArray(value)) {
+            return value.map(item => String(item || '').trim()).filter(Boolean);
+        }
+        if (typeof value === 'string') {
+            return value.split('\n').map(line => line.trim()).filter(Boolean);
+        }
+        return [];
+    }
+
     function renderHumanChat(history) {
         const container = document.getElementById('humanChatContent');
         if (!container) return;
-        let html = '';
+        container.innerHTML = '';
         history.forEach(msg => {
             const isClient = msg.role === 'client';
-            const cls1 = isClient ? 'user' : 'ai';
-            const cls2 = isClient ? 'user-msg' : 'ai-msg';
-            const bgText = !isClient ? `<strong>[${msg.actor || 'Ingeniero'}]</strong><br>` : '';
-            html += `<div class="msg-row ${cls1}"><div class="${cls2}">${bgText}${msg.content}</div></div>`;
+            const row = document.createElement('div');
+            row.className = `msg-row ${isClient ? 'user' : 'ai'}`;
+
+            if (msg.kind === 'blueprint') {
+                const wrap = document.createElement('div');
+                wrap.className = isClient ? 'user-msg' : 'ai-msg';
+                const card = document.createElement('div');
+                card.className = 'blueprint-card';
+
+                const payload = msg.payload || {};
+                const title = payload.title || msg.content || 'Blueprint';
+                const summary = payload.summary || '';
+                const steps = normalizeLines(payload.steps);
+                const deliverables = normalizeLines(payload.deliverables);
+
+                card.innerHTML = `
+                    <h4>${escapeHtml(title)}</h4>
+                    ${summary ? `<div class="blueprint-meta">${escapeHtml(summary)}</div>` : ''}
+                `;
+
+                if (steps.length) {
+                    const ul = document.createElement('ul');
+                    steps.forEach(step => {
+                        const li = document.createElement('li');
+                        li.textContent = step;
+                        ul.appendChild(li);
+                    });
+                    const label = document.createElement('div');
+                    label.className = 'blueprint-meta';
+                    label.textContent = 'Alcance';
+                    card.appendChild(label);
+                    card.appendChild(ul);
+                }
+
+                if (deliverables.length) {
+                    const ul = document.createElement('ul');
+                    deliverables.forEach(item => {
+                        const li = document.createElement('li');
+                        li.textContent = item;
+                        ul.appendChild(li);
+                    });
+                    const label = document.createElement('div');
+                    label.className = 'blueprint-meta';
+                    label.textContent = 'Entregables';
+                    card.appendChild(label);
+                    card.appendChild(ul);
+                }
+
+                const actions = document.createElement('div');
+                actions.className = 'blueprint-actions';
+                if (msg.accepted) {
+                    const badge = document.createElement('span');
+                    badge.className = 'blueprint-tag';
+                    badge.textContent = 'Blueprint aprobado';
+                    actions.appendChild(badge);
+                } else if (!isClient) {
+                    const btn = document.createElement('button');
+                    btn.className = 'blueprint-btn';
+                    btn.textContent = 'Aceptar blueprint';
+                    btn.addEventListener('click', () => acceptBlueprint(msg.id));
+                    actions.appendChild(btn);
+                }
+                if (actions.childNodes.length) card.appendChild(actions);
+
+                wrap.appendChild(card);
+                row.appendChild(wrap);
+                container.appendChild(row);
+                return;
+            }
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = isClient ? 'user-msg' : 'ai-msg';
+            if (isClient) {
+                contentDiv.textContent = msg.content || '';
+            } else {
+                const actor = escapeHtml(msg.actor || 'Ingeniero');
+                const content = escapeHtml(msg.content || '');
+                contentDiv.innerHTML = `<strong>[${actor}]</strong><br>${content}`;
+            }
+            row.appendChild(contentDiv);
+            container.appendChild(row);
         });
-        container.innerHTML = html;
         const log = document.getElementById('humanLog');
         if (log) log.scrollTop = log.scrollHeight;
+    }
+
+    async function acceptBlueprint(blueprintId) {
+        if (!currentProjectName || !blueprintId) return;
+        try {
+            await fetch('/api/human-chat/accept-blueprint', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    project_name: currentProjectName,
+                    blueprint_id: blueprintId,
+                    actor: currentUser?.name || 'Cliente',
+                    client_email: currentUser?.email || ''
+                })
+            });
+            pollHumanChat();
+        } catch (e) {
+            console.error('Error accepting blueprint:', e);
+        }
     }
 
     // React to Tab switch
