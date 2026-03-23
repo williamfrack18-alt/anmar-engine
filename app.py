@@ -2759,10 +2759,11 @@ def save_human_chats(data):
 def send_human_chat():
     try:
         data = request.json or {}
-        project_name = data.get('project_name')
+        project_name = (data.get('project_name') or '').strip().lower()
         role = data.get('role', 'human') # 'human' or 'client'
         content = data.get('content', '').strip()
-        actor = data.get('actor', '') 
+        actor = data.get('actor', '')
+        client_email = (data.get('client_email') or '').strip().lower()
         
         if not project_name or not content:
             return jsonify({"error": "Missing parameters"}), 400
@@ -2780,6 +2781,44 @@ def send_human_chat():
         })
         
         save_human_chats(chats)
+        # Ensure an internal ticket exists and stays updated with unread counts.
+        try:
+            alerts = load_alerts()
+            ticket = next((t for t in alerts if str(t.get("project_name", "")).lower() == project_name), None)
+            now = datetime.now().isoformat()
+            summary_text = content[:140]
+            if not ticket:
+                ticket = {
+                    "id": str(uuid.uuid4())[:8],
+                    "project_name": project_name,
+                    "client_email": client_email,
+                    "summary": summary_text,
+                    "timestamp": now,
+                    "updated_at": now,
+                    "status": "pending",
+                    "priority": "high",
+                    "preview_url": f"/projects/{project_name}/index.html",
+                    "unread_messages": 0,
+                    "events": []
+                }
+                alerts.insert(0, ticket)
+            else:
+                if client_email:
+                    ticket["client_email"] = client_email
+                if summary_text:
+                    ticket["summary"] = summary_text
+                ticket["updated_at"] = now
+
+            if role == "client":
+                ticket["unread_messages"] = int(ticket.get("unread_messages") or 0) + 1
+                append_ticket_event(ticket, ticket.get("status", "pending"), "Nuevo mensaje del cliente.", actor="client")
+            else:
+                ticket["unread_messages"] = 0
+                append_ticket_event(ticket, ticket.get("status", "pending"), "Respuesta enviada al cliente.", actor=actor or "engineer")
+            save_alerts(alerts)
+        except Exception as e:
+            print(f"Error updating internal alerts for human chat: {e}")
+
         return jsonify({"status": "success"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -2787,12 +2826,23 @@ def send_human_chat():
 @app.route('/api/human-chat/history', methods=['GET'])
 def get_human_chat_history():
     try:
-        project_name = request.args.get('project_name')
+        project_name = (request.args.get('project_name') or '').strip().lower()
+        mark_read = str(request.args.get('mark_read', '')).lower() in ('1', 'true', 'yes')
         if not project_name:
             return jsonify({"error": "Missing project_name"}), 400
             
         chats = load_human_chats()
         history = chats.get(project_name, [])
+        if mark_read:
+            try:
+                alerts = load_alerts()
+                ticket = next((t for t in alerts if str(t.get("project_name", "")).lower() == project_name), None)
+                if ticket:
+                    ticket["unread_messages"] = 0
+                    ticket["updated_at"] = datetime.now().isoformat()
+                    save_alerts(alerts)
+            except Exception as e:
+                print(f"Error marking chat read: {e}")
         return jsonify({"history": history})
     except Exception as e:
         return jsonify({"error": str(e)}), 500

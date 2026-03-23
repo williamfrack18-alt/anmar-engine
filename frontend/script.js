@@ -604,7 +604,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         project_name: currentProjectName,
                         role: 'client',
                         content: messageToSend,
-                        actor: currentUser.name || 'Cliente'
+                        actor: currentUser.name || 'Cliente',
+                        client_email: currentUser.email || ''
                     })
                 });
                 pollHumanChat();
