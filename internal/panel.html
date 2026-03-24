@@ -170,7 +170,7 @@
     .status-blocked { color: #f87171; border-color: rgba(248,113,113,0.4); }
     .workspace {
       display: grid;
-      grid-template-columns: 0.95fr 1.35fr;
+      grid-template-columns: 0.85fr 1.6fr;
       gap: 12px;
       height: 100%;
       padding: 12px;
@@ -180,6 +180,11 @@
       border: 1px solid var(--border);
       border-radius: 12px;
       padding: 12px;
+      min-height: 0;
+    }
+    .card.chat-card {
+      display: flex;
+      flex-direction: column;
       min-height: 0;
     }
     .card h2 { margin: 0 0 10px 0; font-size: 0.95rem; }
@@ -219,6 +224,7 @@
       flex-direction: column;
       gap: 8px;
       font-size: 0.9rem;
+      min-height: 360px;
     }
     .msg {
       padding: 8px 12px;
@@ -228,8 +234,9 @@
     }
     .msg.client { background: rgba(59,130,246,0.12); align-self: flex-start; }
     .msg.engineer { background: rgba(16,185,129,0.12); align-self: flex-end; }
-    .toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-    .toolbar input { flex: 1 1 240px; }
+    .toolbar { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; }
+    .toolbar textarea { flex: 1 1 320px; min-height: 72px; }
+    .toolbar button { height: 38px; }
     .btn-ghost { background: transparent; border: 1px dashed rgba(148,163,184,0.4); color: var(--muted); }
     .ai-suggestions {
       display: flex;
@@ -435,14 +442,14 @@
           <h2>Orden</h2>
           <div class="muted">Selecciona una orden para ver detalles.</div>
         </section>
-        <section class="card">
+        <section class="card chat-card">
           <h2>Chat con Cliente</h2>
           <div class="chat">
             <div class="chat-log" id="chatLog">
               <div class="muted">Sin mensajes.</div>
             </div>
             <div class="toolbar">
-              <input id="chatInput" type="text" placeholder="Escribe al cliente..." />
+              <textarea id="chatInput" rows="3" placeholder="Escribe al cliente..."></textarea>
               <button id="sendBtn" class="btn-primary">Enviar</button>
               <button id="aiSuggestBtn" class="btn-ghost">IA sugerir</button>
             </div>
@@ -843,8 +850,11 @@
 
     sendBtn.addEventListener('click', sendChat);
     aiSuggestBtn.addEventListener('click', requestAiSuggestions);
-    chatInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') sendChat();
+    chatInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        sendChat();
+      }
     });
 
     fetchQueue();

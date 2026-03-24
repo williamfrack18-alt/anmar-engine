@@ -38,6 +38,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const notifBadge = document.getElementById('notifBadge');
     const notifToast = document.getElementById('notifToast');
     const notifToastBtn = document.getElementById('notifToastBtn');
+    const notifPanel = document.getElementById('notifPanel');
+    const notifList = document.getElementById('notifList');
+    const notifCloseBtn = document.getElementById('notifCloseBtn');
 
     // --- Session Management ---
     let currentUser = JSON.parse(localStorage.getItem('currentUser'));
@@ -81,6 +84,43 @@ document.addEventListener('DOMContentLoaded', () => {
             blueprintAudio.play().catch(() => {});
             showBlueprintToast();
         }
+        renderNotificationList(history || []);
+    }
+
+    function renderNotificationList(history) {
+        if (!notifList) return;
+        const blueprints = (history || [])
+            .filter(msg => msg.kind === 'blueprint')
+            .map(msg => ({
+                id: msg.id,
+                title: (msg.payload && msg.payload.title) || msg.content || 'Blueprint',
+                accepted: !!msg.accepted,
+                timestamp: msg.timestamp || ''
+            }))
+            .sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''));
+
+        if (!blueprints.length) {
+            notifList.innerHTML = '<div style="color:rgba(255,255,255,0.6); font-size:0.85rem;">Sin notificaciones.</div>';
+            return;
+        }
+
+        notifList.innerHTML = '';
+        blueprints.forEach(item => {
+            const el = document.createElement('div');
+            el.className = 'notif-item';
+            const time = item.timestamp ? new Date(item.timestamp) : null;
+            const timeLabel = time ? time.toLocaleString() : '';
+            el.innerHTML = `
+                <div class="notif-item-title">${escapeHtml(item.title)}</div>
+                <div class="notif-item-meta">${item.accepted ? 'Blueprint aprobado' : 'Blueprint pendiente'} ${timeLabel ? '• ' + timeLabel : ''}</div>
+            `;
+            el.addEventListener('click', () => {
+                if (notifPanel) notifPanel.classList.remove('open');
+                if (typeof switchTab === 'function') switchTab('build');
+                if (typeof switchChatTab === 'function') switchChatTab('Human');
+            });
+            notifList.appendChild(el);
+        });
     }
 
     function showBlueprintToast() {
@@ -237,6 +277,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (notifBtn) {
         notifBtn.addEventListener('click', () => {
+            if (notifPanel) {
+                notifPanel.classList.toggle('open');
+            }
             switchTab('build');
             if (typeof switchChatTab === 'function') {
                 switchChatTab('Human');
@@ -255,6 +298,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (notifToast) notifToast.classList.remove('show');
             if (typeof switchTab === 'function') switchTab('build');
             if (typeof switchChatTab === 'function') switchChatTab('Human');
+        });
+    }
+
+    if (notifCloseBtn) {
+        notifCloseBtn.addEventListener('click', () => {
+            if (notifPanel) notifPanel.classList.remove('open');
         });
     }
 
@@ -769,8 +818,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.__humanAssignedOnce = true;
                 addHumanSystemMessage('Buscando ingeniero disponible...');
                 setTimeout(() => {
+                    addHumanSystemMessage('Asignando ingeniero y revisando tu solicitud...');
+                }, 2600);
+                setTimeout(() => {
                     addHumanSystemMessage('✅ William está conectado y listo para ayudarte.');
-                }, 1200);
+                }, 5200);
             }
 
             try {
