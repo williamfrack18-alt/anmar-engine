@@ -34,6 +34,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const togglePreviewBtn = document.getElementById('togglePreviewBtn');
     const previewPanel = document.getElementById('previewPanel');
     const buildSection = document.getElementById('section-build');
+    const notifBtn = document.getElementById('notifBtn');
+    const notifBadge = document.getElementById('notifBadge');
 
     // --- Session Management ---
     let currentUser = JSON.parse(localStorage.getItem('currentUser'));
@@ -47,12 +49,26 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const res = await fetch(`/api/human-chat/history?project_name=${encodeURIComponent(currentProjectName)}`);
             const data = await res.json();
-            if (data.history && data.history.length > lastHumanChatCount) {
-                lastHumanChatCount = data.history.length;
-                renderHumanChat(data.history);
+            const history = data.history || [];
+            updateBlueprintNotifications(history);
+            if (history && history.length > lastHumanChatCount) {
+                lastHumanChatCount = history.length;
+                renderHumanChat(history);
                 // Human-only chat: always visible
             }
         } catch (e) { console.error('Error polling human chat:', e); }
+    }
+
+    function updateBlueprintNotifications(history) {
+        if (!notifBtn || !notifBadge) return;
+        const pendingBlueprints = (history || []).filter(msg => msg.kind === 'blueprint' && !msg.accepted);
+        const count = pendingBlueprints.length;
+        if (count > 0) {
+            notifBadge.textContent = count > 9 ? '9+' : String(count);
+            notifBtn.classList.add('active');
+        } else {
+            notifBtn.classList.remove('active');
+        }
     }
 
     function addHumanSystemMessage(text) {
@@ -176,6 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         const log = document.getElementById('humanLog');
         if (log) log.scrollTop = log.scrollHeight;
+        updateBlueprintNotifications(history);
     }
 
     async function acceptBlueprint(blueprintId) {
@@ -195,6 +212,21 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) {
             console.error('Error accepting blueprint:', e);
         }
+    }
+
+    if (notifBtn) {
+        notifBtn.addEventListener('click', () => {
+            switchTab('build');
+            if (typeof switchChatTab === 'function') {
+                switchChatTab('Human');
+            }
+            const log = document.getElementById('humanLog');
+            if (log) {
+                setTimeout(() => {
+                    log.scrollTop = log.scrollHeight;
+                }, 120);
+            }
+        });
     }
 
     // React to Tab switch
