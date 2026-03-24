@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ANMAR Internal Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Inter', system-ui, sans-serif;
+      color: #fff;
+      min-height: 100vh;
+      background: #000;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+    }
+    .video-background {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: -100;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .video-background iframe {
+      position: absolute;
+      top: 50%; left: 50%;
+      width: 100vw; height: 100vh;
+      transform: translate(-50%, -50%) scale(1.5);
+      opacity: 0.5;
+      pointer-events: none;
+    }
+    .scanlines {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.2));
+      background-size: 100% 4px;
+      z-index: -50;
+      pointer-events: none;
+    }
+    .green-tint {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(10, 20, 10, 0.5);
+      z-index: -51;
+      pointer-events: none;
+    }
+    .card {
+      width: min(420px, 92vw);
+      background: rgba(6, 6, 6, 0.8);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 18px;
+      padding: 26px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+      backdrop-filter: blur(18px);
+    }
+    h1 { margin: 0 0 6px 0; font-size: 1.2rem; }
+    p { margin: 0 0 16px 0; color: rgba(255,255,255,0.65); font-size: 0.9rem; }
+    label { font-size: 0.75rem; color: rgba(255,255,255,0.6); }
+    input {
+      width: 100%;
+      margin-top: 6px;
+      margin-bottom: 12px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(0,0,0,0.35);
+      color: #fff;
+      outline: none;
+    }
+    button {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: none;
+      background: #10b981;
+      color: #00140f;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .hidden { display: none; }
+    .error {
+      margin-top: 8px;
+      font-size: 0.8rem;
+      color: #f87171;
+    }
+  </style>
+</head>
+<body>
+  <div class="video-background">
+    <iframe src="https://www.youtube.com/embed/Uc1NI4COG9k?autoplay=1&mute=1&loop=1&playlist=Uc1NI4COG9k&controls=0&showinfo=0&rel=0&iv_load_policy=3&disablekb=1&modestbranding=1&start=120"
+      title="Anmar Background" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+  </div>
+  <div class="green-tint"></div>
+  <div class="scanlines"></div>
+
+  <div class="card">
+    <h1>ANMAR Internal</h1>
+    <p>Acceso exclusivo para ingenieros autorizados.</p>
+
+    <form id="loginForm">
+      <label>Usuario o correo</label>
+      <input id="loginIdentifier" type="text" placeholder="william" autocomplete="username" />
+      <label>Contraseña</label>
+      <input id="loginPassword" type="password" placeholder="••••••••" autocomplete="current-password" />
+      <button type="submit">Ingresar</button>
+      <div class="error" id="loginError"></div>
+    </form>
+
+    <form id="setupForm" class="hidden">
+      <p>Configura el primer usuario (admin).</p>
+      <label>Nombre</label>
+      <input id="setupName" type="text" placeholder="William" />
+      <label>Usuario</label>
+      <input id="setupUsername" type="text" placeholder="william" />
+      <label>Correo (opcional)</label>
+      <input id="setupEmail" type="email" placeholder="william@..." />
+      <label>Contraseña</label>
+      <input id="setupPassword" type="password" placeholder="Crea una contraseña" />
+      <button type="submit">Crear administrador</button>
+      <div class="error" id="setupError"></div>
+    </form>
+  </div>
+
+  <script>
+    const loginForm = document.getElementById('loginForm');
+    const setupForm = document.getElementById('setupForm');
+    const loginError = document.getElementById('loginError');
+    const setupError = document.getElementById('setupError');
+
+    async function checkStatus() {
+      try {
+        const res = await fetch('/api/internal/status');
+        const data = await res.json();
+        if (data && data.has_users) {
+          loginForm.classList.remove('hidden');
+          setupForm.classList.add('hidden');
+        } else {
+          loginForm.classList.add('hidden');
+          setupForm.classList.remove('hidden');
+        }
+      } catch (e) {}
+    }
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      loginError.textContent = '';
+      const identifier = document.getElementById('loginIdentifier').value.trim();
+      const password = document.getElementById('loginPassword').value.trim();
+      const res = await fetch('/api/internal/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifier, password })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        loginError.textContent = data.error || 'Error al iniciar sesión';
+        return;
+      }
+      window.location.href = '/internal/panel.html';
+    });
+
+    setupForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      setupError.textContent = '';
+      const name = document.getElementById('setupName').value.trim();
+      const username = document.getElementById('setupUsername').value.trim();
+      const email = document.getElementById('setupEmail').value.trim();
+      const password = document.getElementById('setupPassword').value.trim();
+      const res = await fetch('/api/internal/bootstrap', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, username, email, password })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setupError.textContent = data.error || 'Error creando usuario';
+        return;
+      }
+      window.location.href = '/internal/panel.html';
+    });
+
+    checkStatus();
+  </script>
+</body>
+</html>

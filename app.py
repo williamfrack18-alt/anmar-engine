@@ -7,7 +7,8 @@ import difflib
 import base64
 import requests
 import google.generativeai as genai
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, session
+from werkzeug.security import generate_password_hash, check_password_hash
 from flask_cors import CORS
 from dotenv import load_dotenv
 import antigravity_sdk as antigravity
@@ -46,11 +47,121 @@ def resolve_projects_base_dir():
 projects_base_dir = resolve_projects_base_dir()
 
 app = Flask(__name__, static_folder=frontend_path, template_folder=frontend_path)
+app.secret_key = os.getenv("ANMAR_INTERNAL_SECRET", "anmar-internal-dev")
 
 @app.route('/internal/<path:filename>')
 def serve_internal(filename):
     return send_from_directory(internal_path, filename)
 CORS(app)
+
+@app.route('/api/internal/status', methods=['GET'])
+def internal_status():
+    users = load_internal_users()
+    return jsonify({
+        "has_users": len(users) > 0
+    })
+
+@app.route('/api/internal/bootstrap', methods=['POST'])
+def internal_bootstrap():
+    try:
+        users = load_internal_users()
+        if users:
+            return jsonify({"error": "Bootstrap already completed"}), 403
+        data = request.json or {}
+        name = str(data.get('name') or '').strip()
+        username = str(data.get('username') or '').strip().lower()
+        email = str(data.get('email') or '').strip().lower()
+        password = str(data.get('password') or '').strip()
+        if not username and email:
+            username = email.split("@")[0]
+        if not username or not password:
+            return jsonify({"error": "username and password are required"}), 400
+        new_user = {
+            "id": str(uuid.uuid4()),
+            "name": name or username,
+            "username": username,
+            "email": email or "",
+            "role": "admin",
+            "password_hash": generate_password_hash(password),
+            "created_at": datetime.now().isoformat()
+        }
+        save_internal_users([new_user])
+        session['internal_user'] = {
+            "id": new_user["id"],
+            "name": new_user["name"],
+            "username": new_user["username"],
+            "email": new_user["email"],
+            "role": new_user["role"]
+        }
+        return jsonify({"status": "ok", "user": session['internal_user']})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/internal/login', methods=['POST'])
+def internal_login():
+    try:
+        data = request.json or {}
+        identifier = str(data.get('identifier') or '').strip().lower()
+        password = str(data.get('password') or '').strip()
+        if not identifier or not password:
+            return jsonify({"error": "identifier and password are required"}), 400
+        user = find_internal_user(identifier)
+        if not user or not check_password_hash(user.get('password_hash', ''), password):
+            return jsonify({"error": "Credenciales inválidas"}), 401
+        session['internal_user'] = {
+            "id": user.get("id"),
+            "name": user.get("name"),
+            "username": user.get("username"),
+            "email": user.get("email"),
+            "role": user.get("role", "agent")
+        }
+        return jsonify({"status": "ok", "user": session['internal_user']})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/internal/logout', methods=['POST'])
+def internal_logout():
+    session.pop('internal_user', None)
+    return jsonify({"status": "ok"})
+
+@app.route('/api/internal/me', methods=['GET'])
+def internal_me():
+    user = session.get('internal_user')
+    if not user:
+        return jsonify({"error": "unauthorized"}), 401
+    return jsonify({"user": user})
+
+@app.route('/api/internal/users', methods=['POST'])
+def create_internal_user():
+    if not require_internal_auth():
+        return jsonify({"error": "unauthorized"}), 401
+    actor = session.get('internal_user') or {}
+    if actor.get('role') != 'admin':
+        return jsonify({"error": "forbidden"}), 403
+    data = request.json or {}
+    name = str(data.get('name') or '').strip()
+    username = str(data.get('username') or '').strip().lower()
+    email = str(data.get('email') or '').strip().lower()
+    password = str(data.get('password') or '').strip()
+    if not username and email:
+        username = email.split("@")[0]
+    if not username or not password:
+        return jsonify({"error": "username and password are required"}), 400
+    existing = find_internal_user(username) or (find_internal_user(email) if email else None)
+    if existing:
+        return jsonify({"error": "User already exists"}), 409
+    users = load_internal_users()
+    users.append({
+        "id": str(uuid.uuid4()),
+        "name": name or username,
+        "username": username,
+        "email": email or "",
+        "role": data.get("role") or "agent",
+        "password_hash": generate_password_hash(password),
+        "created_at": datetime.now().isoformat()
+    })
+    save_internal_users(users)
+    return jsonify({"status": "ok"})
 
 # Google AI Setup
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
@@ -2515,6 +2626,8 @@ Stack: {', '.join(tech_stack)}
 @app.route('/api/accept-ticket', methods=['POST'])
 def accept_ticket():
     try:
+        if not require_internal_auth():
+            return jsonify({"error": "unauthorized"}), 401
         data = request.json
         ticket_id = data.get('ticket_id')
         engineer = data.get('engineer', 'Staff Anmar')
@@ -2585,6 +2698,8 @@ def deliver_ticket():
 @app.route('/api/admin/update-ticket', methods=['POST'])
 def admin_update_ticket():
     try:
+        if not require_internal_auth():
+            return jsonify({"error": "unauthorized"}), 401
         data = request.json or {}
         ticket_id = str(data.get('ticket_id') or '').strip()
         if not ticket_id:
@@ -2689,6 +2804,8 @@ def get_project_status():
 @app.route('/api/internal-alerts', methods=['GET'])
 def get_internal_alerts():
     try:
+        if not require_internal_auth():
+            return jsonify({"error": "unauthorized"}), 401
         alerts = [normalize_ticket_status(a) for a in load_alerts()]
         alerts.sort(key=lambda a: a.get("updated_at", a.get("timestamp", "")), reverse=True)
         return jsonify(alerts)
@@ -2698,6 +2815,8 @@ def get_internal_alerts():
 @app.route('/api/internal-queue', methods=['GET'])
 def get_internal_queue():
     try:
+        if not require_internal_auth():
+            return jsonify({"error": "unauthorized"}), 401
         engineer = request.args.get('engineer')
         status = request.args.get('status', 'all')
         priority = request.args.get('priority', 'all')
@@ -2717,6 +2836,8 @@ def get_internal_queue():
 @app.route('/api/internal/order-history', methods=['GET'])
 def get_internal_order_history():
     try:
+        if not require_internal_auth():
+            return jsonify({"error": "unauthorized"}), 401
         project_name = (request.args.get('project_name') or '').strip().lower()
         client_email = (request.args.get('client_email') or '').strip().lower()
 
@@ -2752,6 +2873,7 @@ def get_internal_order_history():
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 HUMAN_CHATS_FILE = os.path.join(BASE_DIR, 'backend', 'human_chats.json')
 PROJECT_OWNERS_FILE = os.path.join(BASE_DIR, 'backend', 'project_owners.json')
+INTERNAL_USERS_FILE = os.path.join(BASE_DIR, 'backend', 'internal_users.json')
 
 def load_project_owners():
     if not os.path.exists(PROJECT_OWNERS_FILE):
@@ -2770,6 +2892,38 @@ def save_project_owners(data):
             json.dump(data, f, indent=2)
     except Exception as e:
         print(f"Error saving project owners: {e}")
+
+def load_internal_users():
+    if not os.path.exists(INTERNAL_USERS_FILE):
+        return []
+    try:
+        with open(INTERNAL_USERS_FILE, 'r') as f:
+            data = json.load(f)
+            return data if isinstance(data, list) else []
+    except Exception:
+        return []
+
+def save_internal_users(users):
+    try:
+        os.makedirs(os.path.dirname(INTERNAL_USERS_FILE), exist_ok=True)
+        with open(INTERNAL_USERS_FILE, 'w') as f:
+            json.dump(users, f, indent=2)
+    except Exception as e:
+        print(f"Error saving internal users: {e}")
+
+def find_internal_user(identifier):
+    ident = str(identifier or '').strip().lower()
+    if not ident:
+        return None
+    for u in load_internal_users():
+        if str(u.get('email', '')).lower() == ident or str(u.get('username', '')).lower() == ident:
+            return u
+    return None
+
+def require_internal_auth():
+    if not session.get('internal_user'):
+        return False
+    return True
 
 def load_human_chats():
     if not os.path.exists(HUMAN_CHATS_FILE):
@@ -2799,6 +2953,10 @@ def send_human_chat():
         client_email = (data.get('client_email') or '').strip().lower()
         kind = (data.get('kind') or '').strip().lower()
         payload = data.get('payload')
+
+        if role == 'human' or kind == 'blueprint':
+            if not require_internal_auth():
+                return jsonify({"error": "unauthorized"}), 401
         
         if not project_name or not content:
             return jsonify({"error": "Missing parameters"}), 400
@@ -2950,6 +3108,8 @@ def accept_blueprint():
 @app.route('/api/internal/ai-reply', methods=['POST'])
 def internal_ai_reply():
     try:
+        if not require_internal_auth():
+            return jsonify({"error": "unauthorized"}), 401
         data = request.json or {}
         project_name = (data.get('project_name') or '').strip().lower()
         client_email = (data.get('client_email') or '').strip().lower()

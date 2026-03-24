@@ -536,6 +536,28 @@
       renderQueue(lastQueue);
     });
 
+    async function initAuth() {
+      try {
+        const res = await fetch('/api/internal/me');
+        if (!res.ok) {
+          window.location.href = '/internal/login.html';
+          return false;
+        }
+        const data = await res.json();
+        const user = data.user || {};
+        if (user.name) currentEngineer = user.name;
+        const select = document.getElementById('engineerSelect');
+        if (select && user.name) {
+          select.innerHTML = `<option>${user.name}</option>`;
+          select.disabled = true;
+        }
+        return true;
+      } catch (e) {
+        window.location.href = '/internal/login.html';
+        return false;
+      }
+    }
+
     function statusClass(status) {
       const s = String(status || 'pending').toLowerCase();
       if (s === 'developing') return 'status-developing';
@@ -857,8 +879,11 @@
       }
     });
 
-    fetchQueue();
-    setInterval(fetchQueue, 8000);
+    initAuth().then((ok) => {
+      if (!ok) return;
+      fetchQueue();
+      setInterval(fetchQueue, 8000);
+    });
   </script>
 </body>
 </html>
