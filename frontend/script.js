@@ -1837,7 +1837,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch('/api/create-empty-project', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ project_name: name })
+                body: JSON.stringify({ project_name: name, user_email: currentUser?.email || '' })
             });
             const data = await res.json();
             if (!res.ok) {
@@ -1918,11 +1918,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadProjects() {
         try {
-            const response = await fetch('/list-projects'); // FIXED PORT
+            const emailQuery = currentUser?.email ? `?email=${encodeURIComponent(currentUser.email)}` : '';
+            const response = await fetch(`/list-projects${emailQuery}`); // FIXED PORT
             const projects = await response.json();
 
             projectList.innerHTML = '';
             if (projectsFolderGrid) projectsFolderGrid.innerHTML = '';
+            const input = document.getElementById('newProjectNameInput');
+            const createBtn = document.getElementById('createProjectInlineBtn');
+            const limitHint = document.getElementById('projectLimitHint');
 
             if (projects.length === 0) {
                 projectList.innerHTML = '<li style="padding:0.5rem">No projects found.</li>';
@@ -1933,8 +1937,31 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     `;
                 }
+                if (input) {
+                    input.disabled = false;
+                    input.placeholder = 'Nombre del proyecto';
+                    input.style.opacity = '1';
+                }
+                if (createBtn) {
+                    createBtn.disabled = false;
+                    createBtn.style.opacity = '1';
+                    createBtn.style.pointerEvents = 'auto';
+                }
+                if (limitHint) limitHint.style.display = 'none';
                 return;
             }
+
+            if (input) {
+                input.disabled = true;
+                input.placeholder = 'Ya tienes un proyecto activo';
+                input.style.opacity = '0.6';
+            }
+            if (createBtn) {
+                createBtn.disabled = true;
+                createBtn.style.opacity = '0.5';
+                createBtn.style.pointerEvents = 'none';
+            }
+            if (limitHint) limitHint.style.display = 'block';
 
             projects.forEach(project => {
                 const li = document.createElement('li');
@@ -1980,7 +2007,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             const res = await fetch('/delete-project', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ project_name: project })
+                                body: JSON.stringify({ project_name: project, user_email: currentUser?.email || '' })
                             });
                             if (res.ok) {
                                 li.remove();
@@ -2047,7 +2074,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             const res = await fetch('/delete-project', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ project_name: project })
+                                body: JSON.stringify({ project_name: project, user_email: currentUser?.email || '' })
                             });
                             const payload = await res.json().catch(() => ({}));
                             if (!res.ok) {

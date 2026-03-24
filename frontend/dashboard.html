@@ -1195,7 +1195,7 @@
                         Crea tu proyecto (la carpeta principal) y automáticamente pasas a Construcción.
                     </p>
 
-                    <div style="display:flex; gap:12px; align-items:center; margin: 16px 0 22px 0; flex-wrap:wrap;">
+                    <div style="display:flex; gap:12px; align-items:center; margin: 16px 0 8px 0; flex-wrap:wrap;">
                         <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; width:100%;">
                             <input id="newProjectNameInput" type="text" placeholder="Nombre del proyecto"
                                 style="flex:1; min-width:240px; background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.2); color:#fff; padding:12px 14px; border-radius:12px; outline:none; font-size:0.95rem;">
@@ -1205,6 +1205,10 @@
                             </button>
                         </div>
                         <span style="font-size:0.85rem; opacity:0.6;">Escribe el nombre y te llevamos directo al chat.</span>
+                    </div>
+                    <div id="projectLimitHint"
+                        style="display:none; font-size:0.82rem; color:#93c5fd; opacity:0.85; margin-bottom:12px;">
+                        Tu cuenta ya tiene un proyecto activo. Para crear otro, elimina el actual.
                     </div>
 
                     <div id="projectsFolderGrid"

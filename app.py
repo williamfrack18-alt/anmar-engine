@@ -2751,6 +2751,25 @@ def get_internal_order_history():
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 HUMAN_CHATS_FILE = os.path.join(BASE_DIR, 'backend', 'human_chats.json')
+PROJECT_OWNERS_FILE = os.path.join(BASE_DIR, 'backend', 'project_owners.json')
+
+def load_project_owners():
+    if not os.path.exists(PROJECT_OWNERS_FILE):
+        return {}
+    try:
+        with open(PROJECT_OWNERS_FILE, 'r') as f:
+            data = json.load(f)
+            return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+def save_project_owners(data):
+    try:
+        os.makedirs(os.path.dirname(PROJECT_OWNERS_FILE), exist_ok=True)
+        with open(PROJECT_OWNERS_FILE, 'w') as f:
+            json.dump(data, f, indent=2)
+    except Exception as e:
+        print(f"Error saving project owners: {e}")
 
 def load_human_chats():
     if not os.path.exists(HUMAN_CHATS_FILE):
@@ -4017,8 +4036,21 @@ def get_system_status():
 @app.route('/list-projects', methods=['GET'])
 def list_projects():
     try:
-        if not os.path.exists(projects_base_dir): return jsonify([])
-        projects = [name for name in os.listdir(projects_base_dir) if os.path.isdir(os.path.join(projects_base_dir, name)) and not name.startswith('.')]
+        if not os.path.exists(projects_base_dir):
+            return jsonify([])
+        projects = [
+            name for name in os.listdir(projects_base_dir)
+            if os.path.isdir(os.path.join(projects_base_dir, name)) and not name.startswith('.')
+        ]
+        email = str(request.args.get('email') or '').strip().lower()
+        if email:
+            owners = load_project_owners()
+            # Legacy fallback: if there is exactly one project and no owners yet, assign it.
+            if not owners and len(projects) == 1:
+                owners[projects[0]] = email
+                save_project_owners(owners)
+            filtered = [p for p in projects if owners.get(p) == email]
+            return jsonify(filtered)
         return jsonify(projects)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -4028,13 +4060,24 @@ def delete_project():
     try:
         data = request.json or {}
         project_name = sanitize_project_name(data.get('project_name', ''))
+        user_email = str(data.get('user_email') or '').strip().lower()
         if not project_name:
             return jsonify({"error": "project_name is required"}), 400
+        if user_email:
+            owners = load_project_owners()
+            owner = owners.get(project_name)
+            if owner and owner != user_email:
+                return jsonify({"error": "No tienes permiso para eliminar este proyecto."}), 403
         project_path = os.path.join(projects_base_dir, project_name)
         if not os.path.abspath(project_path).startswith(os.path.abspath(projects_base_dir)):
             return jsonify({"error": "Invalid project path"}), 403
         if os.path.exists(project_path):
             shutil.rmtree(project_path)
+            if user_email:
+                owners = load_project_owners()
+                if owners.get(project_name) == user_email:
+                    owners.pop(project_name, None)
+                    save_project_owners(owners)
             return jsonify({"message": "Deleted", "project_name": project_name})
         return jsonify({"error": "Not found"}), 404
     except Exception as e:
@@ -4055,8 +4098,15 @@ def create_empty_project():
     try:
         data = request.json or {}
         raw_name = data.get('project_name', '')
+        user_email = str(data.get('user_email') or '').strip().lower()
         project_name = sanitize_project_name(raw_name)
         project_path = os.path.join(projects_base_dir, project_name)
+
+        if user_email:
+            owners = load_project_owners()
+            owned = [p for p, owner in owners.items() if owner == user_email]
+            if len(owned) >= 1:
+                return jsonify({"error": "Tu cuenta ya tiene un proyecto activo. Elimina el actual para crear otro."}), 403
 
         if os.path.exists(project_path):
             return jsonify({"error": "Ese proyecto ya existe. Usa otro nombre."}), 409
@@ -4100,6 +4150,11 @@ def create_empty_project():
 """
         with open(os.path.join(project_path, 'index.html'), 'w', encoding='utf-8') as f:
             f.write(starter_html)
+
+        if user_email:
+            owners = load_project_owners()
+            owners[project_name] = user_email
+            save_project_owners(owners)
 
         return jsonify({
             "status": "ok",
