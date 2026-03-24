@@ -36,6 +36,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const buildSection = document.getElementById('section-build');
     const notifBtn = document.getElementById('notifBtn');
     const notifBadge = document.getElementById('notifBadge');
+    const notifToast = document.getElementById('notifToast');
+    const notifToastBtn = document.getElementById('notifToastBtn');
 
     // --- Session Management ---
     let currentUser = JSON.parse(localStorage.getItem('currentUser'));
@@ -43,6 +45,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Human Chat Polling ---
     let humanChatInterval = null;
     let lastHumanChatCount = 0;
+    const notifiedBlueprintIds = new Set();
+    const blueprintAudio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+    blueprintAudio.volume = 0.4;
 
     async function pollHumanChat() {
         if (!currentProjectName) return;
@@ -69,6 +74,22 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             notifBtn.classList.remove('active');
         }
+
+        const fresh = pendingBlueprints.filter(msg => msg.id && !notifiedBlueprintIds.has(msg.id));
+        if (fresh.length > 0) {
+            fresh.forEach(msg => notifiedBlueprintIds.add(msg.id));
+            blueprintAudio.play().catch(() => {});
+            showBlueprintToast();
+        }
+    }
+
+    function showBlueprintToast() {
+        if (!notifToast) return;
+        notifToast.classList.add('show');
+        clearTimeout(window.__notifToastTimer);
+        window.__notifToastTimer = setTimeout(() => {
+            notifToast.classList.remove('show');
+        }, 6000);
     }
 
     function addHumanSystemMessage(text) {
@@ -226,6 +247,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     log.scrollTop = log.scrollHeight;
                 }, 120);
             }
+        });
+    }
+
+    if (notifToastBtn) {
+        notifToastBtn.addEventListener('click', () => {
+            if (notifToast) notifToast.classList.remove('show');
+            if (typeof switchTab === 'function') switchTab('build');
+            if (typeof switchChatTab === 'function') switchChatTab('Human');
         });
     }
 
