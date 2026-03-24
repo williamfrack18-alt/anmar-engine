@@ -314,6 +314,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentPlanContent = '';
     let currentTicketProjectId = '';
     let isProcessing = false;
+    let projectLimitReached = false;
     let previewLoadTimer = null;
     let pendingMemorySave = null;
     let interactionMode = 'strategy'; // strategy | edit
@@ -1834,6 +1835,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function createProjectByName(name) {
         try {
+            if (projectLimitReached) {
+                showProjectLimitModal();
+                return;
+            }
             const res = await fetch('/api/create-empty-project', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1927,6 +1932,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const input = document.getElementById('newProjectNameInput');
             const createBtn = document.getElementById('createProjectInlineBtn');
             const limitHint = document.getElementById('projectLimitHint');
+            projectLimitReached = projects.length >= 1;
 
             if (projects.length === 0) {
                 projectList.innerHTML = '<li style="padding:0.5rem">No projects found.</li>';
@@ -2101,6 +2107,16 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) {
             console.error(e);
         }
+    }
+
+    window.showProjectLimitModal = function () {
+        const modal = document.getElementById('project-limit-modal');
+        if (modal) modal.style.display = 'flex';
+    }
+
+    window.closeProjectLimitModal = function () {
+        const modal = document.getElementById('project-limit-modal');
+        if (modal) modal.style.display = 'none';
     }
 
     // --- MARKETING MODULE ---
