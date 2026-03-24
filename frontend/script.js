@@ -141,6 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
         container.appendChild(msgRow);
         const log = document.getElementById('humanLog');
         if (log) log.scrollTop = log.scrollHeight;
+        return msgRow;
     }
 
     function escapeHtml(text) {
@@ -816,11 +817,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!window.__humanAssignedOnce) {
                 window.__humanAssignedOnce = true;
-                addHumanSystemMessage('Buscando ingeniero disponible...');
+                const startAt = Date.now();
+                const searchRow = addHumanSystemMessage('Buscando ingeniero disponible... 0s');
+                const searchEl = searchRow ? searchRow.querySelector('.ai-msg') : null;
+                if (window.__humanSearchTimer) clearInterval(window.__humanSearchTimer);
+                window.__humanSearchTimer = setInterval(() => {
+                    const elapsed = Math.max(0, Math.floor((Date.now() - startAt) / 1000));
+                    if (searchEl) searchEl.textContent = `Buscando ingeniero disponible... ${elapsed}s`;
+                }, 1000);
                 setTimeout(() => {
                     addHumanSystemMessage('Asignando ingeniero y revisando tu solicitud...');
                 }, 2600);
                 setTimeout(() => {
+                    if (window.__humanSearchTimer) clearInterval(window.__humanSearchTimer);
+                    const total = Math.max(0, Math.floor((Date.now() - startAt) / 1000));
+                    if (searchEl) searchEl.textContent = `Ingeniero encontrado en ${total}s.`;
                     addHumanSystemMessage('✅ William está conectado y listo para ayudarte.');
                 }, 5200);
             }

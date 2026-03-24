@@ -725,6 +725,33 @@
             padding: 10px 12px;
         }
 
+        .social-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 6px;
+        }
+
+        .social-link {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: rgba(0, 0, 0, 0.35);
+            color: rgba(255, 255, 255, 0.7);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            transition: transform 0.2s, color 0.2s, border-color 0.2s;
+            text-decoration: none;
+        }
+
+        .social-link:hover {
+            transform: translateY(-1px);
+            color: #fff;
+            border-color: rgba(59, 130, 246, 0.6);
+        }
+
         .notif-item {
             border: 1px solid rgba(255,255,255,0.1);
             border-radius: 12px;
@@ -977,14 +1004,30 @@
         </nav>
 
         <!-- RIGHT: STATUS -->
-        <div style="width:250px; display:flex; justify-content:flex-end; align-items:center; gap:10px;">
-            <button class="notif-btn" id="notifBtn" title="Notificaciones">
-                <i class="fas fa-bell"></i>
-                <span class="notif-badge" id="notifBadge">0</span>
-            </button>
-            <div
-                style="text-align:right; font-size:0.75rem; opacity:0.5; font-weight:600; letter-spacing:1px; font-family:'Inter';">
-                SUPRA ENGINE ACTIVE
+        <div style="width:250px; display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+            <div style="display:flex; justify-content:flex-end; align-items:center; gap:10px;">
+                <button class="notif-btn" id="notifBtn" title="Notificaciones">
+                    <i class="fas fa-bell"></i>
+                    <span class="notif-badge" id="notifBadge">0</span>
+                </button>
+                <div
+                    style="text-align:right; font-size:0.75rem; opacity:0.5; font-weight:600; letter-spacing:1px; font-family:'Inter';">
+                    SUPRA ENGINE ACTIVE
+                </div>
+            </div>
+            <div class="social-row">
+                <a class="social-link" href="https://instagram.com/anmarenterprices" target="_blank" rel="noopener"
+                    title="Instagram"><i class="fab fa-instagram"></i></a>
+                <a class="social-link" href="https://facebook.com/anmarenterprices" target="_blank" rel="noopener"
+                    title="Facebook"><i class="fab fa-facebook-f"></i></a>
+                <a class="social-link" href="https://www.linkedin.com/company/anmarenterprices" target="_blank" rel="noopener"
+                    title="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+                <a class="social-link" href="https://tiktok.com/@anmarenterprices" target="_blank" rel="noopener"
+                    title="TikTok"><i class="fab fa-tiktok"></i></a>
+                <a class="social-link" href="https://x.com/anmarenterprices" target="_blank" rel="noopener"
+                    title="X"><i class="fab fa-twitter"></i></a>
+                <a class="social-link" href="https://www.youtube.com/@anmarenterprices" target="_blank" rel="noopener"
+                    title="YouTube"><i class="fab fa-youtube"></i></a>
             </div>
         </div>
     </header>
