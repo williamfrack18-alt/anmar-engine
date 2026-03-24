@@ -240,6 +240,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            if (msg.kind === 'preview') {
+                const wrap = document.createElement('div');
+                wrap.className = isClient ? 'user-msg' : 'ai-msg';
+                const card = document.createElement('div');
+                card.className = 'blueprint-card';
+                const payload = msg.payload || {};
+                const url = payload.url || msg.content || '';
+                card.innerHTML = `
+                    <h4>Preview actualizado</h4>
+                    <div class="blueprint-meta">Tu ingeniero compartió una nueva previsualización.</div>
+                `;
+                if (url) {
+                    const actions = document.createElement('div');
+                    actions.className = 'blueprint-actions';
+                    const btn = document.createElement('button');
+                    btn.className = 'blueprint-btn';
+                    btn.textContent = 'Abrir preview';
+                    btn.addEventListener('click', () => window.open(url, '_blank'));
+                    actions.appendChild(btn);
+                    card.appendChild(actions);
+                }
+                wrap.appendChild(card);
+                row.appendChild(wrap);
+                container.appendChild(row);
+                return;
+            }
+
             const contentDiv = document.createElement('div');
             contentDiv.className = isClient ? 'user-msg' : 'ai-msg';
             if (isClient) {
@@ -2219,17 +2246,38 @@ document.addEventListener('DOMContentLoaded', () => {
     (async () => {
         const lastProject = localStorage.getItem(getLastProjectStorageKey()) || '';
         if (!lastProject) {
+            try {
+                const emailQuery = currentUser?.email ? `?email=${encodeURIComponent(currentUser.email)}` : '';
+                const response = await fetch(`/list-projects${emailQuery}`);
+                const projects = await response.json();
+                if (Array.isArray(projects) && projects.length === 1) {
+                    currentProjectName = projects[0];
+                    persistCurrentProject();
+                    await loadChatMemory();
+                    loadProjectPreview(currentProjectName);
+                    if (humanChatInterval) clearInterval(humanChatInterval);
+                    humanChatInterval = setInterval(pollHumanChat, 3000);
+                    pollHumanChat();
+                    switchTab('build');
+                    addLog(`Proyecto restaurado: ${currentProjectName}`, 'system');
+                    return;
+                }
+            } catch (e) { }
             switchTab('projects');
             return;
         }
         try {
-            const response = await fetch('/list-projects');
+            const emailQuery = currentUser?.email ? `?email=${encodeURIComponent(currentUser.email)}` : '';
+            const response = await fetch(`/list-projects${emailQuery}`);
             const projects = await response.json();
             if (Array.isArray(projects) && projects.includes(lastProject)) {
                 currentProjectName = lastProject;
                 persistCurrentProject();
                 await loadChatMemory();
                 loadProjectPreview(lastProject);
+                if (humanChatInterval) clearInterval(humanChatInterval);
+                humanChatInterval = setInterval(pollHumanChat, 3000);
+                pollHumanChat();
                 switchTab('build');
                 addLog(`Proyecto restaurado: ${lastProject}`, 'system');
                 return;

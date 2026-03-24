@@ -341,6 +341,18 @@
       display: grid;
       gap: 10px;
     }
+    .editor-textarea {
+      width: 100%;
+      min-height: 320px;
+      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.85rem;
+      background: rgba(0,0,0,0.35);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px;
+      color: var(--text);
+      padding: 10px;
+      resize: vertical;
+    }
     .modal-header {
       display: flex;
       justify-content: space-between;
@@ -486,6 +498,33 @@
       </div>
       <div class="blueprint-actions">
         <button class="btn-primary" onclick="sendBlueprint()">Enviar blueprint al cliente</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="editorModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div style="font-weight:700;">Editor de Preview</div>
+        <button class="modal-close" onclick="closeEditorModal()">Cerrar</button>
+      </div>
+      <div class="row">
+        <div>
+          <label>Archivo</label>
+          <select id="editorFile">
+            <option value="index.html">index.html</option>
+            <option value="style.css">style.css</option>
+            <option value="app.js">app.js</option>
+          </select>
+        </div>
+        <div style="display:flex; align-items:end;">
+          <button onclick="loadEditorFile()">Cargar archivo</button>
+        </div>
+      </div>
+      <textarea id="editorContent" class="editor-textarea" placeholder="Contenido del archivo..."></textarea>
+      <div class="actions" style="grid-template-columns: 1fr 1fr;">
+        <button onclick="saveEditorFile()" class="btn-primary">Guardar cambios</button>
+        <button onclick="openPreview(currentOrder?.project_name)">Abrir preview</button>
       </div>
     </div>
   </div>
@@ -646,7 +685,12 @@
         <div class="actions" style="margin-top:8px; grid-template-columns: repeat(3, 1fr);">
           <button onclick="openBlueprintModal()">Blueprint</button>
           <button onclick="openPreview('${item.project_name}')">Preview</button>
+          <button onclick="openEditorModal()">Editor</button>
+        </div>
+        <div class="actions" style="margin-top:8px; grid-template-columns: repeat(3, 1fr);">
+          <button onclick="sendPreviewLink()">Enviar preview</button>
           <button onclick="copyPath('${item.project_name}')">Copiar ruta</button>
+          <button onclick="saveNotes('${item.id}')">Guardar nota</button>
         </div>
 
         <details style="margin-top:10px;">
@@ -666,7 +710,6 @@
             <textarea id="internalNotesInput" rows="3" placeholder="Notas internas (solo equipo)">${internalNotes}</textarea>
           </div>
           <div class="actions" style="margin-top:8px;">
-            <button onclick="saveNotes('${item.id}')">Guardar nota</button>
             <button class="btn-warning" onclick="setStatus('${item.id}','blocked')">Bloquear</button>
             <button onclick="saveProgress('${item.id}')">Guardar avance</button>
           </div>
@@ -770,6 +813,62 @@
     function closeBlueprintModal() {
       const modal = document.getElementById('blueprintModal');
       if (modal) modal.classList.remove('open');
+    }
+
+    function openEditorModal() {
+      const modal = document.getElementById('editorModal');
+      if (modal) modal.classList.add('open');
+      loadEditorFile();
+    }
+
+    function closeEditorModal() {
+      const modal = document.getElementById('editorModal');
+      if (modal) modal.classList.remove('open');
+    }
+
+    async function loadEditorFile() {
+      if (!currentOrder) return;
+      const file = document.getElementById('editorFile')?.value || 'index.html';
+      const res = await fetch(`/api/engineer/file?project_id=${encodeURIComponent(currentOrder.project_name)}&filename=${encodeURIComponent(file)}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      const content = data.content || '';
+      const editor = document.getElementById('editorContent');
+      if (editor) editor.value = content;
+    }
+
+    async function saveEditorFile() {
+      if (!currentOrder) return;
+      const file = document.getElementById('editorFile')?.value || 'index.html';
+      const content = document.getElementById('editorContent')?.value || '';
+      await fetch('/api/engineer/file', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          project_id: currentOrder.project_name,
+          filename: file,
+          content
+        })
+      });
+      fetchQueue();
+    }
+
+    async function sendPreviewLink() {
+      if (!currentOrder) return;
+      const previewUrl = `/projects/${currentOrder.project_name}/index.html`;
+      await fetch('/api/human-chat/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          project_name: currentOrder.project_name,
+          role: 'human',
+          content: `Preview actualizado: ${previewUrl}`,
+          actor: currentEngineer,
+          kind: 'preview',
+          payload: { url: previewUrl }
+        })
+      });
+      loadChat();
     }
 
     async function loadChat() {

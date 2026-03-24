@@ -3204,6 +3204,8 @@ def auto_assign_dispatch():
 @app.route('/api/engineer/file', methods=['GET', 'POST'])
 def manage_project_file():
     try:
+        if not require_internal_auth():
+            return jsonify({"error": "unauthorized"}), 401
         project_id = request.args.get('project_id') or request.json.get('project_id')
         filename = request.args.get('filename') or request.json.get('filename')
         
@@ -3232,6 +3234,8 @@ def manage_project_file():
 @app.route('/api/engineer/ai-assist', methods=['POST'])
 def engineer_ai_assist():
     try:
+        if not require_internal_auth():
+            return jsonify({"error": "unauthorized"}), 401
         data = request.json
         project_id = data.get('project_id')
         instruction = data.get('instruction') 
