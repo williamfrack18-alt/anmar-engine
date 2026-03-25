@@ -353,6 +353,18 @@
       padding: 10px;
       resize: vertical;
     }
+    .ai-textarea {
+      width: 100%;
+      min-height: 180px;
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 0.9rem;
+      background: rgba(0,0,0,0.35);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px;
+      color: var(--text);
+      padding: 10px;
+      resize: vertical;
+    }
     .modal-header {
       display: flex;
       justify-content: space-between;
@@ -502,29 +514,34 @@
     </div>
   </div>
 
-  <div class="modal" id="editorModal">
+  <div class="modal" id="aiBuildModal">
     <div class="modal-content">
       <div class="modal-header">
-        <div style="font-weight:700;">Editor de Preview</div>
-        <button class="modal-close" onclick="closeEditorModal()">Cerrar</button>
+        <div style="font-weight:700;">Generar Preview con IA</div>
+        <button class="modal-close" onclick="closeAiBuildModal()">Cerrar</button>
+      </div>
+      <div>
+        <label>Instrucción</label>
+        <textarea id="aiBuildInstruction" class="ai-textarea" placeholder="Ej: Crea una landing para una librería de libros antiguos con catálogo, testimonios y formulario de contacto."></textarea>
       </div>
       <div class="row">
         <div>
-          <label>Archivo</label>
-          <select id="editorFile">
-            <option value="index.html">index.html</option>
-            <option value="style.css">style.css</option>
-            <option value="app.js">app.js</option>
+          <label>Motor</label>
+          <select id="aiBuildEngine">
+            <option value="antigravity">Antigravity (Gemini)</option>
+            <option value="openai_codex">Codex (OpenAI)</option>
           </select>
         </div>
         <div style="display:flex; align-items:end;">
-          <button onclick="loadEditorFile()">Cargar archivo</button>
+          <label style="font-size:0.74rem;">
+            <input id="aiBuildSendPreview" type="checkbox" checked />
+            Enviar preview al cliente
+          </label>
         </div>
       </div>
-      <textarea id="editorContent" class="editor-textarea" placeholder="Contenido del archivo..."></textarea>
-      <div class="actions" style="grid-template-columns: 1fr 1fr;">
-        <button onclick="saveEditorFile()" class="btn-primary">Guardar cambios</button>
-        <button onclick="openPreview(currentOrder?.project_name)">Abrir preview</button>
+      <div id="aiBuildStatus" class="muted"></div>
+      <div class="actions" style="grid-template-columns: 1fr;">
+        <button class="btn-primary" onclick="runAiBuild()">Generar Preview</button>
       </div>
     </div>
   </div>
@@ -623,6 +640,9 @@
       }
       lastUnreadTotal = unreadTotal;
       renderQueue(items);
+      if (!currentOrder && items.length) {
+        loadOrder(items[0]);
+      }
     }
 
     function renderQueue(items) {
@@ -684,8 +704,8 @@
         </div>
         <div class="actions" style="margin-top:8px; grid-template-columns: repeat(3, 1fr);">
           <button onclick="openBlueprintModal()">Blueprint</button>
+          <button onclick="openAiBuildModal()">IA Build</button>
           <button onclick="openPreview('${item.project_name}')">Preview</button>
-          <button onclick="openEditorModal()">Editor</button>
         </div>
         <div class="actions" style="margin-top:8px; grid-template-columns: repeat(3, 1fr);">
           <button onclick="sendPreviewLink()">Enviar preview</button>
@@ -815,42 +835,46 @@
       if (modal) modal.classList.remove('open');
     }
 
-    function openEditorModal() {
-      const modal = document.getElementById('editorModal');
+    function openAiBuildModal() {
+      const modal = document.getElementById('aiBuildModal');
       if (modal) modal.classList.add('open');
-      loadEditorFile();
     }
 
-    function closeEditorModal() {
-      const modal = document.getElementById('editorModal');
+    function closeAiBuildModal() {
+      const modal = document.getElementById('aiBuildModal');
       if (modal) modal.classList.remove('open');
     }
 
-    async function loadEditorFile() {
+    async function runAiBuild() {
       if (!currentOrder) return;
-      const file = document.getElementById('editorFile')?.value || 'index.html';
-      const res = await fetch(`/api/engineer/file?project_id=${encodeURIComponent(currentOrder.project_name)}&filename=${encodeURIComponent(file)}`);
-      if (!res.ok) return;
-      const data = await res.json();
-      const content = data.content || '';
-      const editor = document.getElementById('editorContent');
-      if (editor) editor.value = content;
-    }
-
-    async function saveEditorFile() {
-      if (!currentOrder) return;
-      const file = document.getElementById('editorFile')?.value || 'index.html';
-      const content = document.getElementById('editorContent')?.value || '';
-      await fetch('/api/engineer/file', {
+      const instruction = (document.getElementById('aiBuildInstruction')?.value || '').trim();
+      const engine = document.getElementById('aiBuildEngine')?.value || 'antigravity';
+      const sendPreview = document.getElementById('aiBuildSendPreview')?.checked;
+      const statusEl = document.getElementById('aiBuildStatus');
+      if (!instruction) {
+        if (statusEl) statusEl.textContent = 'Escribe una instrucción para generar el preview.';
+        return;
+      }
+      if (statusEl) statusEl.textContent = 'Generando preview con IA...';
+      const res = await fetch('/api/engineer/ai-generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           project_id: currentOrder.project_name,
-          filename: file,
-          content
+          instruction,
+          engine
         })
       });
-      fetchQueue();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (statusEl) statusEl.textContent = data.error || 'No se pudo generar el preview.';
+        return;
+      }
+      if (statusEl) statusEl.textContent = 'Preview generado.';
+      if (sendPreview) {
+        await sendPreviewLink();
+      }
+      closeAiBuildModal();
     }
 
     async function sendPreviewLink() {

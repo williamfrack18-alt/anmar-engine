@@ -3303,6 +3303,45 @@ def engineer_ai_assist():
         # Fallback for parsing errors
         return jsonify({"thought": "Error processing logic, but here is a raw attempt.", "code": "// Error generating code"}), 500
 
+@app.route('/api/engineer/ai-generate', methods=['POST'])
+def engineer_ai_generate():
+    try:
+        if not require_internal_auth():
+            return jsonify({"error": "unauthorized"}), 401
+        data = request.json or {}
+        project_id = data.get('project_id')
+        instruction = data.get('instruction', '')
+        engine = data.get('engine', ENGINE_ANTIGRAVITY)
+
+        if not project_id or not instruction:
+            return jsonify({"error": "project_id and instruction are required"}), 400
+
+        prompt = f"""
+Eres un ingeniero senior de ANMAR. Genera un sitio web completo en un solo archivo HTML (con CSS y JS inline si aplica).
+Debe ser una primera versión presentable para mostrar al cliente como preview.
+Usa diseño moderno, tipografía limpia y secciones claras.
+Instrucción del cliente:
+\"\"\"{instruction}\"\"\"
+
+Entrega SOLO el HTML completo, sin markdown.
+"""
+        html = call_ai_text(prompt, engine=engine) or ""
+        if not html.strip().lower().startswith('<!doctype'):
+            html = f"<!DOCTYPE html>\\n{html}"
+
+        project_dir = os.path.join(projects_base_dir, project_id)
+        os.makedirs(project_dir, exist_ok=True)
+        file_path = os.path.join(project_dir, 'index.html')
+        with open(file_path, 'w') as f:
+            f.write(html)
+
+        return jsonify({
+            "status": "ok",
+            "preview_url": f"/projects/{project_id}/index.html"
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/create-blueprint', methods=['POST'])
 def create_blueprint():
     try:
