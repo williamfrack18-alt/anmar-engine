@@ -131,6 +131,42 @@ def internal_me():
         return jsonify({"error": "unauthorized"}), 401
     return jsonify({"user": user})
 
+@app.route('/api/get-ai-suggestion', methods=['POST'])
+def get_ai_suggestion():
+    try:
+        if not require_internal_auth():
+            return jsonify({"error": "unauthorized"}), 401
+        data = request.json or {}
+        chat_history = str(data.get('chatHistory') or '').strip()
+        project_status = str(data.get('projectStatus') or '').strip()
+        project_identifier = str(data.get('projectIdentifier') or '').strip()
+
+        master_prompt = os.getenv('ANMAR_MASTER_PROMPT', '').strip()
+        if not master_prompt:
+            master_prompt = (
+                "Eres analista interno de proyectos para ANMAR. "
+                "Devuelve JSON estricto con las claves Action y Draft_Response."
+            )
+
+        prompt = master_prompt.replace('[CHAT_HISTORY]', chat_history)\
+                              .replace('[PROJECT_STATUS]', project_status)\
+                              .replace('[PROJECT_IDENTIFIER]', project_identifier)
+
+        # Force JSON response
+        json_prompt = f\"\"\"\n{prompt}\n\nDEVUELVE SOLO JSON con esta forma:\n{{\"Action\":\"...\",\"Draft_Response\":\"...\"}}\n\"\"\".strip()
+
+        text = call_ai_text(json_prompt, engine=ENGINE_ANTIGRAVITY) or ""
+        parsed = clean_and_parse_json(text)
+        if isinstance(parsed, dict) and parsed.get('Action') and parsed.get('Draft_Response'):
+            return jsonify(parsed)
+
+        return jsonify({
+            "Action": "Revisar el briefing y alinear próximos pasos.",
+            "Draft_Response": "Gracias por el detalle. Ya lo revisé y te confirmo el siguiente paso en breve."
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/api/internal/users', methods=['POST'])
 def create_internal_user():
     if not require_internal_auth():

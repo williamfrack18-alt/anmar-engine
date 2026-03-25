@@ -459,7 +459,7 @@
     <main class="panel">
       <div class="topline">
         <div style="font-weight:700;">Operaciones</div>
-        <div class="badge" id="activeOrderBadge">Sin orden activa</div>
+        <div class="badge" id="activeOrderBadge">Sin orden activa • <span id="project-status">pending</span></div>
       </div>
       <div class="workspace">
         <section class="card" id="orderCard">
@@ -469,13 +469,15 @@
         <section class="card chat-card">
           <h2>Chat con Cliente</h2>
           <div class="chat">
-            <div class="chat-log" id="chatLog">
+            <div id="chat-messages">
+              <div class="chat-log" id="chatLog">
               <div class="muted">Sin mensajes.</div>
+              </div>
             </div>
             <div class="toolbar">
-              <textarea id="chatInput" rows="3" placeholder="Escribe al cliente..."></textarea>
+              <textarea id="chat-input-textarea" rows="3" placeholder="Escribe al cliente..."></textarea>
               <button id="sendBtn" class="btn-primary">Enviar</button>
-              <button id="aiSuggestBtn" class="btn-ghost">IA sugerir</button>
+              <button id="ia-suggest-btn" class="btn-ghost">IA sugerir</button>
             </div>
             <div class="ai-suggestions" id="aiSuggestions"></div>
           </div>
@@ -546,6 +548,17 @@
     </div>
   </div>
 
+  <div class="modal" id="ai-suggestion-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div style="font-weight:700;">Sugerencia IA</div>
+        <button class="modal-close" onclick="closeAiSuggestionModal()">Cerrar</button>
+      </div>
+      <div class="muted">Acción recomendada</div>
+      <div id="aiSuggestionAction" style="font-weight:600;"></div>
+    </div>
+  </div>
+
   <script>
     let currentEngineer = 'William';
     let currentStatus = 'all';
@@ -562,9 +575,9 @@
     const queueEl = document.getElementById('queue');
     const orderCard = document.getElementById('orderCard');
     const chatLog = document.getElementById('chatLog');
-    const chatInput = document.getElementById('chatInput');
+    const chatInput = document.getElementById('chat-input-textarea');
     const sendBtn = document.getElementById('sendBtn');
-    const aiSuggestBtn = document.getElementById('aiSuggestBtn');
+    const aiSuggestBtn = document.getElementById('ia-suggest-btn');
     const aiSuggestions = document.getElementById('aiSuggestions');
     const queueMeta = document.getElementById('queueMeta');
     const searchInput = document.getElementById('searchInput');
@@ -686,6 +699,8 @@
       chatInput.value = '';
       chatLog.innerHTML = '<div class="muted">Cargando mensajes...</div>';
       activeOrderBadge.textContent = `${item.project_name || 'Orden'} • ${String(item.status || 'pending').toUpperCase()}`;
+      const statusEl = document.getElementById('project-status');
+      if (statusEl) statusEl.textContent = String(item.status || 'pending').toUpperCase();
       const preview = item.preview_url || `/projects/${item.project_name}/index.html`;
       const note = item.delivery_note || '';
       const internalNotes = item.internal_notes || '';
@@ -968,28 +983,70 @@
       chatInput.focus();
     }
 
+    function getChatHistoryText() {
+      if (Array.isArray(currentChatHistory) && currentChatHistory.length) {
+        return currentChatHistory.map((msg) => {
+          const role = msg.role === 'client' ? 'Cliente' : 'Anmar';
+          const content = String(msg.content || '').trim();
+          return content ? `${role}: ${content}` : '';
+        }).filter(Boolean).join('\n');
+      }
+      const container = document.getElementById('chat-messages');
+      if (!container) return '';
+      const msgs = container.querySelectorAll('.msg');
+      const lines = [];
+      msgs.forEach((node) => {
+        const isClient = node.classList.contains('client');
+        const role = isClient ? 'Cliente' : 'Anmar';
+        const content = node.textContent.trim();
+        if (content) lines.push(`${role}: ${content}`);
+      });
+      return lines.join('\n');
+    }
+
+    function showAiSuggestionModal(actionText) {
+      const modal = document.getElementById('ai-suggestion-modal');
+      const actionEl = document.getElementById('aiSuggestionAction');
+      if (actionEl) actionEl.textContent = actionText || '';
+      if (modal) modal.classList.add('open');
+    }
+
+    function closeAiSuggestionModal() {
+      const modal = document.getElementById('ai-suggestion-modal');
+      if (modal) modal.classList.remove('open');
+    }
+
     async function requestAiSuggestions() {
       if (!currentOrder) return;
+      const original = aiSuggestBtn.textContent;
       aiSuggestBtn.disabled = true;
-      aiSuggestBtn.textContent = 'Generando...';
+      aiSuggestBtn.textContent = 'Cargando...';
       try {
-        const res = await fetch('/api/internal/ai-reply', {
+        const chatHistory = getChatHistoryText();
+        const statusEl = document.getElementById('project-status');
+        const projectStatus = statusEl ? statusEl.textContent.trim() : (currentOrder.status || '');
+        const res = await fetch('/api/get-ai-suggestion', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            project_name: currentOrder.project_name,
-            client_email: currentOrder.client_email || '',
-            status: currentOrder.status || '',
-            messages: currentChatHistory || []
+            chatHistory,
+            projectStatus,
+            projectIdentifier: currentOrder.project_name || ''
           })
         });
         const data = await res.json();
-        renderAiSuggestions(data.suggestions || []);
+        if (data && data.Draft_Response) {
+          chatInput.value = data.Draft_Response;
+          chatInput.focus();
+        }
+        if (data && data.Action) {
+          showAiSuggestionModal(data.Action);
+        }
       } catch (e) {
-        renderAiSuggestions([]);
+        // ignore
       } finally {
         aiSuggestBtn.disabled = false;
-        aiSuggestBtn.textContent = 'IA sugerir';
+        aiSuggestBtn.textContent = original || 'IA sugerir';
       }
     }
 
