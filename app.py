@@ -153,7 +153,12 @@ def get_ai_suggestion():
                               .replace('[PROJECT_IDENTIFIER]', project_identifier)
 
         # Force JSON response
-        json_prompt = f\"\"\"\n{prompt}\n\nDEVUELVE SOLO JSON con esta forma:\n{{\"Action\":\"...\",\"Draft_Response\":\"...\"}}\n\"\"\".strip()
+        json_prompt = f"""
+{prompt}
+
+DEVUELVE SOLO JSON con esta forma:
+{{"Action":"...","Draft_Response":"..."}}
+""".strip()
 
         text = call_ai_text(json_prompt, engine=ENGINE_ANTIGRAVITY) or ""
         parsed = clean_and_parse_json(text)
