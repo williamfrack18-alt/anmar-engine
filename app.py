@@ -6,6 +6,7 @@ import uuid
 import difflib
 import base64
 import requests
+import stripe
 import google.generativeai as genai
 from flask import Flask, request, jsonify, send_from_directory, session
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -48,6 +49,19 @@ projects_base_dir = resolve_projects_base_dir()
 
 app = Flask(__name__, static_folder=frontend_path, template_folder=frontend_path)
 app.secret_key = os.getenv("ANMAR_INTERNAL_SECRET", "anmar-internal-dev")
+
+# --- STRIPE CONFIG ---
+STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "").strip()
+STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "").strip()
+STRIPE_PRICE_MARKETING = os.getenv("STRIPE_PRICE_MARKETING", "").strip()
+STRIPE_PRICE_MARKETING_BUILD = os.getenv("STRIPE_PRICE_MARKETING_BUILD", "").strip()
+
+stripe.api_key = STRIPE_SECRET_KEY
+
+STRIPE_PLAN_LABELS = {
+    "marketing": "Marketing",
+    "marketing_build": "Marketing + Construcción"
+}
 
 @app.route('/internal/<path:filename>')
 def serve_internal(filename):
@@ -443,6 +457,12 @@ def init_db():
         conn.execute("ALTER TABLE users ADD COLUMN subscription_plan TEXT NOT NULL DEFAULT 'none'")
     if 'subscription_started_at' not in cols:
         conn.execute("ALTER TABLE users ADD COLUMN subscription_started_at TIMESTAMP")
+    if 'stripe_customer_id' not in cols:
+        conn.execute("ALTER TABLE users ADD COLUMN stripe_customer_id TEXT")
+    if 'stripe_subscription_id' not in cols:
+        conn.execute("ALTER TABLE users ADD COLUMN stripe_subscription_id TEXT")
+    if 'subscription_status' not in cols:
+        conn.execute("ALTER TABLE users ADD COLUMN subscription_status TEXT NOT NULL DEFAULT 'inactive'")
     conn.commit()
     conn.close()
 
@@ -1897,6 +1917,8 @@ def ensure_user_exists_for_tokens(conn, email):
 def consume_user_tokens(email, amount, reason=""):
     if not email:
         return False, "No has iniciado sesión.", None
+    if is_user_subscribed(email):
+        return True, "subscribed", get_user_token_balance(email)
     try:
         amount = int(amount)
     except Exception:
@@ -1941,6 +1963,50 @@ def is_user_subscribed(email):
         return int(user['subscription_active']) == 1
     except Exception:
         return False
+
+def get_stripe_plan_map():
+    return {
+        "marketing": STRIPE_PRICE_MARKETING,
+        "marketing_build": STRIPE_PRICE_MARKETING_BUILD
+    }
+
+def normalize_plan_label(plan_key):
+    if not plan_key:
+        return "none"
+    return STRIPE_PLAN_LABELS.get(plan_key, plan_key)
+
+def set_user_subscription(email, active, plan_key=None, customer_id=None, subscription_id=None, status=None):
+    if not email:
+        return
+    conn = get_db_connection()
+    ensure_user_exists_for_tokens(conn, email)
+    plan_label = normalize_plan_label(plan_key) if active else 'none'
+    sub_active = 1 if active else 0
+    fields = ["subscription_active = ?", "subscription_plan = ?"]
+    values = [sub_active, plan_label]
+    if active:
+        fields.append("subscription_started_at = CURRENT_TIMESTAMP")
+    if customer_id is not None:
+        fields.append("stripe_customer_id = ?")
+        values.append(customer_id)
+    if subscription_id is not None:
+        fields.append("stripe_subscription_id = ?")
+        values.append(subscription_id)
+    if status is not None:
+        fields.append("subscription_status = ?")
+        values.append(status)
+    values.append(email)
+    conn.execute(f"UPDATE users SET {', '.join(fields)} WHERE email = ?", values)
+    conn.commit()
+    conn.close()
+
+def find_user_by_stripe_customer(customer_id):
+    if not customer_id:
+        return None
+    conn = get_db_connection()
+    row = conn.execute('SELECT email FROM users WHERE stripe_customer_id = ?', (customer_id,)).fetchone()
+    conn.close()
+    return row['email'] if row else None
 
 def get_project_paywall_state(email, project_name):
     if not email or not project_name:
@@ -2316,7 +2382,7 @@ def get_user_stats():
     
     conn = get_db_connection()
     user = conn.execute(
-        'SELECT tokens, created_at, subscription_active, subscription_plan FROM users WHERE email = ?',
+        'SELECT tokens, created_at, subscription_active, subscription_plan, subscription_status FROM users WHERE email = ?',
         (email,)
     ).fetchone()
     conn.close()
@@ -2326,10 +2392,143 @@ def get_user_stats():
             "tokens": user['tokens'],
             "joined": user['created_at'],
             "subscription_active": int(user['subscription_active']) == 1 if 'subscription_active' in user.keys() else False,
-            "subscription_plan": user['subscription_plan'] if 'subscription_plan' in user.keys() else 'none'
+            "subscription_plan": user['subscription_plan'] if 'subscription_plan' in user.keys() else 'none',
+            "subscription_status": user['subscription_status'] if 'subscription_status' in user.keys() else 'inactive'
         })
     else:
         return jsonify({"error": "User not found"}), 404
+
+# --- STRIPE CHECKOUT ---
+@app.route('/api/stripe/create-checkout-session', methods=['POST'])
+def stripe_create_checkout_session():
+    try:
+        if not STRIPE_SECRET_KEY:
+            return jsonify({"error": "Stripe no configurado"}), 500
+        data = request.json or {}
+        email = (data.get('email') or '').strip().lower()
+        plan_key = (data.get('plan') or '').strip()
+        plan_map = get_stripe_plan_map()
+        price_id = plan_map.get(plan_key)
+
+        if not email or not price_id:
+            return jsonify({"error": "Email o plan inválido"}), 400
+
+        origin = request.headers.get('Origin')
+        if not origin:
+            origin = request.host_url.rstrip('/')
+
+        success_url = os.getenv("STRIPE_SUCCESS_URL", "").strip() or f"{origin}/dashboard.html?checkout=success&session_id={{CHECKOUT_SESSION_ID}}"
+        cancel_url = os.getenv("STRIPE_CANCEL_URL", "").strip() or f"{origin}/dashboard.html?checkout=cancel"
+
+        session = stripe.checkout.Session.create(
+            mode="subscription",
+            line_items=[{"price": price_id, "quantity": 1}],
+            customer_email=email,
+            client_reference_id=email,
+            success_url=success_url,
+            cancel_url=cancel_url,
+            allow_promotion_codes=True,
+            metadata={
+                "plan": plan_key,
+                "email": email
+            }
+        )
+
+        return jsonify({"url": session.url})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/stripe/webhook', methods=['POST'])
+def stripe_webhook():
+    payload = request.data
+    sig_header = request.headers.get('Stripe-Signature', '')
+
+    if not STRIPE_WEBHOOK_SECRET:
+        return jsonify({"error": "Stripe webhook secret missing"}), 500
+
+    try:
+        event = stripe.Webhook.construct_event(
+            payload=payload,
+            sig_header=sig_header,
+            secret=STRIPE_WEBHOOK_SECRET
+        )
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+    event_type = event.get('type')
+    data_object = (event.get('data') or {}).get('object') or {}
+
+    if event_type == 'checkout.session.completed':
+        email = (data_object.get('customer_email') or '').strip().lower()
+        metadata = data_object.get('metadata') or {}
+        plan_key = (metadata.get('plan') or '').strip()
+        customer_id = data_object.get('customer')
+        subscription_id = data_object.get('subscription')
+        if email:
+            set_user_subscription(
+                email,
+                True,
+                plan_key=plan_key,
+                customer_id=customer_id,
+                subscription_id=subscription_id,
+                status="active"
+            )
+
+    if event_type in ('customer.subscription.updated', 'customer.subscription.deleted'):
+        customer_id = data_object.get('customer')
+        status = (data_object.get('status') or '').strip().lower()
+        plan_key = None
+        items = data_object.get('items') or {}
+        data_items = items.get('data') if isinstance(items, dict) else []
+        if data_items:
+            price_id = data_items[0].get('price', {}).get('id')
+            for key, value in get_stripe_plan_map().items():
+                if value and value == price_id:
+                    plan_key = key
+                    break
+        email = find_user_by_stripe_customer(customer_id)
+        if email:
+            active = status in ('active', 'trialing')
+            set_user_subscription(
+                email,
+                active,
+                plan_key=plan_key,
+                customer_id=customer_id,
+                subscription_id=data_object.get('id'),
+                status=status or ("active" if active else "inactive")
+            )
+
+    return jsonify({"received": True})
+
+@app.route('/api/stripe/verify-session', methods=['GET'])
+def stripe_verify_session():
+    try:
+        session_id = (request.args.get('session_id') or '').strip()
+        if not session_id:
+            return jsonify({"error": "Missing session_id"}), 400
+        if not STRIPE_SECRET_KEY:
+            return jsonify({"error": "Stripe no configurado"}), 500
+
+        session_data = stripe.checkout.Session.retrieve(session_id)
+        email = (session_data.get('customer_email') or '').strip().lower()
+        metadata = session_data.get('metadata') or {}
+        plan_key = (metadata.get('plan') or '').strip()
+        customer_id = session_data.get('customer')
+        subscription_id = session_data.get('subscription')
+
+        if email:
+            set_user_subscription(
+                email,
+                True,
+                plan_key=plan_key,
+                customer_id=customer_id,
+                subscription_id=subscription_id,
+                status="active"
+            )
+        return jsonify({"status": "ok"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/api/submit-ticket', methods=['POST'])
 def submit_ticket():
@@ -2998,6 +3197,11 @@ def send_human_chat():
         if role == 'human' or kind == 'blueprint':
             if not require_internal_auth():
                 return jsonify({"error": "unauthorized"}), 401
+        if role == 'client':
+            if not client_email:
+                return jsonify({"error": "No has iniciado sesión."}), 401
+            if not is_user_subscribed(client_email):
+                return jsonify({"error": "Plan requerido para chatear con el equipo.", "code": "subscription_required"}), 402
         
         if not project_name or not content:
             return jsonify({"error": "Missing parameters"}), 400

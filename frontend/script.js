@@ -366,24 +366,48 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    async function checkUserCredits() {
+    function formatPlanLabel(plan) {
+        const key = (plan || '').toLowerCase();
+        if (key.includes('marketing + construcción') || key.includes('marketing + construccion')) {
+            return 'Marketing + Construcción';
+        }
+        if (key.includes('marketing')) return 'Marketing';
+        return 'Plan requerido';
+    }
+
+    async function refreshSubscriptionStatus(showMessage = false) {
         if (!userTokensEl) return;
         try {
             const res = await fetch(`/api/user-stats?email=${currentUser.email}`);
             const data = await res.json();
-            if (data.tokens !== undefined) {
-                userTokensEl.innerHTML = `<i class="fas fa-coins" style="color:#fbbf24; margin-right:5px;"></i> ${data.tokens} Créditos`;
+            if (data.subscription_active !== undefined) {
+                subscriptionActive = !!data.subscription_active;
+                subscriptionPlan = data.subscription_plan || 'none';
+                const label = subscriptionActive ? formatPlanLabel(subscriptionPlan) : 'Plan requerido';
+                userTokensEl.innerHTML = `<i class="fas fa-crown" style="color:#fbbf24; margin-right:6px;"></i> ${label}`;
                 if (profileCreditsEl) {
-                    profileCreditsEl.textContent = `${data.tokens} créditos`;
+                    profileCreditsEl.textContent = subscriptionActive ? label : 'Sin plan activo';
                 }
-                if (data.tokens === 0) {
-                    userTokensEl.style.color = '#ef4444';
-                    addLog("⚠️ Has agotado tus créditos gratuitos. Actualiza a Premium para continuar construyendo.", "system");
+                if (!subscriptionActive && showMessage) {
+                    addLog("🔒 Para chatear con el equipo necesitas activar un plan.", "system");
                 }
             }
         } catch (e) {
             console.error("Auth Error", e);
         }
+    }
+
+    async function checkUserCredits() {
+        await refreshSubscriptionStatus();
+    }
+
+    async function requireSubscription() {
+        if (subscriptionActive) return true;
+        await refreshSubscriptionStatus(true);
+        if (subscriptionActive) return true;
+        const modal = document.getElementById('pricing-modal');
+        if (modal) modal.style.display = 'flex';
+        return false;
     }
 
     // State
@@ -404,6 +428,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let isVoiceRecording = false;
     let reviewOverlayTimer = null;
     let previewLockedByReview = false;
+    let subscriptionActive = false;
+    let subscriptionPlan = 'none';
 
     // Conversation State
     let chatStage = 'initial'; // 'initial', 'refinement', 'ready', 'blueprint', 'building'
@@ -413,6 +439,27 @@ document.addEventListener('DOMContentLoaded', () => {
     checkUserCredits();
     hydrateProfile();
     renderBriefState();
+    (function handleCheckoutReturn() {
+        const params = new URLSearchParams(window.location.search);
+        const status = params.get('checkout');
+        const sessionId = params.get('session_id');
+        if (!status) return;
+        if (status === 'success') {
+            if (sessionId) {
+                fetch(`/api/stripe/verify-session?session_id=${encodeURIComponent(sessionId)}`)
+                    .then(() => refreshSubscriptionStatus(true))
+                    .catch(() => refreshSubscriptionStatus(true));
+            } else {
+                setTimeout(() => {
+                    refreshSubscriptionStatus(true);
+                }, 1200);
+            }
+            addLog("✅ Pago confirmado. Tu plan ya está activo.", "success");
+        }
+        if (status === 'cancel') {
+            addLog("Pago cancelado. Puedes intentar de nuevo cuando quieras.", "system");
+        }
+    })();
 
     function setInteractionMode(mode) {
         interactionMode = mode === 'edit' ? 'edit' : 'strategy';
@@ -831,6 +878,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // --- NEW: HUMAN CHAT FLOW ---
         if (typeof isHumanChatActive !== 'undefined' && isHumanChatActive) {
+            const okSubscription = await requireSubscription();
+            if (!okSubscription) return;
             const messageToSend = text;
             chatInput.value = '';
             const msgRow = document.createElement('div');
@@ -864,7 +913,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             try {
-                await fetch('/api/human-chat/send', {
+                const response = await fetch('/api/human-chat/send', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -875,6 +924,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         client_email: currentUser.email || ''
                     })
                 });
+                if (response.status === 402) {
+                    const modal = document.getElementById('pricing-modal');
+                    if (modal) modal.style.display = 'flex';
+                    addHumanSystemMessage('🔒 Activa un plan para continuar con el chat.');
+                    return;
+                }
                 pollHumanChat();
             } catch (e) { console.error(e); }
             return;
@@ -2396,34 +2451,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     window.unlockPremium = function () {
-        // Simulate Payment Processing
-        const btn = document.querySelector('#premium-modal button');
-        if (btn) {
-            // const originalContent = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Procesando...';
-            btn.style.opacity = '0.7';
-        }
-
-        setTimeout(() => {
-            // Success
-            localStorage.setItem('anmar_premium', 'true');
-            if (btn) {
-                btn.innerHTML = '<i class="fas fa-check"></i> ¡Pago Exitoso!';
-                btn.style.background = '#10b981';
-                btn.style.opacity = '1';
-            }
-
-            setTimeout(() => {
-                // Hide Modal
-                const modal = document.getElementById('premium-modal');
-                if (modal) modal.style.display = 'none';
-
-                // Proceed
-                if (window.pendingPlan) {
-                    startBuildProcess(window.pendingPlan);
-                }
-            }, 1000);
-        }, 1500);
+        const premiumModal = document.getElementById('premium-modal');
+        if (premiumModal) premiumModal.style.display = 'none';
+        const pricingModal = document.getElementById('pricing-modal');
+        if (pricingModal) pricingModal.style.display = 'flex';
     }
 
     window.startBuildProcess = async function (plan) {
@@ -2537,7 +2568,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const tokensBadge = document.getElementById('userTokens');
             if (tokensBadge) {
                 tokensBadge.style.cursor = 'pointer';
-                tokensBadge.setAttribute('title', 'Clic para recargar energía');
+                tokensBadge.setAttribute('title', 'Clic para ver planes');
                 tokensBadge.onclick = () => {
                     const modal = document.getElementById('pricing-modal');
                     if (modal) modal.style.display = 'flex';
@@ -2547,57 +2578,37 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     window.purchasePlan = async function (planId) {
-        const btn = event.target.closest('button'); // Ensure we get the button
-        const originalText = btn.innerHTML;
-
-        // Simulate Processing
-        btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Procesando...';
-        btn.style.opacity = '0.7';
-        // await new Promise(r => setTimeout(r, 1500)); 
+        const btn = event?.target?.closest('button');
+        const originalText = btn ? btn.innerHTML : '';
+        if (btn) {
+            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Redirigiendo...';
+            btn.style.opacity = '0.7';
+        }
 
         try {
             const currentUser = JSON.parse(localStorage.getItem('currentUser'));
             if (!currentUser) { alert("Error de sesión"); return; }
 
-            const res = await fetch('/api/recharge-tokens', {
+            const res = await fetch('/api/stripe/create-checkout-session', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: currentUser.email, plan_id: planId })
+                body: JSON.stringify({ email: currentUser.email, plan: planId })
             });
 
             const data = await res.json();
 
-            if (data.status === 'success') {
-                btn.innerHTML = '<i class="fas fa-check"></i> ¡Éxito!';
-                btn.style.background = '#10b981';
-                btn.style.color = '#fff';
-
-                // Update Header Spark
-                const tokensBadge = document.getElementById('userTokens');
-                if (tokensBadge) {
-                    let displayBalance = data.new_balance;
-                    if (data.new_balance > 9000) displayBalance = "∞"; // Agency
-
-                    tokensBadge.innerHTML = `<i class="fas fa-coins" style="color:#fbbf24; margin-right:5px;"></i> ${displayBalance} Créditos`;
-                    tokensBadge.style.color = '#fff';
-                }
-
-                addLog(`⚡ Recarga Exitosa: +${data.added} Tokens añadidos.`, "success");
-
-                setTimeout(() => {
-                    document.getElementById('pricing-modal').style.display = 'none';
-                    btn.innerHTML = originalText;
-                    btn.style.background = '';
-                    btn.style.opacity = '1';
-                }, 1500);
-            } else {
-                throw new Error(data.error || "Fallo en transacción");
+            if (data.url) {
+                window.location.href = data.url;
+                return;
             }
+            throw new Error(data.error || "No se pudo iniciar el pago.");
         } catch (e) {
             console.error(e);
-            btn.innerHTML = '<i class="fas fa-times"></i> Error';
-            btn.style.background = '#ef4444';
-            setTimeout(() => { btn.innerHTML = originalText; btn.style.background = ''; btn.style.opacity = '1'; }, 2000);
+            if (btn) {
+                btn.innerHTML = '<i class="fas fa-times"></i> Error';
+                btn.style.background = '#ef4444';
+                setTimeout(() => { btn.innerHTML = originalText; btn.style.background = ''; btn.style.opacity = '1'; }, 2000);
+            }
         }
     }
     /* --- HELPER: TIMELINE --- */
