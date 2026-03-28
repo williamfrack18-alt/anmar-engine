@@ -1837,7 +1837,64 @@
 </script>
 
 <!-- MAIN LOGIC (Preserving original file) -->
-<script src="script.js?v=20"></script>
+<script src="script.js?v=21"></script>
+<script>
+    // Fallbacks in case main script fails to boot
+    (function () {
+        function safeSwitchTab(tab) {
+            const sec = document.getElementById(`section-${tab}`);
+            if (!sec) return;
+            document.querySelectorAll('.section-view').forEach(s => s.classList.remove('active'));
+            sec.classList.add('active');
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            const btn = document.getElementById(`tab-${tab}`);
+            if (btn) btn.classList.add('active');
+            document.querySelectorAll('.nav-icon').forEach(b => b.classList.remove('active'));
+            const nav = document.getElementById(`nav-${tab}`);
+            if (nav) nav.classList.add('active');
+        }
+
+        if (typeof window.switchTab !== 'function') {
+            window.switchTab = safeSwitchTab;
+        }
+
+        if (typeof window.createProjectFromInput !== 'function') {
+            window.createProjectFromInput = async function () {
+                const input = document.getElementById('newProjectNameInput');
+                const name = (input?.value || '').trim();
+                if (!name) {
+                    alert('Escribe un nombre para el proyecto.');
+                    return;
+                }
+                let email = '';
+                try {
+                    const raw = localStorage.getItem('currentUser');
+                    const user = raw ? JSON.parse(raw) : null;
+                    email = user?.email || '';
+                } catch (e) { }
+
+                try {
+                    const res = await fetch('/api/create-empty-project', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ project_name: name, user_email: email })
+                    });
+                    const data = await res.json();
+                    if (!res.ok) {
+                        alert(data.error || 'No se pudo crear el proyecto.');
+                        return;
+                    }
+                    if (email) {
+                        localStorage.setItem(`anmar:last_project:${email.toLowerCase()}`, data.project_name);
+                    }
+                    safeSwitchTab('build');
+                } catch (e) {
+                    alert('Error de conexión creando proyecto.');
+                }
+            }
+        }
+    })();
+</script>
 </body>
 
 </html>
