@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anmar Enterprises | Precios</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css?v=11">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        html { scroll-behavior: smooth; }
+        * { box-sizing: border-box; }
+        body {
+            background-color: #000;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            overflow-y: auto;
+            min-height: 100vh;
+            width: 100%;
+            font-family: 'Inter', sans-serif;
+            color: #fff;
+            zoom: 1;
+        }
+
+        .video-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -100;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .video-background iframe {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 100vw;
+            height: 100vh;
+            transform: translate(-50%, -50%) scale(1.5);
+            pointer-events: none;
+            opacity: 0.6;
+        }
+
+        @media (min-aspect-ratio: 16/9) {
+            .video-background iframe { width: 100vw; height: 56.25vw; }
+        }
+
+        @media (max-aspect-ratio: 16/9) {
+            .video-background iframe { width: 177.78vh; height: 100vh; }
+        }
+
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom,
+                    rgba(255, 255, 255, 0),
+                    rgba(255, 255, 255, 0) 50%,
+                    rgba(0, 0, 0, 0.2) 50%,
+                    rgba(0, 0, 0, 0.2));
+            background-size: 100% 4px;
+            z-index: -50;
+            pointer-events: none;
+        }
+
+        .green-tint {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(20, 40, 20, 0.4);
+            z-index: -51;
+            pointer-events: none;
+        }
+
+        header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.75rem 4vw;
+            z-index: 100;
+            backdrop-filter: blur(6px);
+        }
+
+        .logo {
+            font-weight: 700;
+            font-size: 1.3rem;
+            letter-spacing: -0.6px;
+            color: #fff;
+            text-decoration: none;
+        }
+
+        nav { display: flex; gap: 1.6rem; }
+        nav a {
+            text-decoration: none;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+            font-weight: 500;
+            letter-spacing: 0.2px;
+            transition: color 0.3s;
+        }
+        nav a:hover { color: #fff; }
+        nav a.active { color: #fff; }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .btn-login {
+            color: #fff;
+            text-decoration: none;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-start {
+            background: #fff;
+            color: #000;
+            padding: 0.7rem 1.3rem;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            text-decoration: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
+        }
+
+        .btn-start:hover { transform: translateY(-2px); }
+
+        .hero-container {
+            min-height: 70vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            text-align: left;
+            padding-left: 8vw;
+            padding-right: 6vw;
+            position: relative;
+            z-index: 10;
+        }
+
+        h1.main-title {
+            font-size: 4.1rem;
+            line-height: 1.08;
+            font-weight: 500;
+            letter-spacing: -2px;
+            margin-bottom: 1.2rem;
+            max-width: 900px;
+        }
+
+        p.hero-subtitle {
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.95);
+            max-width: 760px;
+            margin-bottom: 2.2rem;
+            line-height: 1.7;
+            text-shadow: 0 8px 22px rgba(0, 0, 0, 0.5);
+        }
+
+        .cta-button {
+            background: #fff;
+            color: #000;
+            font-weight: 700;
+            font-size: 1rem;
+            padding: 1rem 2.2rem;
+            text-decoration: none;
+            border-radius: 8px;
+            display: inline-block;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+        }
+
+        .cta-button:hover { transform: translateY(-2px); box-shadow: 0 16px 36px rgba(255, 255, 255, 0.2); }
+        .cta-secondary { background: transparent; color: #fff; border: 1px solid rgba(255, 255, 255, 0.6); }
+        .cta-secondary:hover { background: rgba(255, 255, 255, 0.08); }
+
+        .cta-row {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-start;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .content-section {
+            min-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 5rem 2rem 6rem;
+            position: relative;
+            z-index: 10;
+            background: linear-gradient(to bottom, transparent, rgba(5, 5, 5, 0.8));
+        }
+
+        h2.section-header { font-size: 2.7rem; margin: 0 0 1rem; }
+
+        p.section-body {
+            color: rgba(255, 255, 255, 0.78);
+            font-size: 1rem;
+            line-height: 1.7;
+            max-width: 860px;
+        }
+
+        .info-strip {
+            width: min(980px, 92vw);
+            margin: 2.5rem auto 2.5rem;
+            padding: 1.6rem 2.2rem;
+            border-radius: 18px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(5, 8, 8, 0.55);
+            backdrop-filter: blur(8px);
+            text-align: left;
+            box-shadow: 0 18px 45px rgba(0, 0, 0, 0.4);
+        }
+
+        .info-strip h3 { margin: 0 0 0.6rem 0; font-size: 1.1rem; letter-spacing: 0.5px; }
+        .info-strip p { margin: 0; color: rgba(255, 255, 255, 0.75); line-height: 1.6; font-size: 0.95rem; }
+
+        .plans-grid {
+            width: min(1180px, 92vw);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.8rem;
+            margin: 1.5rem auto 0;
+        }
+
+        .plan-card {
+            padding: 2.2rem;
+            border-radius: 22px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(10, 12, 12, 0.6);
+            backdrop-filter: blur(12px);
+            box-shadow: 0 18px 42px rgba(0, 0, 0, 0.35);
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            min-height: 520px;
+        }
+
+        .plan-card.recommended {
+            border: 1px solid rgba(16, 185, 129, 0.65);
+            box-shadow: 0 24px 55px rgba(16, 185, 129, 0.18);
+        }
+
+        .plan-icon {
+            width: 46px;
+            height: 46px;
+            border-radius: 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.2rem;
+        }
+
+        .plan-header h4 { margin: 0.8rem 0 0.2rem; font-size: 1.2rem; }
+        .plan-header p { margin: 0; color: rgba(255, 255, 255, 0.65); font-size: 0.9rem; }
+        .plan-price { font-size: 2.4rem; font-weight: 700; margin: 0.4rem 0 0.4rem; }
+
+        .plan-cta {
+            margin-top: 0.4rem;
+        }
+
+        .plan-cta .cta-button {
+            width: 100%;
+            text-align: center;
+            padding: 0.8rem 1.4rem;
+            font-size: 0.95rem;
+        }
+
+        .plan-card ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            color: rgba(255, 255, 255, 0.78);
+            font-size: 0.92rem;
+            line-height: 1.65;
+        }
+
+        .plan-card ul li::before { content: "• "; color: rgba(16, 185, 129, 0.8); }
+
+        .plan-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.72rem;
+            letter-spacing: 1px;
+            color: rgba(255, 255, 255, 0.6);
+            text-transform: uppercase;
+        }
+
+        .footer-note {
+            margin-top: 2rem;
+            color: rgba(255, 255, 255, 0.65);
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 820px) {
+            nav { display: none; }
+            h1.main-title { font-size: 3rem; }
+            h2.section-header { font-size: 2.1rem; }
+            .hero-container { min-height: 60vh; }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="video-background">
+        <iframe
+            src="https://www.youtube.com/embed/Uc1NI4COG9k?autoplay=1&mute=1&loop=1&playlist=Uc1NI4COG9k&controls=0&showinfo=0&rel=0&iv_load_policy=3&disablekb=1&modestbranding=1&start=120"
+            title="Anmar Background" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen>
+        </iframe>
+    </div>
+
+    <div class="green-tint" style="position:fixed;"></div>
+    <div class="scanlines" style="position:fixed;"></div>
+
+    <header>
+        <a href="index.html" class="logo">Anmar Enterprises</a>
+        <nav>
+            <a href="index.html">Inicio</a>
+            <a href="index.html#genesis">Construcción</a>
+            <a href="index.html#impulso">Crecimiento</a>
+            <a href="index.html#escala">Financiación</a>
+            <a href="pricing.html" class="active">Precios</a>
+            <a href="index.html#preguntas">Preguntas</a>
+        </nav>
+        <div class="nav-actions">
+            <a href="login.html" class="btn-login js-auth-link" id="navAuthLink">
+                <i class="fas fa-arrow-right-to-bracket"></i> Iniciar Sesión
+            </a>
+            <a href="login.html" class="btn-start js-auth-link" id="navStartLink">Comenzar</a>
+        </div>
+    </header>
+
+    <div class="hero-container">
+        <div class="cta-row">
+            <a href="#precios" class="cta-button">Ver planes</a>
+            <a href="login.html" class="cta-button cta-secondary js-auth-link">Activar ahora</a>
+        </div>
+    </div>
+
+    <section class="content-section" id="precios">
+        <h2 class="section-header">Precios claros, beneficios completos.</h2>
+        <p class="section-body">
+            El pago es mensual y se activa antes del chat humano. Puedes cancelar cuando quieras. Los planes incluyen
+            soporte directo con especialistas y ejecución real, no solo recomendaciones.
+        </p>
+
+        <div class="info-strip">
+            <h3>¿Qué estás comprando realmente?</h3>
+            <p>Acceso al equipo que construye, ejecuta y optimiza tu proyecto. Nada de llamadas eternas: el trabajo se
+                coordina por chat con entregas y métricas visibles. Tienes dos planes de entrada con tokens limitados
+                y dos planes ilimitados para ejecución total.</p>
+        </div>
+
+        <div class="plans-grid">
+            <div class="plan-card">
+                <div class="plan-icon"><i class="fas fa-seedling"></i></div>
+                <div class="plan-header">
+                    <h4>Inicio</h4>
+                    <p>Para comenzar con tokens limitados.</p>
+                </div>
+                <div class="plan-price">$47<span style="font-size:1rem; color:rgba(255,255,255,0.6);">/mes</span></div>
+                <ul>
+                    <li>Tokens limitados para chat con el equipo</li>
+                    <li>Acceso a guías y recomendaciones base</li>
+                    <li>Soporte humano en horario estándar</li>
+                    <li>Brief inicial y diagnóstico de mercado</li>
+                </ul>
+                <div class="plan-tag"><i class="fas fa-layer-group"></i> Tokens limitados</div>
+                <div class="plan-cta">
+                    <a href="login.html" class="cta-button js-auth-link">Activar Inicio</a>
+                </div>
+            </div>
+            <div class="plan-card">
+                <div class="plan-icon"><i class="fas fa-rocket"></i></div>
+                <div class="plan-header">
+                    <h4>Impulso</h4>
+                    <p>Más tokens, más iteración por chat.</p>
+                </div>
+                <div class="plan-price">$137<span style="font-size:1rem; color:rgba(255,255,255,0.6);">/mes</span></div>
+                <ul>
+                    <li>Tokens limitados ampliados</li>
+                    <li>Campañas y anuncios con equipo humano</li>
+                    <li>Optimización semanal de métricas</li>
+                    <li>Soporte prioritario en chat</li>
+                </ul>
+                <div class="plan-tag"><i class="fas fa-layer-group"></i> Tokens limitados</div>
+                <div class="plan-cta">
+                    <a href="login.html" class="cta-button js-auth-link">Activar Impulso</a>
+                </div>
+            </div>
+            <div class="plan-card">
+                <div class="plan-icon"><i class="fas fa-bullhorn"></i></div>
+                <div class="plan-header">
+                    <h4>Marketing Ilimitado</h4>
+                    <p>Solo marketing, sin límite de tokens.</p>
+                </div>
+                <div class="plan-price">$297<span style="font-size:1rem; color:rgba(255,255,255,0.6);">/mes</span></div>
+                <ul>
+                    <li>Estrategia y ejecución de campañas</li>
+                    <li>Creación de artes: videos e imágenes para ads</li>
+                    <li>Copywriting para anuncios y embudos</li>
+                    <li>Community manager y crecimiento orgánico</li>
+                    <li>Métricas y optimización semanal</li>
+                    <li>Chat directo con especialistas</li>
+                </ul>
+                <div class="plan-tag"><i class="fas fa-infinity"></i> Tokens ilimitados</div>
+                <div class="plan-cta">
+                    <a href="login.html" class="cta-button js-auth-link">Activar Marketing</a>
+                </div>
+            </div>
+            <div class="plan-card recommended">
+                <div class="plan-icon"><i class="fas fa-cube"></i></div>
+                <div class="plan-header">
+                    <h4>Marketing + Construcción</h4>
+                    <p>Marketing + ejecución técnica sin límites.</p>
+                </div>
+                <div class="plan-price">$397<span style="font-size:1rem; color:rgba(255,255,255,0.6);">/mes</span></div>
+                <ul>
+                    <li>Todo lo del plan Marketing Ilimitado</li>
+                    <li>Construcción web, software o e‑commerce</li>
+                    <li>Previsualización continua y cambios por chat</li>
+                    <li>Integraciones: pagos, formularios, automatizaciones</li>
+                    <li>Roadmap técnico con ingeniería humana</li>
+                    <li>Soporte prioritario durante la ejecución</li>
+                </ul>
+                <div class="plan-tag"><i class="fas fa-infinity"></i> Tokens ilimitados</div>
+                <div class="plan-cta">
+                    <a href="login.html" class="cta-button js-auth-link">Activar Plan Completo</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-note">¿Tienes dudas? Revisa las preguntas frecuentes en la página principal.</div>
+    </section>
+
+    <canvas id="gravityCanvas"
+        style="position:fixed; top:0; left:0; width:100%; height:100%; z-index:-40; pointer-events:none;"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gravityCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let particlesArray;
+        let signalsArray = [];
+        const mouse = {
+            x: null,
+            y: null,
+            radius: (canvas.height / 60) * (canvas.width / 60)
+        };
+
+        window.addEventListener('mousemove', function (event) {
+            mouse.x = event.x;
+            mouse.y = event.y;
+        });
+
+        window.addEventListener('mouseout', function () {
+            mouse.x = undefined;
+            mouse.y = undefined;
+        });
+
+        window.addEventListener('resize', function () {
+            canvas.width = innerWidth;
+            canvas.height = innerHeight;
+            mouse.radius = ((canvas.height / 60) * (canvas.height / 60));
+            init();
+        });
+
+        class Particle {
+            constructor(x, y, directionX, directionY, size, color) {
+                this.x = x;
+                this.y = y;
+                this.directionX = directionX;
+                this.directionY = directionY;
+                this.size = size;
+                this.color = color;
+            }
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2, false);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+            }
+            update() {
+                if (this.x > canvas.width || this.x < 0) this.directionX = -this.directionX;
+                if (this.y > canvas.height || this.y < 0) this.directionY = -this.directionY;
+
+                this.x += this.directionX;
+                this.y += this.directionY;
+
+                if (mouse.x && mouse.y) {
+                    const dx = mouse.x - this.x;
+                    const dy = mouse.y - this.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < mouse.radius + this.size) {
+                        if (mouse.x < this.x && this.x < canvas.width - this.size * 10) this.x += 2;
+                        if (mouse.x > this.x && this.x > this.size * 10) this.x -= 2;
+                        if (mouse.y < this.y && this.y < canvas.height - this.size * 10) this.y += 2;
+                        if (mouse.y > this.y && this.y > this.size * 10) this.y -= 2;
+                    }
+                }
+                this.draw();
+            }
+        }
+
+        class Signal {
+            constructor(x, y, targetX, targetY) {
+                this.x = x;
+                this.y = y;
+                this.targetX = targetX;
+                this.targetY = targetY;
+                this.progress = 0;
+                this.speed = 0.008 + Math.random() * 0.01;
+                this.dead = false;
+            }
+            update() {
+                this.progress += this.speed;
+                if (this.progress >= 1) {
+                    this.dead = true;
+                } else {
+                    this.x = this.x + (this.targetX - this.x) * this.progress;
+                    this.y = this.y + (this.targetY - this.y) * this.progress;
+                }
+            }
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 1.5, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(16,185,129,0.7)';
+                ctx.fill();
+            }
+        }
+
+        function init() {
+            particlesArray = [];
+            let numberOfParticles = (canvas.height * canvas.width) / 6000;
+            for (let i = 0; i < numberOfParticles; i++) {
+                let size = (Math.random() * 2) + 0.5;
+                let x = (Math.random() * ((innerWidth - size * 2) - (size * 2)) + size * 2);
+                let y = (Math.random() * ((innerHeight - size * 2) - (size * 2)) + size * 2);
+                let directionX = (Math.random() * 0.4) - 0.2;
+                let directionY = (Math.random() * 0.4) - 0.2;
+                let color = 'rgba(255, 255, 255, 0.8)';
+                particlesArray.push(new Particle(x, y, directionX, directionY, size, color));
+            }
+        }
+
+        function connect() {
+            let opacityValue = 1;
+            for (let a = 0; a < particlesArray.length; a++) {
+                for (let b = a; b < particlesArray.length; b++) {
+                    let distance = ((particlesArray[a].x - particlesArray[b].x) * (particlesArray[a].x - particlesArray[b].x)) +
+                        ((particlesArray[a].y - particlesArray[b].y) * (particlesArray[a].y - particlesArray[b].y));
+                    if (distance < (canvas.width / 7) * (canvas.height / 7)) {
+                        opacityValue = 1 - (distance / 20000);
+                        ctx.strokeStyle = 'rgba(255, 255, 255,' + opacityValue * 0.15 + ')';
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.moveTo(particlesArray[a].x, particlesArray[a].y);
+                        ctx.lineTo(particlesArray[b].x, particlesArray[b].y);
+                        ctx.stroke();
+                        if (Math.random() < 0.0005 && opacityValue > 0.2) {
+                            signalsArray.push(new Signal(particlesArray[a].x, particlesArray[a].y, particlesArray[b].x, particlesArray[b].y));
+                        }
+                    }
+                }
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            ctx.clearRect(0, 0, innerWidth, innerHeight);
+            for (let i = 0; i < particlesArray.length; i++) {
+                particlesArray[i].update();
+            }
+            connect();
+            for (let i = signalsArray.length - 1; i >= 0; i--) {
+                signalsArray[i].update();
+                signalsArray[i].draw();
+                if (signalsArray[i].dead) signalsArray.splice(i, 1);
+            }
+        }
+
+        init();
+        animate();
+
+        const currentUserRaw = localStorage.getItem('currentUser');
+        let currentUser = null;
+        try {
+            currentUser = currentUserRaw ? JSON.parse(currentUserRaw) : null;
+        } catch (_) {
+            localStorage.removeItem('currentUser');
+        }
+
+        if (currentUser && currentUser.email) {
+            document.querySelectorAll('.js-auth-link').forEach((el) => {
+                el.setAttribute('href', 'dashboard.html');
+            });
+            const navAuthLink = document.getElementById('navAuthLink');
+            if (navAuthLink) navAuthLink.innerHTML = '<i class="fas fa-table-columns"></i> Ir al Dashboard';
+            const navStartLink = document.getElementById('navStartLink');
+            if (navStartLink) navStartLink.textContent = 'Continuar';
+        }
+    </script>
+</body>
+
+</html>
