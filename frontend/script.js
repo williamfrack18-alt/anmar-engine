@@ -45,6 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const welcomeType = document.getElementById('welcomeType');
     const welcomeInput = document.getElementById('welcomeProjectInput');
     const welcomeStartBtn = document.getElementById('welcomeStartBtn');
+    const welcomeStatus = document.getElementById('welcomeStatus');
 
     // --- Session Management ---
     let currentUser = JSON.parse(localStorage.getItem('currentUser'));
@@ -498,6 +499,7 @@ document.addEventListener('DOMContentLoaded', () => {
             welcomeInput.addEventListener('input', () => {
                 const value = (welcomeInput.value || '').trim();
                 if (welcomeStartBtn) welcomeStartBtn.disabled = value.length < 3;
+                if (welcomeStatus) welcomeStatus.textContent = '';
             });
             welcomeInput.addEventListener('keydown', (event) => {
                 if (event.key === 'Enter') {
@@ -510,13 +512,24 @@ document.addEventListener('DOMContentLoaded', () => {
             welcomeStartBtn.addEventListener('click', async () => {
                 const value = (welcomeInput?.value || '').trim();
                 if (value.length < 3) return;
-                if (welcomeScreen) {
-                    welcomeScreen.classList.add('fade-out');
+                welcomeStartBtn.disabled = true;
+                const originalLabel = welcomeStartBtn.textContent;
+                welcomeStartBtn.textContent = 'Creando...';
+                const created = await createProjectByName(value, {
+                    showAlert: false,
+                    onError: (msg) => {
+                        if (welcomeStatus) welcomeStatus.textContent = msg || 'No se pudo crear el proyecto.';
+                    }
+                });
+                if (created) {
+                    if (welcomeScreen) welcomeScreen.classList.add('fade-out');
+                    setTimeout(() => {
+                        setWelcomeVisible(false);
+                    }, 250);
+                } else {
+                    welcomeStartBtn.disabled = false;
+                    welcomeStartBtn.textContent = originalLabel;
                 }
-                setTimeout(async () => {
-                    await createProjectByName(value);
-                    setWelcomeVisible(false);
-                }, 250);
             });
         }
         setWelcomeVisible(false);
@@ -2053,11 +2066,14 @@ document.addEventListener('DOMContentLoaded', () => {
         await createProjectByName(projectName.trim());
     }
 
-    async function createProjectByName(name) {
+    async function createProjectByName(name, options = {}) {
+        const showAlert = options.showAlert !== false;
+        const onError = typeof options.onError === 'function' ? options.onError : null;
         try {
             if (projectLimitReached) {
                 showProjectLimitModal();
-                return;
+                if (onError) onError('Ya tienes un proyecto activo.');
+                return false;
             }
             const res = await fetch('/api/create-empty-project', {
                 method: 'POST',
@@ -2066,8 +2082,13 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             const data = await res.json();
             if (!res.ok) {
-                alert(data.error || 'No se pudo crear el proyecto.');
-                return;
+                const msg = data.error || 'No se pudo crear el proyecto.';
+                if (res.status === 403 || msg.toLowerCase().includes('proyecto')) {
+                    showProjectLimitModal();
+                }
+                if (showAlert) alert(msg);
+                if (onError) onError(msg);
+                return false;
             }
             currentProjectName = data.project_name;
             currentTicketProjectId = data.project_id || '';
@@ -2085,9 +2106,13 @@ document.addEventListener('DOMContentLoaded', () => {
             addLog(`Proyecto creado: ${currentProjectName}. Inicia la conversación estratégica en el chat.`, 'system');
             await loadProjects();
             switchTab('build');
+            return true;
         } catch (e) {
             console.error(e);
-            alert('Error de conexión creando proyecto.');
+            const msg = 'Error de conexión creando proyecto.';
+            if (showAlert) alert(msg);
+            if (onError) onError(msg);
+            return false;
         }
     }
 
