@@ -46,6 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const welcomeInput = document.getElementById('welcomeProjectInput');
     const welcomeStartBtn = document.getElementById('welcomeStartBtn');
     const welcomeStatus = document.getElementById('welcomeStatus');
+    const welcomeCloseBtn = document.getElementById('welcomeCloseBtn');
 
     // --- Session Management ---
     let currentUser = null;
@@ -503,10 +504,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function initWelcomeScreen() {
         if (!welcomeScreen) return;
+        if (welcomeCloseBtn) {
+            welcomeCloseBtn.addEventListener('click', () => {
+                setWelcomeVisible(false);
+                switchTab('projects');
+            });
+        }
         if (welcomeInput) {
             welcomeInput.addEventListener('input', () => {
                 const value = (welcomeInput.value || '').trim();
-                if (welcomeStartBtn) welcomeStartBtn.disabled = value.length < 3;
+                if (welcomeStartBtn) welcomeStartBtn.disabled = value.length < 1;
                 if (welcomeStatus) welcomeStatus.textContent = '';
             });
             welcomeInput.addEventListener('keydown', (event) => {
@@ -519,7 +526,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (welcomeStartBtn) {
             welcomeStartBtn.addEventListener('click', async () => {
                 const value = (welcomeInput?.value || '').trim();
-                if (value.length < 3) return;
+                if (value.length < 1) {
+                    if (welcomeStatus) welcomeStatus.textContent = 'Escribe un nombre para el proyecto.';
+                    return;
+                }
                 welcomeStartBtn.disabled = true;
                 const originalLabel = welcomeStartBtn.textContent;
                 welcomeStartBtn.textContent = 'Creando...';
@@ -542,6 +552,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         setWelcomeVisible(false);
     }
+
+    window.addEventListener('error', (event) => {
+        try {
+            if (welcomeStatus) {
+                welcomeStatus.textContent = `Error interno: ${event.message || 'Revisa la consola.'}`;
+            }
+        } catch (e) {}
+    });
 
     function typeWelcomeText() {
         if (!welcomeType || welcomeTyped) return;
