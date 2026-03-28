@@ -48,7 +48,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const welcomeStatus = document.getElementById('welcomeStatus');
 
     // --- Session Management ---
-    let currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    let currentUser = null;
+    try {
+        const rawUser = localStorage.getItem('currentUser');
+        currentUser = rawUser ? JSON.parse(rawUser) : null;
+    } catch (e) {
+        console.warn('Invalid currentUser in localStorage. Resetting session.');
+        localStorage.removeItem('currentUser');
+        currentUser = null;
+    }
 
     // --- Human Chat Polling ---
     let humanChatInterval = null;
