@@ -1439,49 +1439,93 @@
             <p style="color:#666;">Elige el acceso que deseas antes de iniciar el chat con el equipo.</p>
         </div>
 
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:20px;">
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:20px;">
 
-            <!-- PLAN 1: MARKETING -->
+            <!-- PLAN 0: INICIO -->
             <div
-                style="background:#111; border:1px solid #333; padding:30px; border-radius:16px; text-align:left; transition:transform 0.2s; position:relative;">
+                style="background:#111; border:1px solid #333; padding:26px; border-radius:16px; text-align:left; position:relative;">
+                <div style="width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);">
+                    <i class="fas fa-seedling" style="color:#fff;"></i>
+                </div>
                 <h3
-                    style="color:#93c5fd; font-size:0.9rem; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">
-                    Marketing</h3>
-                <div style="font-size:2.6rem; color:#fff; font-weight:bold; margin-bottom:10px;">$297<span
+                    style="color:#93c5fd; font-size:0.85rem; text-transform:uppercase; letter-spacing:1px; margin:14px 0 8px;">
+                    Inicio</h3>
+                <div style="font-size:2.3rem; color:#fff; font-weight:bold; margin-bottom:10px;">$47<span
                         style="font-size:1rem; color:#555;">/mes</span></div>
-                <p style="color:#bdbdbd; line-height:1.6; margin:0 0 18px 0;">
-                    Acceso directo al equipo de marketing para campañas, copys, anuncios y crecimiento.
-                </p>
                 <ul
-                    style="list-style:none; padding:0; color:#c7c7c7; line-height:1.9; margin-bottom:22px; font-size:0.9rem;">
-                    <li><i class="fas fa-check" style="color:#10b981;"></i> Estrategia y ejecución</li>
-                    <li><i class="fas fa-check" style="color:#10b981;"></i> Métricas y optimización</li>
-                    <li><i class="fas fa-check" style="color:#10b981;"></i> Soporte humano dedicado</li>
+                    style="list-style:none; padding:0; color:#c7c7c7; line-height:1.9; margin-bottom:18px; font-size:0.88rem;">
+                    <li><i class="fas fa-check" style="color:#10b981;"></i> Tokens limitados</li>
+                    <li><i class="fas fa-check" style="color:#10b981;"></i> Diagnóstico inicial</li>
+                    <li><i class="fas fa-check" style="color:#10b981;"></i> Soporte humano básico</li>
+                </ul>
+                <button disabled
+                    style="width:100%; padding:12px; background:#1f2937; color:#9ca3af; border:none; border-radius:8px; font-weight:bold; cursor:not-allowed;">
+                    Próximamente</button>
+            </div>
+
+            <!-- PLAN 1: IMPULSO -->
+            <div
+                style="background:#111; border:1px solid #333; padding:26px; border-radius:16px; text-align:left; position:relative;">
+                <div style="width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);">
+                    <i class="fas fa-rocket" style="color:#fff;"></i>
+                </div>
+                <h3
+                    style="color:#93c5fd; font-size:0.85rem; text-transform:uppercase; letter-spacing:1px; margin:14px 0 8px;">
+                    Impulso</h3>
+                <div style="font-size:2.3rem; color:#fff; font-weight:bold; margin-bottom:10px;">$137<span
+                        style="font-size:1rem; color:#555;">/mes</span></div>
+                <ul
+                    style="list-style:none; padding:0; color:#c7c7c7; line-height:1.9; margin-bottom:18px; font-size:0.88rem;">
+                    <li><i class="fas fa-check" style="color:#10b981;"></i> Más tokens (limitados)</li>
+                    <li><i class="fas fa-check" style="color:#10b981;"></i> Optimización semanal</li>
+                    <li><i class="fas fa-check" style="color:#10b981;"></i> Soporte prioritario</li>
+                </ul>
+                <button disabled
+                    style="width:100%; padding:12px; background:#1f2937; color:#9ca3af; border:none; border-radius:8px; font-weight:bold; cursor:not-allowed;">
+                    Próximamente</button>
+            </div>
+
+            <!-- PLAN 2: MARKETING -->
+            <div
+                style="background:#111; border:1px solid #333; padding:26px; border-radius:16px; text-align:left; position:relative;">
+                <div style="width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);">
+                    <i class="fas fa-bullhorn" style="color:#fff;"></i>
+                </div>
+                <h3
+                    style="color:#93c5fd; font-size:0.85rem; text-transform:uppercase; letter-spacing:1px; margin:14px 0 8px;">
+                    Marketing Ilimitado</h3>
+                <div style="font-size:2.3rem; color:#fff; font-weight:bold; margin-bottom:10px;">$297<span
+                        style="font-size:1rem; color:#555;">/mes</span></div>
+                <ul
+                    style="list-style:none; padding:0; color:#c7c7c7; line-height:1.9; margin-bottom:18px; font-size:0.88rem;">
+                    <li><i class="fas fa-check" style="color:#10b981;"></i> Tokens ilimitados</li>
+                    <li><i class="fas fa-check" style="color:#10b981;"></i> Ads + artes + growth</li>
+                    <li><i class="fas fa-check" style="color:#10b981;"></i> Community manager</li>
                 </ul>
                 <button onclick="purchasePlan('marketing')"
                     style="width:100%; padding:12px; background:#3b82f6; color:#fff; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">
                     Activar Marketing</button>
             </div>
 
-            <!-- PLAN 2: MARKETING + CONSTRUCCIÓN -->
+            <!-- PLAN 3: MARKETING + CONSTRUCCIÓN -->
             <div
-                style="background:#111; border:1px solid #10b981; padding:30px; border-radius:16px; text-align:left; position:relative; box-shadow:0 0 22px rgba(16, 185, 129, 0.2);">
+                style="background:#111; border:1px solid #10b981; padding:26px; border-radius:16px; text-align:left; position:relative; box-shadow:0 0 22px rgba(16, 185, 129, 0.2);">
                 <div
                     style="position:absolute; top:-12px; left:50%; transform:translateX(-50%); background:#10b981; color:#000; padding:2px 10px; border-radius:12px; font-size:0.7rem; font-weight:bold;">
                     RECOMENDADO</div>
+                <div style="width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);">
+                    <i class="fas fa-cube" style="color:#fff;"></i>
+                </div>
                 <h3
-                    style="color:#10b981; font-size:0.9rem; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">
+                    style="color:#10b981; font-size:0.85rem; text-transform:uppercase; letter-spacing:1px; margin:14px 0 8px;">
                     Marketing + Construcción</h3>
-                <div style="font-size:2.6rem; color:#fff; font-weight:bold; margin-bottom:10px;">$397<span
+                <div style="font-size:2.3rem; color:#fff; font-weight:bold; margin-bottom:10px;">$397<span
                         style="font-size:1rem; color:#555;">/mes</span></div>
-                <p style="color:#e5e7eb; line-height:1.6; margin:0 0 18px 0;">
-                    Incluye marketing y construcción web con soporte humano para lanzar y escalar rápido.
-                </p>
                 <ul
-                    style="list-style:none; padding:0; color:#fff; line-height:1.9; margin-bottom:22px; font-size:0.9rem;">
+                    style="list-style:none; padding:0; color:#fff; line-height:1.9; margin-bottom:18px; font-size:0.88rem;">
+                    <li><i class="fas fa-check" style="color:#10b981;"></i> Tokens ilimitados</li>
+                    <li><i class="fas fa-check" style="color:#10b981;"></i> Web + software completo</li>
                     <li><i class="fas fa-check" style="color:#10b981;"></i> Ingeniería humana</li>
-                    <li><i class="fas fa-check" style="color:#10b981;"></i> Web + automatizaciones</li>
-                    <li><i class="fas fa-check" style="color:#10b981;"></i> Marketing completo</li>
                 </ul>
                 <button onclick="purchasePlan('marketing_build')"
                     style="width:100%; padding:12px; background:#10b981; color:#001b12; border:none; border-radius:8px; font-weight:bold; cursor:pointer; box-shadow:0 0 10px rgba(16,185,129,0.4);">
