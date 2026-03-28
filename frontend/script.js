@@ -2078,11 +2078,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const showAlert = options.showAlert !== false;
         const onError = typeof options.onError === 'function' ? options.onError : null;
         try {
-            if (projectLimitReached) {
-                showProjectLimitModal();
-                if (onError) onError('Ya tienes un proyecto activo.');
-                return false;
-            }
             const res = await fetch('/api/create-empty-project', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -2091,9 +2086,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
             if (!res.ok) {
                 const msg = data.error || 'No se pudo crear el proyecto.';
-                if (res.status === 403 || msg.toLowerCase().includes('proyecto')) {
-                    showProjectLimitModal();
-                }
                 if (showAlert) alert(msg);
                 if (onError) onError(msg);
                 return false;
@@ -2186,7 +2178,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const input = document.getElementById('newProjectNameInput');
             const createBtn = document.getElementById('createProjectInlineBtn');
             const limitHint = document.getElementById('projectLimitHint');
-            projectLimitReached = projects.length >= 1;
+            projectLimitReached = false;
 
             if (projects.length === 0) {
                 setWelcomeVisible(true);
@@ -2214,16 +2206,16 @@ document.addEventListener('DOMContentLoaded', () => {
             setWelcomeVisible(false);
 
             if (input) {
-                input.disabled = true;
-                input.placeholder = 'Ya tienes un proyecto activo';
-                input.style.opacity = '0.6';
+                input.disabled = false;
+                input.placeholder = 'Nombre del proyecto';
+                input.style.opacity = '1';
             }
             if (createBtn) {
-                createBtn.disabled = true;
-                createBtn.style.opacity = '0.5';
-                createBtn.style.pointerEvents = 'none';
+                createBtn.disabled = false;
+                createBtn.style.opacity = '1';
+                createBtn.style.pointerEvents = 'auto';
             }
-            if (limitHint) limitHint.style.display = 'block';
+            if (limitHint) limitHint.style.display = 'none';
 
             projects.forEach(project => {
                 const li = document.createElement('li');

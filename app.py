@@ -4552,9 +4552,6 @@ def create_empty_project():
 
         if user_email:
             owners = load_project_owners()
-            owned = [p for p, owner in owners.items() if owner == user_email]
-            if len(owned) >= 1:
-                return jsonify({"error": "Tu cuenta ya tiene un proyecto activo. Elimina el actual para crear otro."}), 403
 
         if os.path.exists(project_path):
             return jsonify({"error": "Ese proyecto ya existe. Usa otro nombre."}), 409
