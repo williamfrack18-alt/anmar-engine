@@ -41,6 +41,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const notifPanel = document.getElementById('notifPanel');
     const notifList = document.getElementById('notifList');
     const notifCloseBtn = document.getElementById('notifCloseBtn');
+    const welcomeScreen = document.getElementById('welcomeScreen');
+    const welcomeType = document.getElementById('welcomeType');
+    const welcomeInput = document.getElementById('welcomeProjectInput');
+    const welcomeStartBtn = document.getElementById('welcomeStartBtn');
 
     // --- Session Management ---
     let currentUser = JSON.parse(localStorage.getItem('currentUser'));
@@ -351,6 +355,9 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
+    // Initialize welcome screen greeting once user is known
+    typeWelcomeText();
+
     if (typeof switchChatTab === 'function') {
         switchChatTab('Human');
     }
@@ -430,6 +437,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let previewLockedByReview = false;
     let subscriptionActive = false;
     let subscriptionPlan = 'none';
+    let welcomeTyped = false;
 
     // Conversation State
     let chatStage = 'initial'; // 'initial', 'refinement', 'ready', 'blueprint', 'building'
@@ -439,6 +447,7 @@ document.addEventListener('DOMContentLoaded', () => {
     checkUserCredits();
     hydrateProfile();
     renderBriefState();
+    initWelcomeScreen();
     (function handleCheckoutReturn() {
         const params = new URLSearchParams(window.location.search);
         const status = params.get('checkout');
@@ -481,6 +490,72 @@ document.addEventListener('DOMContentLoaded', () => {
             modeStrategyBtn.style.border = '1px solid rgba(255,255,255,0.15)';
         }
         renderBriefState();
+    }
+
+    function initWelcomeScreen() {
+        if (!welcomeScreen) return;
+        if (welcomeInput) {
+            welcomeInput.addEventListener('input', () => {
+                const value = (welcomeInput.value || '').trim();
+                if (welcomeStartBtn) welcomeStartBtn.disabled = value.length < 3;
+            });
+            welcomeInput.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    if (welcomeStartBtn && !welcomeStartBtn.disabled) welcomeStartBtn.click();
+                }
+            });
+        }
+        if (welcomeStartBtn) {
+            welcomeStartBtn.addEventListener('click', async () => {
+                const value = (welcomeInput?.value || '').trim();
+                if (value.length < 3) return;
+                if (welcomeScreen) {
+                    welcomeScreen.classList.add('fade-out');
+                }
+                setTimeout(async () => {
+                    await createProjectByName(value);
+                    setWelcomeVisible(false);
+                }, 250);
+            });
+        }
+        setWelcomeVisible(false);
+    }
+
+    function typeWelcomeText() {
+        if (!welcomeType || welcomeTyped) return;
+        welcomeTyped = true;
+        const rawName = (currentUser?.name || '').trim();
+        const displayName = rawName ? rawName.split(' ')[0] : 'arquitecto';
+        const text = `Bienvenido de nuevo, ${displayName} — ¿qué vamos a construir hoy?`;
+        let idx = 0;
+        welcomeType.textContent = '';
+        const tick = () => {
+            if (!welcomeType) return;
+            if (idx <= text.length) {
+                welcomeType.textContent = text.slice(0, idx);
+                idx += 1;
+                setTimeout(tick, 24);
+            } else {
+                welcomeType.innerHTML = `${text}<span class="caret">|</span>`;
+            }
+        };
+        tick();
+    }
+
+    function setWelcomeVisible(show) {
+        if (!welcomeScreen) return;
+        if (show) {
+            welcomeScreen.classList.add('visible');
+            welcomeScreen.classList.remove('fade-out');
+            if (welcomeInput) {
+                welcomeInput.value = '';
+                if (welcomeStartBtn) welcomeStartBtn.disabled = true;
+            }
+            typeWelcomeText();
+        } else {
+            welcomeScreen.classList.remove('visible');
+        }
     }
 
     function setSelectedEngine(engine, logChange = false) {
@@ -1997,6 +2072,7 @@ document.addEventListener('DOMContentLoaded', () => {
             currentProjectName = data.project_name;
             currentTicketProjectId = data.project_id || '';
             chatStage = 'construction_mode';
+            setWelcomeVisible(false);
 
             // Reset and trigger human chat polling 
             lastHumanChatCount = 0;
@@ -2080,6 +2156,7 @@ document.addEventListener('DOMContentLoaded', () => {
             projectLimitReached = projects.length >= 1;
 
             if (projects.length === 0) {
+                setWelcomeVisible(true);
                 projectList.innerHTML = '<li style="padding:0.5rem">No projects found.</li>';
                 if (projectsFolderGrid) {
                     projectsFolderGrid.innerHTML = `
@@ -2101,6 +2178,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (limitHint) limitHint.style.display = 'none';
                 return;
             }
+            setWelcomeVisible(false);
 
             if (input) {
                 input.disabled = true;
@@ -2313,6 +2391,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (humanChatInterval) clearInterval(humanChatInterval);
                     humanChatInterval = setInterval(pollHumanChat, 3000);
                     pollHumanChat();
+                    setWelcomeVisible(false);
                     switchTab('build');
                     addLog(`Proyecto restaurado: ${currentProjectName}`, 'system');
                     return;
@@ -2333,6 +2412,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (humanChatInterval) clearInterval(humanChatInterval);
                 humanChatInterval = setInterval(pollHumanChat, 3000);
                 pollHumanChat();
+                setWelcomeVisible(false);
                 switchTab('build');
                 addLog(`Proyecto restaurado: ${lastProject}`, 'system');
                 return;

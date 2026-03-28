@@ -108,6 +108,168 @@
             pointer-events: none;
         }
 
+        /* --- WELCOME SCREEN --- */
+        .welcome-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 1200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            background: radial-gradient(circle at top, rgba(16, 185, 129, 0.12), rgba(4, 6, 6, 0.92));
+            backdrop-filter: blur(6px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.45s ease;
+        }
+
+        .welcome-screen.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .welcome-screen.fade-out {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .welcome-card {
+            width: min(720px, 92vw);
+            background: rgba(8, 10, 12, 0.72);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 26px;
+            padding: 42px;
+            box-shadow: 0 26px 60px rgba(0, 0, 0, 0.55);
+            position: relative;
+            overflow: hidden;
+            text-align: left;
+        }
+
+        .welcome-auras {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .welcome-auras span {
+            position: absolute;
+            width: 240px;
+            height: 240px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.28), transparent 65%);
+            animation: welcomeFloat 9s ease-in-out infinite;
+            opacity: 0.6;
+        }
+
+        .welcome-auras span:nth-child(1) {
+            top: -60px;
+            right: -80px;
+        }
+
+        .welcome-auras span:nth-child(2) {
+            bottom: -80px;
+            left: -40px;
+            width: 200px;
+            height: 200px;
+            animation-delay: 1.5s;
+        }
+
+        .welcome-auras span:nth-child(3) {
+            top: 40%;
+            left: 55%;
+            width: 160px;
+            height: 160px;
+            animation-delay: 3s;
+        }
+
+        @keyframes welcomeFloat {
+            0%, 100% {
+                transform: translateY(0) translateX(0);
+                opacity: 0.7;
+            }
+            50% {
+                transform: translateY(20px) translateX(-10px);
+                opacity: 0.35;
+            }
+        }
+
+        .welcome-title {
+            position: relative;
+            z-index: 1;
+            font-size: 1.6rem;
+            font-weight: 600;
+            margin: 0 0 0.85rem 0;
+            letter-spacing: -0.4px;
+        }
+
+        .welcome-title .caret {
+            display: inline-block;
+            margin-left: 4px;
+            animation: welcomeBlink 1s steps(2) infinite;
+        }
+
+        @keyframes welcomeBlink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        .welcome-sub {
+            position: relative;
+            z-index: 1;
+            color: rgba(255, 255, 255, 0.65);
+            margin: 0 0 1.5rem 0;
+            font-size: 0.95rem;
+        }
+
+        .welcome-input-wrap {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 18px;
+            padding: 10px 14px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+        }
+
+        .welcome-input-wrap input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        .welcome-input-wrap button {
+            background: #fff;
+            color: #000;
+            border: none;
+            border-radius: 14px;
+            padding: 10px 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .welcome-input-wrap button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .welcome-hint {
+            position: relative;
+            z-index: 1;
+            margin-top: 0.9rem;
+            color: rgba(255, 255, 255, 0.55);
+            font-size: 0.85rem;
+        }
+
         /* --- DASHBOARD LAYOUT --- */
         .app-layout {
             display: flex;
@@ -1001,6 +1163,24 @@
     </div>
     <div class="green-tint"></div>
     <div class="scanlines"></div>
+
+    <!-- WELCOME SCREEN -->
+    <div id="welcomeScreen" class="welcome-screen">
+        <div class="welcome-card">
+            <div class="welcome-auras">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <div id="welcomeType" class="welcome-title"></div>
+            <div class="welcome-sub">Nombra tu primer proyecto para iniciar la construcción.</div>
+            <div class="welcome-input-wrap">
+                <input id="welcomeProjectInput" type="text" placeholder="Name your project..." />
+                <button id="welcomeStartBtn" type="button" disabled>Start Building</button>
+            </div>
+            <div class="welcome-hint">Puedes crear 1 proyecto por cuenta.</div>
+        </div>
+    </div>
 
     <div class="app-layout" style="display:flex; flex-direction:row; padding-top:var(--header-height); height:100vh; overflow:hidden;">
 
