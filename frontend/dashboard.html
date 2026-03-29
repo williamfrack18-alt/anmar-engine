@@ -1118,6 +1118,100 @@
             }
         }
 
+        @media (max-width: 768px) {
+            :root {
+                --header-height: 64px;
+                --tab-font: 0.68rem;
+                --tab-pad: 6px 10px;
+                --textarea-height: 120px;
+            }
+
+            header.global-header {
+                padding: 0 16px;
+            }
+
+            header.global-header .logo {
+                font-size: 1rem;
+            }
+
+            .main-tabs {
+                gap: 6px;
+                overflow-x: auto;
+                white-space: nowrap;
+                padding-bottom: 6px;
+            }
+
+            .main-tabs::-webkit-scrollbar {
+                display: none;
+            }
+
+            aside {
+                display: none !important;
+            }
+
+            .workspace {
+                margin-left: 0 !important;
+                padding: 16px !important;
+            }
+
+            #section-build.section-view.active {
+                grid-template-columns: 1fr !important;
+            }
+
+            .preview-panel {
+                height: 42vh;
+                min-height: 280px;
+            }
+
+            .welcome-card {
+                padding: 28px;
+            }
+
+            .welcome-input-wrap {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .welcome-input-wrap button {
+                width: 100%;
+                justify-content: center;
+            }
+
+            #paywallBanner {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+
+        @media (max-width: 520px) {
+            :root {
+                --header-height: 56px;
+                --tab-font: 0.62rem;
+                --tab-pad: 6px 8px;
+            }
+
+            .workspace {
+                padding: 12px !important;
+            }
+
+            #section-build textarea {
+                font-size: 0.9rem;
+            }
+
+            .terminal-wrapper {
+                padding: 12px;
+            }
+
+            .chat-input-area {
+                padding: 10px;
+            }
+
+            .send-btn {
+                width: 32px;
+                height: 32px;
+            }
+        }
+
         /* Hide duplicated internal branding */
         .console-header .brand-text {
             display: none !important;
@@ -1141,6 +1235,16 @@
             display: flex !important;
             gap: 8px;
             pointer-events: auto;
+        }
+
+        @media (max-width: 768px) {
+            #userTokens {
+                top: auto !important;
+                bottom: 16px !important;
+                right: 16px !important;
+                font-size: 0.7rem !important;
+                padding: 6px 12px !important;
+            }
         }
     </style>
 </head>
