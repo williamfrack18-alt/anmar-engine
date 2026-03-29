@@ -326,6 +326,32 @@
             background: rgba(255, 255, 255, 0.025);
         }
 
+        .terms-check {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin: 0.6rem 0 0.2rem;
+            text-align: left;
+            font-size: 0.78rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .terms-check input[type="checkbox"] {
+            margin-top: 2px;
+            width: 16px;
+            height: 16px;
+            accent-color: #10b981;
+        }
+
+        .terms-check a {
+            color: #22d3ee;
+            text-decoration: none;
+        }
+
+        .terms-check a:hover {
+            text-decoration: underline;
+        }
+
         .card-inner {
             position: relative;
             z-index: 2;
@@ -375,6 +401,14 @@
                 <div class="input-group">
                     <label class="input-label">ACCESS KEY</label>
                     <input type="password" id="password" class="input-field" placeholder="••••••••" required>
+                </div>
+
+                <div class="terms-check" id="termsGroup" style="display:none;">
+                    <input type="checkbox" id="termsAccepted">
+                    <label for="termsAccepted">
+                        Acepto los <a href="terms.html" target="_blank" rel="noopener">Términos y Condiciones</a> de
+                        Anmar Enterprises.
+                    </label>
                 </div>
 
                 <button type="submit" class="login-btn" id="submitBtn">
@@ -433,6 +467,13 @@
             document.getElementById('nameGroup').style.display = mode === 'register' ? 'block' : 'none';
             document.getElementById('name').required = mode === 'register';
             document.getElementById('btnText').textContent = mode === 'register' ? 'Crear Cuenta' : 'Acceder';
+            const termsGroup = document.getElementById('termsGroup');
+            const termsAccepted = document.getElementById('termsAccepted');
+            if (termsGroup && termsAccepted) {
+                termsGroup.style.display = mode === 'register' ? 'flex' : 'none';
+                termsAccepted.required = mode === 'register';
+                if (mode !== 'register') termsAccepted.checked = false;
+            }
             const divider = document.querySelector('.social-divider');
             const socials = document.querySelector('.social-buttons');
             if (divider && socials) {
@@ -447,6 +488,7 @@
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const name = document.getElementById('name').value;
+            const termsAccepted = document.getElementById('termsAccepted')?.checked;
             const btn = document.getElementById('submitBtn');
 
             // UI Loading
@@ -457,7 +499,10 @@
             try {
                 let endpoint = mode === 'register' ? '/register' : '/login';
                 let payload = { email, password };
-                if (mode === 'register') payload.name = name;
+                if (mode === 'register') {
+                    payload.name = name;
+                    payload.termsAccepted = termsAccepted;
+                }
 
                 const res = await fetch(API_URL + endpoint, {
                     method: 'POST',
@@ -520,6 +565,7 @@
 
             const name = externalName || `${provider} User`;
             const email = externalEmail || `${provider.toLowerCase()}@anmarenterprices.com`;
+            const termsAccepted = document.getElementById('termsAccepted')?.checked;
 
             const btn = document.getElementById('submitBtn');
             const el = document.getElementById('statusMsg');
@@ -535,6 +581,7 @@
                     bodyData.email = email;
                     bodyData.name = name;
                 }
+                bodyData.termsAccepted = termsAccepted;
 
                 const res = await fetch(API_URL + '/social-login', {
                     method: 'POST',

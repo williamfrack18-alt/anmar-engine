@@ -595,9 +595,12 @@ def register():
     name = data.get('name')
     email = data.get('email')
     password = data.get('password')
+    terms_accepted = data.get('termsAccepted')
 
     if not email or not password:
         return jsonify({"error": "Faltan datos"}), 400
+    if not terms_accepted:
+        return jsonify({"error": "Debes aceptar los Términos y Condiciones para registrarte."}), 400
 
     hashed_pw = generate_password_hash(password)
 
@@ -642,6 +645,7 @@ def social_login():
     token = data.get('token')
     email = data.get('email')
     name = data.get('name')
+    terms_accepted = data.get('termsAccepted')
 
     if provider == 'Google':
         if not token:
@@ -669,6 +673,9 @@ def social_login():
     user = conn.execute('SELECT * FROM users WHERE email = ?', (email,)).fetchone()
 
     if not user:
+        if not terms_accepted:
+            conn.close()
+            return jsonify({"error": "Debes aceptar los Términos y Condiciones para crear tu cuenta."}), 400
         # User doesn't exist, create automatically using social info
         import secrets
         random_password = secrets.token_urlsafe(16)  # Generate a long placeholder password
