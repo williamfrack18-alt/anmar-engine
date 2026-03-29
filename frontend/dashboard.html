@@ -1845,10 +1845,15 @@
 </script>
 
 <!-- MAIN LOGIC (Preserving original file) -->
-<script src="script.js?v=22"></script>
 <script>
-    // Fallbacks in case main script fails to boot
-    (function () {
+    // Pre-fallback: define a safe recovery that works even if script.js crashes
+    window.__applyDashboardFallback = function () {
+        try {
+            document.body.classList.remove('welcome-mode');
+            const welcome = document.getElementById('welcomeScreen');
+            if (welcome) welcome.classList.remove('visible');
+        } catch (e) {}
+
         function safeSwitchTab(tab) {
             const sec = document.getElementById(`section-${tab}`);
             if (!sec) return;
@@ -1862,46 +1867,59 @@
             if (nav) nav.classList.add('active');
         }
 
-        if (typeof window.switchTab !== 'function') {
-            window.switchTab = safeSwitchTab;
-        }
+        window.switchTab = safeSwitchTab;
 
-        if (typeof window.createProjectFromInput !== 'function') {
-            window.createProjectFromInput = async function () {
-                const input = document.getElementById('newProjectNameInput');
-                const name = (input?.value || '').trim();
-                if (!name) {
-                    alert('Escribe un nombre para el proyecto.');
+        window.createProjectFromInput = async function () {
+            const input = document.getElementById('newProjectNameInput');
+            const name = (input?.value || '').trim();
+            if (!name) {
+                alert('Escribe un nombre para el proyecto.');
+                return;
+            }
+            let email = '';
+            try {
+                const raw = localStorage.getItem('currentUser');
+                const user = raw ? JSON.parse(raw) : null;
+                email = user?.email || '';
+            } catch (e) { }
+
+            try {
+                const res = await fetch('/api/create-empty-project', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ project_name: name, user_email: email })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    alert(data.error || 'No se pudo crear el proyecto.');
                     return;
                 }
-                let email = '';
-                try {
-                    const raw = localStorage.getItem('currentUser');
-                    const user = raw ? JSON.parse(raw) : null;
-                    email = user?.email || '';
-                } catch (e) { }
-
-                try {
-                    const res = await fetch('/api/create-empty-project', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ project_name: name, user_email: email })
-                    });
-                    const data = await res.json();
-                    if (!res.ok) {
-                        alert(data.error || 'No se pudo crear el proyecto.');
-                        return;
-                    }
-                    if (email) {
-                        localStorage.setItem(`anmar:last_project:${email.toLowerCase()}`, data.project_name);
-                    }
-                    safeSwitchTab('build');
-                } catch (e) {
-                    alert('Error de conexión creando proyecto.');
+                if (email) {
+                    localStorage.setItem(`anmar:last_project:${email.toLowerCase()}`, data.project_name);
                 }
+                safeSwitchTab('build');
+            } catch (e) {
+                alert('Error de conexión creando proyecto.');
             }
+        };
+
+        const chatInput = document.getElementById('businessIdea');
+        const sendBtn = document.getElementById('generateBtn');
+        if (chatInput) chatInput.disabled = false;
+        if (sendBtn) sendBtn.disabled = false;
+    };
+
+    window.addEventListener('error', () => window.__applyDashboardFallback());
+    window.addEventListener('unhandledrejection', () => window.__applyDashboardFallback());
+</script>
+<script src="script.js?v=23"></script>
+<script>
+    // Post-fallback: ensure functions exist after main load
+    document.addEventListener('DOMContentLoaded', () => {
+        if (typeof window.switchTab !== 'function' || typeof window.createProjectFromInput !== 'function') {
+            window.__applyDashboardFallback();
         }
-    })();
+    });
 </script>
 </body>
 
