@@ -357,22 +357,23 @@
         .ai-console {
             flex: 1;
             /* Takes 50% or so */
-            background: rgba(6, 6, 6, 0.68);
-            backdrop-filter: blur(25px);
+            background: rgba(8, 10, 12, 0.72);
+            backdrop-filter: blur(22px);
             border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 18px;
+            border-radius: 26px;
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            box-shadow: 0 14px 46px rgba(0, 0, 0, 0.55);
+            box-shadow: 0 26px 60px rgba(0, 0, 0, 0.55);
         }
 
         .console-header {
-            padding: 1.5rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1.3rem 1.6rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            background: linear-gradient(180deg, rgba(12, 16, 16, 0.65), rgba(8, 10, 12, 0.4));
         }
 
         .brand-text {
@@ -418,7 +419,7 @@
         /* Terminal/Chat Logic Match */
         .terminal-wrapper {
             flex-grow: 1;
-            padding: 1.6rem;
+            padding: 1.7rem;
             overflow-y: auto;
             /* Change base font to clean sans-serif like Gemini */
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
@@ -427,6 +428,7 @@
             display: flex;
             flex-direction: column;
             gap: 1.5rem;
+            background: radial-gradient(circle at top left, rgba(16, 185, 129, 0.05), transparent 45%);
         }
 
         /* Chat Bubbles Style */
@@ -579,16 +581,16 @@
 
         /* Input Area */
         .chat-input-area {
-            padding: 1.2rem 1.4rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            background: rgba(6, 6, 6, 0.65);
+            padding: 1.2rem 1.4rem 1.4rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(8, 10, 12, 0.6);
         }
 
         .input-glass {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            padding: 0.5rem;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 18px;
+            padding: 0.7rem;
             display: flex;
             flex-direction: column;
             gap: 0.5rem;
@@ -604,6 +606,23 @@
             outline: none;
             resize: none;
             height: 72px;
+        }
+
+        .glass-panel {
+            background: rgba(8, 10, 12, 0.72);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 26px;
+            padding: 36px;
+            box-shadow: 0 26px 60px rgba(0, 0, 0, 0.55);
+        }
+
+        .glass-panel h2 {
+            font-size: 1.35rem;
+            margin: 0;
+        }
+
+        .glass-panel p {
+            color: rgba(255, 255, 255, 0.72);
         }
 
         textarea::placeholder {
@@ -1580,8 +1599,7 @@
             <!-- SECTION 2: PROYECTOS -->
             <div id="section-projects" class="section-view active"
                 style="padding:40px; color:#fff; flex-direction:column; align-items:center; justify-content:center; height:100%;">
-                <div
-                    style="background:rgba(10, 12, 14, 0.75); border:1px solid rgba(59, 130, 246, 0.25); padding:36px; border-radius:20px; text-align:left; width:min(980px,92vw); box-shadow:0 22px 48px rgba(0,0,0,0.45);">
+                <div class="glass-panel" style="width:min(980px,92vw); text-align:left;">
                     <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
                         <i class="fas fa-folder-tree" style="font-size:1.4rem; color:#3b82f6;"></i>
                         <h2 style="color:#fff; margin:0;">Proyectos</h2>
