@@ -1195,7 +1195,7 @@
     <div class="scanlines"></div>
 
     <!-- WELCOME SCREEN -->
-    <div id="welcomeScreen" class="welcome-screen">
+    <div id="welcomeScreen" class="welcome-screen visible">
         <div class="welcome-card">
             <div class="welcome-auras">
                 <span></span>
@@ -1848,12 +1848,6 @@
 <script>
     // Pre-fallback: define a safe recovery that works even if script.js crashes
     window.__applyDashboardFallback = function () {
-        try {
-            document.body.classList.remove('welcome-mode');
-            const welcome = document.getElementById('welcomeScreen');
-            if (welcome) welcome.classList.remove('visible');
-        } catch (e) {}
-
         function safeSwitchTab(tab) {
             const sec = document.getElementById(`section-${tab}`);
             if (!sec) return;
@@ -1869,13 +1863,7 @@
 
         window.switchTab = safeSwitchTab;
 
-        window.createProjectFromInput = async function () {
-            const input = document.getElementById('newProjectNameInput');
-            const name = (input?.value || '').trim();
-            if (!name) {
-                alert('Escribe un nombre para el proyecto.');
-                return;
-            }
+        async function createProjectByNameFallback(name) {
             let email = '';
             try {
                 const raw = localStorage.getItem('currentUser');
@@ -1883,25 +1871,61 @@
                 email = user?.email || '';
             } catch (e) { }
 
+            const res = await fetch('/api/create-empty-project', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ project_name: name, user_email: email })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'No se pudo crear el proyecto.');
+            if (email) {
+                localStorage.setItem(`anmar:last_project:${email.toLowerCase()}`, data.project_name);
+            }
+            return data.project_name;
+        }
+
+        window.createProjectFromInput = async function () {
+            const input = document.getElementById('newProjectNameInput');
+            const name = (input?.value || '').trim();
+            if (!name) {
+                alert('Escribe un nombre para el proyecto.');
+                return;
+            }
             try {
-                const res = await fetch('/api/create-empty-project', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ project_name: name, user_email: email })
-                });
-                const data = await res.json();
-                if (!res.ok) {
-                    alert(data.error || 'No se pudo crear el proyecto.');
-                    return;
-                }
-                if (email) {
-                    localStorage.setItem(`anmar:last_project:${email.toLowerCase()}`, data.project_name);
-                }
+                await createProjectByNameFallback(name);
                 safeSwitchTab('build');
             } catch (e) {
-                alert('Error de conexión creando proyecto.');
+                alert(e.message || 'Error de conexión creando proyecto.');
             }
         };
+
+        const welcomeBtn = document.getElementById('welcomeStartBtn');
+        if (welcomeBtn) {
+            welcomeBtn.onclick = async () => {
+                const input = document.getElementById('welcomeProjectInput');
+                const name = (input?.value || '').trim();
+                if (!name) {
+                    alert('Escribe un nombre para el proyecto.');
+                    return;
+                }
+                try {
+                    await createProjectByNameFallback(name);
+                    const welcome = document.getElementById('welcomeScreen');
+                    if (welcome) welcome.classList.remove('visible');
+                    safeSwitchTab('build');
+                } catch (e) {
+                    alert(e.message || 'Error de conexión creando proyecto.');
+                }
+            };
+        }
+
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.onclick = () => {
+                localStorage.removeItem('currentUser');
+                window.location.href = 'login.html';
+            };
+        }
 
         const chatInput = document.getElementById('businessIdea');
         const sendBtn = document.getElementById('generateBtn');
@@ -1912,11 +1936,11 @@
     window.addEventListener('error', () => window.__applyDashboardFallback());
     window.addEventListener('unhandledrejection', () => window.__applyDashboardFallback());
 </script>
-<script src="script.js?v=23"></script>
+<script src="script.js?v=24"></script>
 <script>
     // Post-fallback: ensure functions exist after main load
-    document.addEventListener('DOMContentLoaded', () => {
-        if (typeof window.switchTab !== 'function' || typeof window.createProjectFromInput !== 'function') {
+    window.addEventListener('load', () => {
+        if (!window.__mainScriptOk || typeof window.switchTab !== 'function' || typeof window.createProjectFromInput !== 'function') {
             window.__applyDashboardFallback();
         }
     });
