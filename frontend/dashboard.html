@@ -1401,6 +1401,17 @@
                             <div id="humanChatContent" style="display:flex; flex-direction:column; gap:8px;"></div>
                         </div>
 
+                        <div id="paywallBanner"
+                            style="display:none; margin:10px 0 14px 0; padding:12px 14px; border-radius:12px; border:1px solid rgba(251,191,36,0.35); background:rgba(251,191,36,0.08); color:#fde68a; font-size:0.85rem; align-items:center; justify-content:space-between; gap:12px;">
+                            <div>
+                                <strong>Activa tu plan</strong> para habilitar el chat con ingenieros.
+                            </div>
+                            <button id="paywallBtn"
+                                style="background:#fbbf24; color:#111; border:none; padding:8px 14px; border-radius:10px; font-weight:700; cursor:pointer;">
+                                Ver planes
+                            </button>
+                        </div>
+
                         <!-- Input Area -->
                         <div class="chat-input-area">
                             <div class="input-glass">
@@ -1983,7 +1994,7 @@
     window.addEventListener('error', () => window.__applyDashboardFallback());
     window.addEventListener('unhandledrejection', () => window.__applyDashboardFallback());
 </script>
-<script src="script.js?v=27"></script>
+<script src="script.js?v=28"></script>
 <script>
     // Post-fallback: ensure functions exist after main load
     window.addEventListener('load', () => {

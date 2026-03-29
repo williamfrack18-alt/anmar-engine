@@ -42,6 +42,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const notifPanel = document.getElementById('notifPanel');
     const notifList = document.getElementById('notifList');
     const notifCloseBtn = document.getElementById('notifCloseBtn');
+    const paywallBanner = document.getElementById('paywallBanner');
+    const paywallBtn = document.getElementById('paywallBtn');
     const welcomeScreen = document.getElementById('welcomeScreen');
     const welcomeType = document.getElementById('welcomeType');
     const welcomeInput = document.getElementById('welcomeProjectInput');
@@ -413,9 +415,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!subscriptionActive && showMessage) {
                     addLog("🔒 Para chatear con el equipo necesitas activar un plan.", "system");
                 }
+                updatePaywallBanner();
             }
         } catch (e) {
             console.error("Auth Error", e);
+        }
+    }
+
+    function updatePaywallBanner() {
+        if (!paywallBanner) return;
+        if (subscriptionActive) {
+            paywallBanner.style.display = 'none';
+        } else {
+            paywallBanner.style.display = 'flex';
         }
     }
 
@@ -430,6 +442,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const modal = document.getElementById('pricing-modal');
         if (modal) modal.style.display = 'flex';
         return false;
+    }
+
+    if (paywallBtn) {
+        paywallBtn.addEventListener('click', () => {
+            const modal = document.getElementById('pricing-modal');
+            if (modal) modal.style.display = 'flex';
+        });
     }
 
     // State
@@ -2163,6 +2182,11 @@ document.addEventListener('DOMContentLoaded', () => {
             addLog(`Proyecto creado: ${currentProjectName}. Inicia la conversación estratégica en el chat.`, 'system');
             await loadProjects();
             switchTab('build');
+            updatePaywallBanner();
+            if (!subscriptionActive) {
+                const modal = document.getElementById('pricing-modal');
+                if (modal) modal.style.display = 'flex';
+            }
             return true;
         } catch (e) {
             console.error(e);
