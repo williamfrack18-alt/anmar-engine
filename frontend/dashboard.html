@@ -1848,6 +1848,9 @@
 <script>
     // Pre-fallback: define a safe recovery that works even if script.js crashes
     window.__applyDashboardFallback = function () {
+        try {
+            document.body.classList.add('welcome-mode');
+        } catch (e) {}
         function safeSwitchTab(tab) {
             const sec = document.getElementById(`section-${tab}`);
             if (!sec) return;
@@ -1900,10 +1903,15 @@
         };
 
         const welcomeBtn = document.getElementById('welcomeStartBtn');
-        if (welcomeBtn) {
+        const welcomeInput = document.getElementById('welcomeProjectInput');
+        if (welcomeBtn && welcomeInput) {
+            const toggle = () => {
+                welcomeBtn.disabled = welcomeInput.value.trim().length < 1;
+            };
+            toggle();
+            welcomeInput.oninput = toggle;
             welcomeBtn.onclick = async () => {
-                const input = document.getElementById('welcomeProjectInput');
-                const name = (input?.value || '').trim();
+                const name = (welcomeInput.value || '').trim();
                 if (!name) {
                     alert('Escribe un nombre para el proyecto.');
                     return;
@@ -1912,10 +1920,21 @@
                     await createProjectByNameFallback(name);
                     const welcome = document.getElementById('welcomeScreen');
                     if (welcome) welcome.classList.remove('visible');
+                    document.body.classList.remove('welcome-mode');
                     safeSwitchTab('build');
                 } catch (e) {
                     alert(e.message || 'Error de conexión creando proyecto.');
                 }
+            };
+        }
+
+        const welcomeClose = document.getElementById('welcomeCloseBtn');
+        if (welcomeClose) {
+            welcomeClose.onclick = () => {
+                const welcome = document.getElementById('welcomeScreen');
+                if (welcome) welcome.classList.remove('visible');
+                document.body.classList.remove('welcome-mode');
+                safeSwitchTab('projects');
             };
         }
 
@@ -1936,7 +1955,7 @@
     window.addEventListener('error', () => window.__applyDashboardFallback());
     window.addEventListener('unhandledrejection', () => window.__applyDashboardFallback());
 </script>
-<script src="script.js?v=24"></script>
+<script src="script.js?v=25"></script>
 <script>
     // Post-fallback: ensure functions exist after main load
     window.addEventListener('load', () => {

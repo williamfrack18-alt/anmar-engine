@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
+    try {
     // START FOCUS MODE
     document.body.classList.add('zen-mode');
 
@@ -2776,4 +2777,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     window.__mainScriptOk = true;
+    } catch (e) {
+        console.error('Dashboard boot error:', e);
+        if (window.__applyDashboardFallback) {
+            window.__applyDashboardFallback();
+        }
+    }
 });
