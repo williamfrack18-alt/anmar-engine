@@ -3113,6 +3113,7 @@ def get_internal_order_history():
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 HUMAN_CHATS_FILE = os.path.join(BASE_DIR, 'backend', 'human_chats.json')
 PROJECT_OWNERS_FILE = os.path.join(BASE_DIR, 'backend', 'project_owners.json')
+PROJECT_META_FILE = os.path.join(BASE_DIR, 'backend', 'project_meta.json')
 INTERNAL_USERS_FILE = os.path.join(BASE_DIR, 'backend', 'internal_users.json')
 
 def load_project_owners():
@@ -3132,6 +3133,24 @@ def save_project_owners(data):
             json.dump(data, f, indent=2)
     except Exception as e:
         print(f"Error saving project owners: {e}")
+
+def load_project_meta():
+    if not os.path.exists(PROJECT_META_FILE):
+        return {}
+    try:
+        with open(PROJECT_META_FILE, 'r') as f:
+            data = json.load(f)
+            return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+def save_project_meta(data):
+    try:
+        os.makedirs(os.path.dirname(PROJECT_META_FILE), exist_ok=True)
+        with open(PROJECT_META_FILE, 'w') as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+    except Exception as e:
+        print(f"Error saving project meta: {e}")
 
 def load_internal_users():
     if not os.path.exists(INTERNAL_USERS_FILE):
@@ -4503,6 +4522,22 @@ def list_projects():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/projects-meta', methods=['GET'])
+def projects_meta():
+    try:
+        email = str(request.args.get('email') or '').strip().lower()
+        meta = load_project_meta()
+        if not email:
+            return jsonify(meta)
+        owners = load_project_owners()
+        filtered = {}
+        for project, owner in owners.items():
+            if owner == email and project in meta:
+                filtered[project] = meta.get(project)
+        return jsonify(filtered)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/delete-project', methods=['POST'])
 def delete_project():
     try:
@@ -4526,6 +4561,10 @@ def delete_project():
                 if owners.get(project_name) == user_email:
                     owners.pop(project_name, None)
                     save_project_owners(owners)
+            meta = load_project_meta()
+            if project_name in meta:
+                meta.pop(project_name, None)
+                save_project_meta(meta)
             return jsonify({"message": "Deleted", "project_name": project_name})
         return jsonify({"error": "Not found"}), 404
     except Exception as e:
@@ -4547,6 +4586,7 @@ def create_empty_project():
         data = request.json or {}
         raw_name = data.get('project_name', '')
         user_email = str(data.get('user_email') or '').strip().lower()
+        phone = str(data.get('phone') or '').strip()
         project_name = sanitize_project_name(raw_name)
         project_path = os.path.join(projects_base_dir, project_name)
 
@@ -4557,6 +4597,14 @@ def create_empty_project():
             return jsonify({"error": "Ese proyecto ya existe. Usa otro nombre."}), 409
 
         os.makedirs(project_path, exist_ok=True)
+        # Save metadata (phone, owner)
+        meta = load_project_meta()
+        meta[project_name] = {
+            "phone": phone,
+            "owner": user_email,
+            "created_at": datetime.utcnow().isoformat()
+        }
+        save_project_meta(meta)
         starter_html = f"""<!DOCTYPE html>
 <html lang="es">
 <head>

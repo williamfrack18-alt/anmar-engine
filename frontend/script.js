@@ -46,8 +46,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const welcomeType = document.getElementById('welcomeType');
     const welcomeInput = document.getElementById('welcomeProjectInput');
     const welcomeStartBtn = document.getElementById('welcomeStartBtn');
+    const welcomePhoneStep = document.getElementById('welcomePhoneStep');
+    const welcomePhoneInput = document.getElementById('welcomePhoneInput');
+    const welcomePhoneBtn = document.getElementById('welcomePhoneBtn');
     const welcomeStatus = document.getElementById('welcomeStatus');
     const welcomeCloseBtn = document.getElementById('welcomeCloseBtn');
+    const newProjectPhoneInput = document.getElementById('newProjectPhoneInput');
 
     // --- Session Management ---
     let currentUser = null;
@@ -514,6 +518,40 @@ document.addEventListener('DOMContentLoaded', () => {
                 switchTab('projects');
             });
         }
+        if (welcomePhoneBtn) {
+            welcomePhoneBtn.addEventListener('click', async () => {
+                const name = (welcomeInput?.value || '').trim();
+                const phone = (welcomePhoneInput?.value || '').trim();
+                if (!name) {
+                    if (welcomeStatus) welcomeStatus.textContent = 'Escribe el nombre del proyecto.';
+                    return;
+                }
+                if (!phone) {
+                    if (welcomeStatus) welcomeStatus.textContent = 'Escribe tu número de teléfono.';
+                    return;
+                }
+                welcomePhoneBtn.disabled = true;
+                const originalLabel = welcomePhoneBtn.textContent;
+                welcomePhoneBtn.textContent = 'Creando...';
+                const created = await createProjectByName(name, {
+                    showAlert: false,
+                    phone,
+                    onError: (msg) => {
+                        if (welcomeStatus) welcomeStatus.textContent = msg || 'No se pudo crear el proyecto.';
+                    }
+                });
+                if (created) {
+                    forceWelcome = false;
+                    if (welcomeScreen) welcomeScreen.classList.add('fade-out');
+                    setTimeout(() => {
+                        setWelcomeVisible(false);
+                    }, 250);
+                } else {
+                    welcomePhoneBtn.disabled = false;
+                    welcomePhoneBtn.textContent = originalLabel;
+                }
+            });
+        }
         if (welcomeInput) {
             welcomeInput.addEventListener('input', () => {
                 const value = (welcomeInput.value || '').trim();
@@ -534,24 +572,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (welcomeStatus) welcomeStatus.textContent = 'Escribe un nombre para el proyecto.';
                     return;
                 }
-                welcomeStartBtn.disabled = true;
-                const originalLabel = welcomeStartBtn.textContent;
-                welcomeStartBtn.textContent = 'Creando...';
-                const created = await createProjectByName(value, {
-                    showAlert: false,
-                    onError: (msg) => {
-                        if (welcomeStatus) welcomeStatus.textContent = msg || 'No se pudo crear el proyecto.';
-                    }
-                });
-                if (created) {
-                    forceWelcome = false;
-                    if (welcomeScreen) welcomeScreen.classList.add('fade-out');
-                    setTimeout(() => {
-                        setWelcomeVisible(false);
-                    }, 250);
-                } else {
-                    welcomeStartBtn.disabled = false;
-                    welcomeStartBtn.textContent = originalLabel;
+                if (welcomePhoneStep) {
+                    welcomePhoneStep.style.display = 'flex';
+                }
+                if (welcomePhoneInput) {
+                    welcomePhoneInput.focus();
                 }
             });
         }
@@ -589,19 +614,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function setWelcomeVisible(show) {
         if (!welcomeScreen) return;
-        if (show) {
-            welcomeScreen.classList.add('visible');
-            welcomeScreen.classList.remove('fade-out');
-            document.body.classList.add('welcome-mode');
-            if (welcomeInput) {
-                welcomeInput.value = '';
-                if (welcomeStartBtn) welcomeStartBtn.disabled = true;
+            if (show) {
+                welcomeScreen.classList.add('visible');
+                welcomeScreen.classList.remove('fade-out');
+                document.body.classList.add('welcome-mode');
+                if (welcomeInput) {
+                    welcomeInput.value = '';
+                    if (welcomeStartBtn) welcomeStartBtn.disabled = true;
+                }
+                if (welcomePhoneInput) {
+                    welcomePhoneInput.value = '';
+                }
+                if (welcomePhoneStep) {
+                    welcomePhoneStep.style.display = 'none';
+                }
+                typeWelcomeText();
+            } else {
+                welcomeScreen.classList.remove('visible');
+                document.body.classList.remove('welcome-mode');
             }
-            typeWelcomeText();
-        } else {
-            welcomeScreen.classList.remove('visible');
-            document.body.classList.remove('welcome-mode');
-        }
     }
 
     function setSelectedEngine(engine, logChange = false) {
@@ -2102,11 +2133,12 @@ document.addEventListener('DOMContentLoaded', () => {
     async function createProjectByName(name, options = {}) {
         const showAlert = options.showAlert !== false;
         const onError = typeof options.onError === 'function' ? options.onError : null;
+        const phone = (options.phone || '').trim();
         try {
             const res = await fetch('/api/create-empty-project', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ project_name: name, user_email: currentUser?.email || '' })
+                body: JSON.stringify({ project_name: name, user_email: currentUser?.email || '', phone })
             });
             const data = await res.json();
             if (!res.ok) {
@@ -2149,14 +2181,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.createProjectFromInput = async function () {
         const input = document.getElementById('newProjectNameInput');
+        const phoneInput = document.getElementById('newProjectPhoneInput');
         if (!input) return;
         const value = (input.value || '').trim();
+        const phone = (phoneInput?.value || '').trim();
         if (!value) {
             input.focus();
             return;
         }
-        await createProjectByName(value);
+        if (!phone) {
+            if (phoneInput) phoneInput.focus();
+            alert('Por favor escribe tu número de teléfono.');
+            return;
+        }
+        await createProjectByName(value, { phone });
         input.value = '';
+        if (phoneInput) phoneInput.value = '';
     }
 
     window.deleteAllProjects = async function () {
@@ -2197,6 +2237,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const emailQuery = currentUser?.email ? `?email=${encodeURIComponent(currentUser.email)}` : '';
             const response = await fetch(`/list-projects${emailQuery}`); // FIXED PORT
             const projects = await response.json();
+            let projectMeta = {};
+            try {
+                const metaRes = await fetch(`/api/projects-meta${emailQuery}`);
+                projectMeta = await metaRes.json();
+            } catch (e) {
+                projectMeta = {};
+            }
 
             projectList.innerHTML = '';
             if (projectsFolderGrid) projectsFolderGrid.innerHTML = '';
@@ -2243,12 +2290,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (limitHint) limitHint.style.display = 'none';
 
             projects.forEach(project => {
+                const meta = projectMeta && projectMeta[project] ? projectMeta[project] : {};
+                const phoneLabel = meta && meta.phone ? `📞 ${meta.phone}` : '';
                 const li = document.createElement('li');
                 li.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.1);';
 
                 // Project Name Clickable Area
                 const nameSpan = document.createElement('span');
-                nameSpan.innerHTML = `<i class="fas fa-folder" style="margin-right:8px; color:#3b82f6;"></i> ${project}`;
+                nameSpan.innerHTML = `<i class="fas fa-folder" style="margin-right:8px; color:#3b82f6;"></i> ${project} ${phoneLabel ? `<span style="margin-left:8px; font-size:0.75rem; opacity:0.7;">${phoneLabel}</span>` : ''}`;
                 nameSpan.style.flexGrow = '1';
                 nameSpan.onclick = async () => {
                     currentProjectName = project;
@@ -2320,7 +2369,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 ${escapeHtml(project)}
                             </strong>
                         </div>
-                        <div style="opacity:0.65; font-size:0.8rem; overflow-wrap:anywhere;">Abrir previsualizacion y continuar ajustes.</div>
+                        <div style="opacity:0.65; font-size:0.8rem; overflow-wrap:anywhere;">${phoneLabel || 'Sin teléfono registrado'} · Abrir previsualización y continuar ajustes.</div>
                     `;
                     card.onmouseenter = () => {
                         card.style.transform = 'translateY(-1px)';

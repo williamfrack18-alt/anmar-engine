@@ -1204,12 +1204,16 @@
             </div>
             <button id="welcomeCloseBtn" class="welcome-close" title="Entrar sin proyecto">✕</button>
             <div id="welcomeType" class="welcome-title"></div>
-            <div class="welcome-sub">Nombra tu primer proyecto para iniciar la construcción.</div>
+            <div class="welcome-sub">Paso 1: Nombre del proyecto.</div>
             <div class="welcome-input-wrap">
-                <input id="welcomeProjectInput" type="text" placeholder="Name your project..." />
-                <button id="welcomeStartBtn" type="button" disabled>Start Building</button>
+                <input id="welcomeProjectInput" type="text" placeholder="Nombre del proyecto..." />
+                <button id="welcomeStartBtn" type="button" disabled>Continuar</button>
             </div>
-            <div class="welcome-hint">Puedes crear varios proyectos por cuenta.</div>
+            <div id="welcomePhoneStep" class="welcome-input-wrap" style="display:none; margin-top:12px;">
+                <input id="welcomePhoneInput" type="tel" placeholder="Número de teléfono..." />
+                <button id="welcomePhoneBtn" type="button">Crear proyecto</button>
+            </div>
+            <div class="welcome-hint">Usaremos tu teléfono para coordinar el inicio del proyecto.</div>
             <div id="welcomeStatus" class="welcome-hint" style="color:#fca5a5; min-height:18px;"></div>
         </div>
     </div>
@@ -1471,16 +1475,19 @@
                         Crea tu proyecto (la carpeta principal) y automáticamente pasas a Construcción.
                     </p>
 
-                    <div style="display:flex; gap:12px; align-items:center; margin: 16px 0 8px 0; flex-wrap:wrap;">
-                        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; width:100%;">
-                            <input id="newProjectNameInput" type="text" placeholder="Nombre del proyecto"
-                                style="flex:1; min-width:240px; background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.2); color:#fff; padding:12px 14px; border-radius:12px; outline:none; font-size:0.95rem;">
+                    <div style="display:flex; flex-direction:column; gap:10px; margin: 16px 0 8px 0;">
+                        <div class="welcome-input-wrap" style="margin:0;">
+                            <input id="newProjectNameInput" type="text" placeholder="Nombre del proyecto..." />
                             <button id="createProjectInlineBtn" onclick="createProjectFromInput()"
                                 style="background:#3b82f6; color:#fff; border:none; padding:12px 18px; border-radius:12px; cursor:pointer; font-weight:700; box-shadow:0 12px 26px rgba(59,130,246,0.35);">
-                                <i class="fas fa-plus"></i> Crear Proyecto
+                                Crear
                             </button>
                         </div>
-                        <span style="font-size:0.85rem; opacity:0.6;">Escribe el nombre y te llevamos directo al chat.</span>
+                        <div class="welcome-input-wrap" style="margin:0;">
+                            <input id="newProjectPhoneInput" type="tel" placeholder="Número de teléfono..." />
+                            <button type="button" style="opacity:0.6; cursor:default;" disabled>Teléfono</button>
+                        </div>
+                        <span style="font-size:0.85rem; opacity:0.6;">Primero el nombre, luego tu teléfono para coordinar el inicio.</span>
                     </div>
                     <div id="projectLimitHint"
                         style="display:none; font-size:0.82rem; color:#93c5fd; opacity:0.85; margin-bottom:12px;">
@@ -1866,7 +1873,7 @@
 
         window.switchTab = safeSwitchTab;
 
-        async function createProjectByNameFallback(name) {
+        async function createProjectByNameFallback(name, phone) {
             let email = '';
             try {
                 const raw = localStorage.getItem('currentUser');
@@ -1877,7 +1884,7 @@
             const res = await fetch('/api/create-empty-project', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ project_name: name, user_email: email })
+                body: JSON.stringify({ project_name: name, user_email: email, phone: phone || '' })
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'No se pudo crear el proyecto.');
@@ -1889,13 +1896,19 @@
 
         window.createProjectFromInput = async function () {
             const input = document.getElementById('newProjectNameInput');
+            const phoneInput = document.getElementById('newProjectPhoneInput');
             const name = (input?.value || '').trim();
+            const phone = (phoneInput?.value || '').trim();
             if (!name) {
                 alert('Escribe un nombre para el proyecto.');
                 return;
             }
+            if (!phone) {
+                alert('Escribe tu número de teléfono.');
+                return;
+            }
             try {
-                await createProjectByNameFallback(name);
+                await createProjectByNameFallback(name, phone);
                 safeSwitchTab('build');
             } catch (e) {
                 alert(e.message || 'Error de conexión creando proyecto.');
@@ -1904,20 +1917,34 @@
 
         const welcomeBtn = document.getElementById('welcomeStartBtn');
         const welcomeInput = document.getElementById('welcomeProjectInput');
+        const welcomePhoneStep = document.getElementById('welcomePhoneStep');
+        const welcomePhoneInput = document.getElementById('welcomePhoneInput');
+        const welcomePhoneBtn = document.getElementById('welcomePhoneBtn');
         if (welcomeBtn && welcomeInput) {
             const toggle = () => {
                 welcomeBtn.disabled = welcomeInput.value.trim().length < 1;
             };
             toggle();
             welcomeInput.oninput = toggle;
-            welcomeBtn.onclick = async () => {
+            welcomeBtn.onclick = () => {
+                if (welcomePhoneStep) welcomePhoneStep.style.display = 'flex';
+                if (welcomePhoneInput) welcomePhoneInput.focus();
+            };
+        }
+        if (welcomePhoneBtn && welcomePhoneInput && welcomeInput) {
+            welcomePhoneBtn.onclick = async () => {
                 const name = (welcomeInput.value || '').trim();
+                const phone = (welcomePhoneInput.value || '').trim();
                 if (!name) {
                     alert('Escribe un nombre para el proyecto.');
                     return;
                 }
+                if (!phone) {
+                    alert('Escribe tu número de teléfono.');
+                    return;
+                }
                 try {
-                    await createProjectByNameFallback(name);
+                    await createProjectByNameFallback(name, phone);
                     const welcome = document.getElementById('welcomeScreen');
                     if (welcome) welcome.classList.remove('visible');
                     document.body.classList.remove('welcome-mode');
@@ -1955,7 +1982,7 @@
     window.addEventListener('error', () => window.__applyDashboardFallback());
     window.addEventListener('unhandledrejection', () => window.__applyDashboardFallback());
 </script>
-<script src="script.js?v=25"></script>
+<script src="script.js?v=26"></script>
 <script>
     // Post-fallback: ensure functions exist after main load
     window.addEventListener('load', () => {
