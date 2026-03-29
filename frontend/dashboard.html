@@ -960,6 +960,14 @@
             display: block;
         }
 
+        body.welcome-mode header.global-header,
+        body.welcome-mode aside,
+        body.welcome-mode .workspace {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
         /* Adjust Layout for Fixed Header */
         aside {
             top: var(--header-height) !important;
@@ -1837,7 +1845,7 @@
 </script>
 
 <!-- MAIN LOGIC (Preserving original file) -->
-<script src="script.js?v=21"></script>
+<script src="script.js?v=22"></script>
 <script>
     // Fallbacks in case main script fails to boot
     (function () {

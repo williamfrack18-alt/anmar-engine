@@ -502,10 +502,13 @@ document.addEventListener('DOMContentLoaded', () => {
         renderBriefState();
     }
 
+    let forceWelcome = true;
+
     function initWelcomeScreen() {
         if (!welcomeScreen) return;
         if (welcomeCloseBtn) {
             welcomeCloseBtn.addEventListener('click', () => {
+                forceWelcome = false;
                 setWelcomeVisible(false);
                 switchTab('projects');
             });
@@ -540,6 +543,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
                 if (created) {
+                    forceWelcome = false;
                     if (welcomeScreen) welcomeScreen.classList.add('fade-out');
                     setTimeout(() => {
                         setWelcomeVisible(false);
@@ -587,6 +591,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (show) {
             welcomeScreen.classList.add('visible');
             welcomeScreen.classList.remove('fade-out');
+            document.body.classList.add('welcome-mode');
             if (welcomeInput) {
                 welcomeInput.value = '';
                 if (welcomeStartBtn) welcomeStartBtn.disabled = true;
@@ -594,6 +599,7 @@ document.addEventListener('DOMContentLoaded', () => {
             typeWelcomeText();
         } else {
             welcomeScreen.classList.remove('visible');
+            document.body.classList.remove('welcome-mode');
         }
     }
 
@@ -2199,7 +2205,7 @@ document.addEventListener('DOMContentLoaded', () => {
             projectLimitReached = false;
 
             if (projects.length === 0) {
-                setWelcomeVisible(true);
+                if (!forceWelcome) setWelcomeVisible(true);
                 projectList.innerHTML = '<li style="padding:0.5rem">No projects found.</li>';
                 if (projectsFolderGrid) {
                     projectsFolderGrid.innerHTML = `
@@ -2221,7 +2227,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (limitHint) limitHint.style.display = 'none';
                 return;
             }
-            setWelcomeVisible(false);
+            if (!forceWelcome) setWelcomeVisible(false);
 
             if (input) {
                 input.disabled = false;
@@ -2420,6 +2426,11 @@ document.addEventListener('DOMContentLoaded', () => {
     setInteractionMode('strategy');
     setTimelineVisible(false);
     (async () => {
+        if (forceWelcome) {
+            setWelcomeVisible(true);
+            switchTab('projects');
+            return;
+        }
         const lastProject = localStorage.getItem(getLastProjectStorageKey()) || '';
         if (!lastProject) {
             try {
