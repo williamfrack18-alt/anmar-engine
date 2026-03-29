@@ -1206,12 +1206,12 @@
             <div id="welcomeType" class="welcome-title"></div>
             <div class="welcome-sub">Paso 1: Nombre del proyecto.</div>
             <div class="welcome-input-wrap">
-                <input id="welcomeProjectInput" type="text" placeholder="Nombre del proyecto..." />
-                <button id="welcomeStartBtn" type="button" disabled>Continuar</button>
+                <input id="welcomeProjectInput" type="text" placeholder="Nombre del proyecto..." oninput="__welcomeNameInput && __welcomeNameInput()" />
+                <button id="welcomeStartBtn" type="button" disabled onclick="__welcomeContinue && __welcomeContinue()">Continuar</button>
             </div>
             <div id="welcomePhoneStep" class="welcome-input-wrap" style="display:none; margin-top:12px;">
                 <input id="welcomePhoneInput" type="tel" placeholder="Número de teléfono..." />
-                <button id="welcomePhoneBtn" type="button">Crear proyecto</button>
+                <button id="welcomePhoneBtn" type="button" onclick="__welcomeCreate && __welcomeCreate()">Crear proyecto</button>
             </div>
             <div class="welcome-hint">Usaremos tu teléfono para coordinar el inicio del proyecto.</div>
             <div id="welcomeStatus" class="welcome-hint" style="color:#fca5a5; min-height:18px;"></div>
@@ -1858,6 +1858,10 @@
         try {
             document.body.classList.add('welcome-mode');
         } catch (e) {}
+        const welcomeInput = document.getElementById('welcomeProjectInput');
+        const welcomeBtn = document.getElementById('welcomeStartBtn');
+        const welcomePhoneStep = document.getElementById('welcomePhoneStep');
+        const welcomePhoneInput = document.getElementById('welcomePhoneInput');
         function safeSwitchTab(tab) {
             const sec = document.getElementById(`section-${tab}`);
             if (!sec) return;
@@ -1915,44 +1919,41 @@
             }
         };
 
-        const welcomeBtn = document.getElementById('welcomeStartBtn');
-        const welcomeInput = document.getElementById('welcomeProjectInput');
-        const welcomePhoneStep = document.getElementById('welcomePhoneStep');
-        const welcomePhoneInput = document.getElementById('welcomePhoneInput');
         const welcomePhoneBtn = document.getElementById('welcomePhoneBtn');
+        window.__welcomeNameInput = function () {
+            if (!welcomeBtn || !welcomeInput) return;
+            welcomeBtn.disabled = welcomeInput.value.trim().length < 1;
+        };
+
+        window.__welcomeContinue = function () {
+            if (welcomePhoneStep) welcomePhoneStep.style.display = 'flex';
+            if (welcomePhoneInput) welcomePhoneInput.focus();
+        };
+
+        window.__welcomeCreate = async function () {
+            const name = (welcomeInput?.value || '').trim();
+            const phone = (welcomePhoneInput?.value || '').trim();
+            if (!name) {
+                alert('Escribe un nombre para el proyecto.');
+                return;
+            }
+            if (!phone) {
+                alert('Escribe tu número de teléfono.');
+                return;
+            }
+            try {
+                await createProjectByNameFallback(name, phone);
+                const welcome = document.getElementById('welcomeScreen');
+                if (welcome) welcome.classList.remove('visible');
+                document.body.classList.remove('welcome-mode');
+                safeSwitchTab('build');
+            } catch (e) {
+                alert(e.message || 'Error de conexión creando proyecto.');
+            }
+        };
+
         if (welcomeBtn && welcomeInput) {
-            const toggle = () => {
-                welcomeBtn.disabled = welcomeInput.value.trim().length < 1;
-            };
-            toggle();
-            welcomeInput.oninput = toggle;
-            welcomeBtn.onclick = () => {
-                if (welcomePhoneStep) welcomePhoneStep.style.display = 'flex';
-                if (welcomePhoneInput) welcomePhoneInput.focus();
-            };
-        }
-        if (welcomePhoneBtn && welcomePhoneInput && welcomeInput) {
-            welcomePhoneBtn.onclick = async () => {
-                const name = (welcomeInput.value || '').trim();
-                const phone = (welcomePhoneInput.value || '').trim();
-                if (!name) {
-                    alert('Escribe un nombre para el proyecto.');
-                    return;
-                }
-                if (!phone) {
-                    alert('Escribe tu número de teléfono.');
-                    return;
-                }
-                try {
-                    await createProjectByNameFallback(name, phone);
-                    const welcome = document.getElementById('welcomeScreen');
-                    if (welcome) welcome.classList.remove('visible');
-                    document.body.classList.remove('welcome-mode');
-                    safeSwitchTab('build');
-                } catch (e) {
-                    alert(e.message || 'Error de conexión creando proyecto.');
-                }
-            };
+            window.__welcomeNameInput();
         }
 
         const welcomeClose = document.getElementById('welcomeCloseBtn');
@@ -1982,7 +1983,7 @@
     window.addEventListener('error', () => window.__applyDashboardFallback());
     window.addEventListener('unhandledrejection', () => window.__applyDashboardFallback());
 </script>
-<script src="script.js?v=26"></script>
+<script src="script.js?v=27"></script>
 <script>
     // Post-fallback: ensure functions exist after main load
     window.addEventListener('load', () => {
