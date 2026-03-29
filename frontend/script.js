@@ -356,6 +356,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    let welcomeTyped = false;
+
     // React to Tab switch
     document.addEventListener('chatTabSwitched', (e) => {
         if (e.detail === 'Human') {
@@ -471,7 +473,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let previewLockedByReview = false;
     let subscriptionActive = false;
     let subscriptionPlan = 'none';
-    let welcomeTyped = false;
 
     // Conversation State
     let chatStage = 'initial'; // 'initial', 'refinement', 'ready', 'blueprint', 'building'
