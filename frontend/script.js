@@ -527,13 +527,31 @@ document.addEventListener('DOMContentLoaded', () => {
         renderBriefState();
     }
 
+    function getWelcomeDismissKey() {
+        const email = (currentUser?.email || '').toLowerCase();
+        return `anmar:welcome_done:${email}`;
+    }
+
+    function markWelcomeDone() {
+        try {
+            localStorage.setItem(getWelcomeDismissKey(), '1');
+        } catch (_) { }
+    }
+
     let forceWelcome = true;
 
     function initWelcomeScreen() {
         if (!welcomeScreen) return;
+        try {
+            const alreadyDone = localStorage.getItem(getWelcomeDismissKey());
+            forceWelcome = !alreadyDone;
+        } catch (_) {
+            forceWelcome = true;
+        }
         if (welcomeCloseBtn) {
             welcomeCloseBtn.addEventListener('click', () => {
                 forceWelcome = false;
+                markWelcomeDone();
                 setWelcomeVisible(false);
                 switchTab('projects');
             });
@@ -562,6 +580,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 if (created) {
                     forceWelcome = false;
+                    markWelcomeDone();
                     if (welcomeScreen) welcomeScreen.classList.add('fade-out');
                     setTimeout(() => {
                         setWelcomeVisible(false);
@@ -2170,6 +2189,7 @@ document.addEventListener('DOMContentLoaded', () => {
             currentProjectName = data.project_name;
             currentTicketProjectId = data.project_id || '';
             chatStage = 'construction_mode';
+            markWelcomeDone();
             setWelcomeVisible(false);
 
             // Reset and trigger human chat polling 
@@ -2300,7 +2320,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (limitHint) limitHint.style.display = 'none';
                 return;
             }
-            if (!forceWelcome) setWelcomeVisible(false);
+            if (projects.length > 0) {
+                forceWelcome = false;
+                markWelcomeDone();
+                setWelcomeVisible(false);
+            }
 
             if (input) {
                 input.disabled = false;
