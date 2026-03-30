@@ -4597,17 +4597,17 @@ def create_empty_project():
         project_name = sanitize_project_name(raw_name)
         project_path = os.path.join(projects_base_dir, project_name)
 
+        if os.path.exists(project_path):
+            return jsonify({"error": "Ese proyecto ya existe. Usa otro nombre."}), 409
+
+        os.makedirs(project_path, exist_ok=True)
+
+        # Save owner mapping
         if user_email:
             owners = load_project_owners()
+            owners[project_name] = user_email
+            save_project_owners(owners)
 
-    if os.path.exists(project_path):
-        return jsonify({"error": "Ese proyecto ya existe. Usa otro nombre."}), 409
-
-    os.makedirs(project_path, exist_ok=True)
-    if user_email:
-        owners = load_project_owners()
-        owners[project_name] = user_email
-        save_project_owners(owners)
         # Save metadata (phone, owner)
         meta = load_project_meta()
         meta[project_name] = {
@@ -4616,6 +4616,7 @@ def create_empty_project():
             "created_at": datetime.utcnow().isoformat()
         }
         save_project_meta(meta)
+
         starter_html = f"""<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -4654,11 +4655,6 @@ def create_empty_project():
 """
         with open(os.path.join(project_path, 'index.html'), 'w', encoding='utf-8') as f:
             f.write(starter_html)
-
-        if user_email:
-            owners = load_project_owners()
-            owners[project_name] = user_email
-            save_project_owners(owners)
 
         return jsonify({
             "status": "ok",
