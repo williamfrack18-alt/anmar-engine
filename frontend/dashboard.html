@@ -625,6 +625,35 @@
             color: rgba(255, 255, 255, 0.72);
         }
 
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(260px, 1fr));
+            gap: 20px;
+            align-items: stretch;
+        }
+
+        .plan-card {
+            background: #111;
+            border: 1px solid #333;
+            padding: 26px;
+            border-radius: 16px;
+            text-align: left;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            min-height: 320px;
+        }
+
+        .plan-card .plan-cta {
+            margin-top: auto;
+        }
+
+        @media (max-width: 820px) {
+            .pricing-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         textarea::placeholder {
             color: rgba(255, 255, 255, 0.45);
         }
@@ -1784,11 +1813,10 @@
             <p style="color:#666;">Elige el acceso que deseas antes de iniciar el chat con el equipo.</p>
         </div>
 
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:20px;">
+        <div class="pricing-grid">
 
             <!-- PLAN 0: INICIO -->
-            <div
-                style="background:#111; border:1px solid #333; padding:26px; border-radius:16px; text-align:left; position:relative;">
+            <div class="plan-card">
                 <div style="width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);">
                     <i class="fas fa-seedling" style="color:#fff;"></i>
                 </div>
@@ -1803,14 +1831,13 @@
                     <li><i class="fas fa-check" style="color:#10b981;"></i> Diagnóstico inicial</li>
                     <li><i class="fas fa-check" style="color:#10b981;"></i> Soporte humano básico</li>
                 </ul>
-                <button disabled
+                <button disabled class="plan-cta"
                     style="width:100%; padding:12px; background:#1f2937; color:#9ca3af; border:none; border-radius:8px; font-weight:bold; cursor:not-allowed;">
                     Próximamente</button>
             </div>
 
             <!-- PLAN 1: IMPULSO -->
-            <div
-                style="background:#111; border:1px solid #333; padding:26px; border-radius:16px; text-align:left; position:relative;">
+            <div class="plan-card">
                 <div style="width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);">
                     <i class="fas fa-rocket" style="color:#fff;"></i>
                 </div>
@@ -1825,14 +1852,13 @@
                     <li><i class="fas fa-check" style="color:#10b981;"></i> Optimización semanal</li>
                     <li><i class="fas fa-check" style="color:#10b981;"></i> Soporte prioritario</li>
                 </ul>
-                <button disabled
+                <button disabled class="plan-cta"
                     style="width:100%; padding:12px; background:#1f2937; color:#9ca3af; border:none; border-radius:8px; font-weight:bold; cursor:not-allowed;">
                     Próximamente</button>
             </div>
 
             <!-- PLAN 2: MARKETING -->
-            <div
-                style="background:#111; border:1px solid #333; padding:26px; border-radius:16px; text-align:left; position:relative;">
+            <div class="plan-card">
                 <div style="width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);">
                     <i class="fas fa-bullhorn" style="color:#fff;"></i>
                 </div>
@@ -1847,14 +1873,14 @@
                     <li><i class="fas fa-check" style="color:#10b981;"></i> Ads + artes + growth</li>
                     <li><i class="fas fa-check" style="color:#10b981;"></i> Community manager</li>
                 </ul>
-                <button onclick="purchasePlan('marketing')"
+                <button onclick="purchasePlan('marketing')" class="plan-cta"
                     style="width:100%; padding:12px; background:#3b82f6; color:#fff; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">
                     Activar Marketing</button>
             </div>
 
             <!-- PLAN 3: MARKETING + CONSTRUCCIÓN -->
-            <div
-                style="background:#111; border:1px solid #10b981; padding:26px; border-radius:16px; text-align:left; position:relative; box-shadow:0 0 22px rgba(16, 185, 129, 0.2);">
+            <div class="plan-card"
+                style="border:1px solid #10b981; box-shadow:0 0 22px rgba(16, 185, 129, 0.2);">
                 <div
                     style="position:absolute; top:-12px; left:50%; transform:translateX(-50%); background:#10b981; color:#000; padding:2px 10px; border-radius:12px; font-size:0.7rem; font-weight:bold;">
                     RECOMENDADO</div>
@@ -1872,7 +1898,7 @@
                     <li><i class="fas fa-check" style="color:#10b981;"></i> Web + software completo</li>
                     <li><i class="fas fa-check" style="color:#10b981;"></i> Ingeniería humana</li>
                 </ul>
-                <button onclick="purchasePlan('marketing_build')"
+                <button onclick="purchasePlan('marketing_build')" class="plan-cta"
                     style="width:100%; padding:12px; background:#10b981; color:#001b12; border:none; border-radius:8px; font-weight:bold; cursor:pointer; box-shadow:0 0 10px rgba(16,185,129,0.4);">
                     Activar Plan Completo</button>
             </div>
