@@ -4600,10 +4600,14 @@ def create_empty_project():
         if user_email:
             owners = load_project_owners()
 
-        if os.path.exists(project_path):
-            return jsonify({"error": "Ese proyecto ya existe. Usa otro nombre."}), 409
+    if os.path.exists(project_path):
+        return jsonify({"error": "Ese proyecto ya existe. Usa otro nombre."}), 409
 
-        os.makedirs(project_path, exist_ok=True)
+    os.makedirs(project_path, exist_ok=True)
+    if user_email:
+        owners = load_project_owners()
+        owners[project_name] = user_email
+        save_project_owners(owners)
         # Save metadata (phone, owner)
         meta = load_project_meta()
         meta[project_name] = {

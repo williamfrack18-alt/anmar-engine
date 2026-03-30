@@ -622,6 +622,27 @@ document.addEventListener('DOMContentLoaded', () => {
         setWelcomeVisible(false);
     }
 
+    window.openWelcomeNewProject = function () {
+        forceWelcome = true;
+        if (welcomePhoneStep) {
+            welcomePhoneStep.style.display = 'none';
+        }
+        if (welcomeInput) {
+            welcomeInput.value = '';
+        }
+        if (welcomePhoneInput) {
+            welcomePhoneInput.value = '';
+        }
+        if (welcomeStatus) {
+            welcomeStatus.textContent = '';
+        }
+        if (welcomeStartBtn) {
+            welcomeStartBtn.disabled = true;
+        }
+        setWelcomeVisible(true);
+        switchTab('projects');
+    }
+
     window.addEventListener('error', (event) => {
         try {
             if (welcomeStatus) {
@@ -1194,6 +1215,18 @@ document.addEventListener('DOMContentLoaded', () => {
             setLoading(false);
         }
     });
+
+    if (chatInput) {
+        chatInput.addEventListener('focus', async () => {
+            if (window.__pricingPromptedOnce) return;
+            if (!subscriptionActive) {
+                const ok = await requireSubscription();
+                if (!ok) {
+                    window.__pricingPromptedOnce = true;
+                }
+            }
+        });
+    }
 
     // --- Logic: Generate Blueprint ---
     async function handleBlueprintGeneration(fullContext) {
@@ -2225,23 +2258,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     window.createProjectFromInput = async function () {
-        const input = document.getElementById('newProjectNameInput');
-        const phoneInput = document.getElementById('newProjectPhoneInput');
-        if (!input) return;
-        const value = (input.value || '').trim();
-        const phone = (phoneInput?.value || '').trim();
-        if (!value) {
-            input.focus();
-            return;
-        }
-        if (!phone) {
-            if (phoneInput) phoneInput.focus();
-            alert('Por favor escribe tu número de teléfono.');
-            return;
-        }
-        await createProjectByName(value, { phone });
-        input.value = '';
-        if (phoneInput) phoneInput.value = '';
+        openWelcomeNewProject();
     }
 
     window.deleteAllProjects = async function () {
@@ -2292,8 +2309,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             projectList.innerHTML = '';
             if (projectsFolderGrid) projectsFolderGrid.innerHTML = '';
-            const input = document.getElementById('newProjectNameInput');
-            const createBtn = document.getElementById('createProjectInlineBtn');
             const limitHint = document.getElementById('projectLimitHint');
             projectLimitReached = false;
 
@@ -2307,16 +2322,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     `;
                 }
-                if (input) {
-                    input.disabled = false;
-                    input.placeholder = 'Nombre del proyecto';
-                    input.style.opacity = '1';
-                }
-                if (createBtn) {
-                    createBtn.disabled = false;
-                    createBtn.style.opacity = '1';
-                    createBtn.style.pointerEvents = 'auto';
-                }
                 if (limitHint) limitHint.style.display = 'none';
                 return;
             }
@@ -2326,16 +2331,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 setWelcomeVisible(false);
             }
 
-            if (input) {
-                input.disabled = false;
-                input.placeholder = 'Nombre del proyecto';
-                input.style.opacity = '1';
-            }
-            if (createBtn) {
-                createBtn.disabled = false;
-                createBtn.style.opacity = '1';
-                createBtn.style.pointerEvents = 'auto';
-            }
             if (limitHint) limitHint.style.display = 'none';
 
             projects.forEach(project => {

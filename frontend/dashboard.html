@@ -1609,18 +1609,11 @@
                     </p>
 
                     <div style="display:flex; flex-direction:column; gap:10px; margin: 16px 0 8px 0;">
-                        <div class="welcome-input-wrap" style="margin:0;">
-                            <input id="newProjectNameInput" type="text" placeholder="Nombre del proyecto..." />
-                            <button id="createProjectInlineBtn" onclick="createProjectFromInput()"
-                                style="background:#3b82f6; color:#fff; border:none; padding:12px 18px; border-radius:12px; cursor:pointer; font-weight:700; box-shadow:0 12px 26px rgba(59,130,246,0.35);">
-                                Crear
-                            </button>
-                        </div>
-                        <div class="welcome-input-wrap" style="margin:0;">
-                            <input id="newProjectPhoneInput" type="tel" placeholder="Número de teléfono..." />
-                            <button type="button" style="opacity:0.6; cursor:default;" disabled>Teléfono</button>
-                        </div>
-                        <span style="font-size:0.85rem; opacity:0.6;">Primero el nombre, luego tu teléfono para coordinar el inicio.</span>
+                        <button id="newProjectFlowBtn" onclick="openWelcomeNewProject()"
+                            style="background:#3b82f6; color:#fff; border:none; padding:14px 18px; border-radius:14px; cursor:pointer; font-weight:700; box-shadow:0 14px 30px rgba(59,130,246,0.35); width:fit-content;">
+                            + Nuevo proyecto
+                        </button>
+                        <span style="font-size:0.85rem; opacity:0.6;">Se abrirá la tarjeta para escribir nombre y teléfono.</span>
                     </div>
                     <div id="projectLimitHint"
                         style="display:none; font-size:0.82rem; color:#93c5fd; opacity:0.85; margin-bottom:12px;">
