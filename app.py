@@ -4519,11 +4519,16 @@ def list_projects():
         email = str(request.args.get('email') or '').strip().lower()
         if email:
             owners = load_project_owners()
+            meta = load_project_meta()
             # Legacy fallback: if there is exactly one project and no owners yet, assign it.
             if not owners and len(projects) == 1:
                 owners[projects[0]] = email
                 save_project_owners(owners)
-            filtered = [p for p in projects if owners.get(p) == email]
+            filtered = []
+            for p in projects:
+                owner = owners.get(p) or (meta.get(p, {}).get('owner') if isinstance(meta, dict) else None)
+                if owner == email:
+                    filtered.append(p)
             return jsonify(filtered)
         return jsonify(projects)
     except Exception as e:
