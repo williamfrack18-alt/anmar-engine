@@ -581,19 +581,18 @@
 
         /* Input Area */
         .chat-input-area {
-            padding: 1.2rem 1.4rem 1.4rem;
+            padding: 1.1rem 1.4rem 1.4rem;
             border-top: 1px solid rgba(255, 255, 255, 0.08);
             background: rgba(8, 10, 12, 0.6);
         }
 
         .input-glass {
-            background: rgba(255, 255, 255, 0.06);
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            border-radius: 18px;
-            padding: 0.7rem;
+            background: transparent;
+            border: none;
+            padding: 0;
             display: flex;
             flex-direction: column;
-            gap: 0.5rem;
+            gap: 0.6rem;
         }
 
         textarea {
@@ -606,6 +605,34 @@
             outline: none;
             resize: none;
             height: 72px;
+        }
+
+        .chat-input-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 18px;
+            padding: 10px 14px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+        }
+
+        .chat-input-wrap textarea {
+            height: 60px;
+            padding: 4px 4px 4px 0;
+        }
+
+        .chat-send-btn {
+            background: #fff;
+            color: #000;
+            border: none;
+            border-radius: 14px;
+            padding: 10px 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s ease;
         }
 
         .glass-panel {
@@ -1568,18 +1595,18 @@
                         <div class="chat-input-area">
                             <div class="input-glass">
                                 <!-- ID: businessIdea preserved -->
-                                <textarea id="businessIdea"
-                                    placeholder="Describe tu idea... (ej. 'Un SaaS para gestión de clínicas dentales con pagos Stripe')"></textarea>
+                                <div class="chat-input-wrap">
+                                    <textarea id="businessIdea"
+                                        placeholder="Describe tu idea... (ej. 'Un SaaS para gestión de clínicas dentales con pagos Stripe')"></textarea>
+                                    <button id="generateBtn" class="chat-send-btn" title="Enviar">
+                                        Enviar
+                                    </button>
+                                </div>
                                 <input id="imageUploadInput" type="file" accept="image/*" style="display:none;" />
                                 <div id="attachmentStatus"
                                     style="display:none; font-size:0.72rem; color:#93c5fd; padding:0 10px 2px 10px;">
                                 </div>
-                                <div class="action-bar" style="justify-content:flex-end;">
-                                    <!-- ID: generateBtn preserved -->
-                                    <button id="generateBtn" class="send-btn">
-                                        <i class="fas fa-arrow-up"></i>
-                                    </button>
-                                </div>
+                                <div class="action-bar" style="justify-content:flex-end; display:none;"></div>
                             </div>
                         </div>
                     </section>
