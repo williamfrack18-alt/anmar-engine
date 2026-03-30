@@ -2313,7 +2313,11 @@ document.addEventListener('DOMContentLoaded', () => {
             projectLimitReached = false;
 
             if (projects.length === 0) {
-                if (!forceWelcome) setWelcomeVisible(true);
+                if (forceWelcome) {
+                    setWelcomeVisible(true);
+                } else {
+                    setWelcomeVisible(false);
+                }
                 projectList.innerHTML = '<li style="padding:0.5rem">No projects found.</li>';
                 if (projectsFolderGrid) {
                     projectsFolderGrid.innerHTML = `
