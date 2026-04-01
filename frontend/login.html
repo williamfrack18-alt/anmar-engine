@@ -140,28 +140,23 @@
             opacity: 0.8;
         }
 
-        /* TABS */
-        .auth-tabs {
+        .step-row {
             display: flex;
-            margin-bottom: 1.2rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-top: 0.6rem;
+            font-size: 0.78rem;
+            color: rgba(255, 255, 255, 0.55);
         }
 
-        .tab-btn {
-            flex: 1;
+        .link-btn {
             background: none;
             border: none;
-            color: rgba(255, 255, 255, 0.4);
-            padding: 10px;
+            color: #22d3ee;
             cursor: pointer;
-            font-size: 0.9rem;
-            transition: all 0.3s;
-            border-bottom: 2px solid transparent;
-        }
-
-        .tab-btn.active {
-            color: #fff;
-            border-bottom: 2px solid #10b981;
+            font-size: 0.78rem;
+            padding: 0;
         }
 
         /* INPUTS */
@@ -378,24 +373,27 @@
             <div class="brand-logo">Anmar Enterprises</div>
             <div class="brand-subtitle">Portal de Acceso Seguro</div>
 
-            <!-- TABS -->
-            <div class="auth-tabs">
-                <button class="tab-btn active" id="tabLogin" onclick="switchTab('login')">Ingresar</button>
-                <button class="tab-btn" id="tabRegister" onclick="switchTab('register')">Registrarse</button>
-            </div>
             <div class="subtle-hint pill">
-                También puedes crear tu cuenta con correo y contraseña.
+                Accede o crea tu cuenta en un solo paso.
             </div>
 
-            <!-- FORM -->
-            <form id="authForm" onsubmit="handleAuth(event)">
-                <div class="input-group" id="nameGroup" style="display:none;">
-                    <label class="input-label">NOMBRE COMPLETO</label>
-                    <input type="text" id="name" class="input-field" placeholder="John Doe">
-                </div>
+            <!-- STEP 1: EMAIL -->
+            <div id="emailStep">
                 <div class="input-group">
                     <label class="input-label">EMAIL CORPORATIVO</label>
                     <input type="email" id="email" class="input-field" placeholder="user@anmarenterprices.com" required>
+                </div>
+                <button type="button" class="login-btn" id="continueBtn">
+                    <i class="fas fa-arrow-right"></i> Continuar
+                </button>
+                <div class="subtle-hint">Escribe tu correo y detectamos tu cuenta automáticamente.</div>
+            </div>
+
+            <!-- STEP 2: DETAILS -->
+            <form id="authForm" onsubmit="handleAuth(event)" style="display:none;">
+                <div class="input-group" id="nameGroup" style="display:none;">
+                    <label class="input-label">NOMBRE COMPLETO</label>
+                    <input type="text" id="name" class="input-field" placeholder="John Doe">
                 </div>
 
                 <div class="input-group">
@@ -403,19 +401,22 @@
                     <input type="password" id="password" class="input-field" placeholder="••••••••" required>
                 </div>
 
-                <div class="terms-check" id="termsGroup" style="display:none;">
-                    <input type="checkbox" id="termsAccepted">
-                    <label for="termsAccepted">
-                        Acepto los <a href="terms.html" target="_blank" rel="noopener">Términos y Condiciones</a> de
-                        Anmar Enterprises.
-                    </label>
-                </div>
-
                 <button type="submit" class="login-btn" id="submitBtn">
                     <i class="fas fa-fingerprint"></i> <span id="btnText">Acceder</span>
                 </button>
-                <div class="subtle-hint">Acceso exclusivo para cuentas autorizadas.</div>
+                <div class="step-row">
+                    <span id="authHint">Usaremos este correo para continuar.</span>
+                    <button type="button" class="link-btn" id="changeEmailBtn">Cambiar correo</button>
+                </div>
             </form>
+
+            <div class="terms-check" id="termsGroup">
+                <input type="checkbox" id="termsAccepted">
+                <label for="termsAccepted">
+                    Acepto los <a href="terms.html" target="_blank" rel="noopener">Términos y Condiciones</a> de
+                    Anmar Enterprises.
+                </label>
+            </div>
 
             <div id="statusMsg" class="error-msg"></div>
 
@@ -446,6 +447,13 @@
         let mode = 'login'; // 'login' or 'register'
         const API_URL = '/api'; // Ensure this matches running port
         const urlParams = new URLSearchParams(window.location.search);
+        const emailStep = document.getElementById('emailStep');
+        const continueBtn = document.getElementById('continueBtn');
+        const authForm = document.getElementById('authForm');
+        const nameGroup = document.getElementById('nameGroup');
+        const termsGroup = document.getElementById('termsGroup');
+        const authHint = document.getElementById('authHint');
+        const changeEmailBtn = document.getElementById('changeEmailBtn');
 
         // Keep session sticky: if already logged-in, skip login page.
         if (!urlParams.has('fresh')) {
@@ -459,28 +467,57 @@
             }
         }
 
-        function switchTab(newMode) {
-            mode = newMode;
-            document.getElementById('tabLogin').classList.toggle('active', mode === 'login');
-            document.getElementById('tabRegister').classList.toggle('active', mode === 'register');
-
-            document.getElementById('nameGroup').style.display = mode === 'register' ? 'block' : 'none';
-            document.getElementById('name').required = mode === 'register';
-            document.getElementById('btnText').textContent = mode === 'register' ? 'Crear Cuenta' : 'Acceder';
-            const termsGroup = document.getElementById('termsGroup');
+        function setMode(nextMode) {
+            mode = nextMode;
+            const nameInput = document.getElementById('name');
             const termsAccepted = document.getElementById('termsAccepted');
+            if (nameGroup && nameInput) {
+                nameGroup.style.display = mode === 'register' ? 'block' : 'none';
+                nameInput.required = mode === 'register';
+            }
             if (termsGroup && termsAccepted) {
-                termsGroup.style.display = mode === 'register' ? 'flex' : 'none';
                 termsAccepted.required = mode === 'register';
                 if (mode !== 'register') termsAccepted.checked = false;
             }
-            const divider = document.querySelector('.social-divider');
-            const socials = document.querySelector('.social-buttons');
-            if (divider && socials) {
-                divider.style.display = 'flex';
-                socials.style.display = 'flex';
+            document.getElementById('btnText').textContent = mode === 'register' ? 'Crear Cuenta' : 'Acceder';
+            if (authHint) {
+                authHint.textContent = mode === 'register'
+                    ? 'Crea tu cuenta con este correo.'
+                    : 'Ingresa tu contraseña para continuar.';
             }
+        }
+
+        function setStep(step) {
+            if (emailStep) emailStep.style.display = step === 'email' ? 'block' : 'none';
+            if (authForm) authForm.style.display = step === 'details' ? 'block' : 'none';
             showStatus('', '');
+        }
+
+        async function checkEmail() {
+            const email = document.getElementById('email').value.trim();
+            if (!email) {
+                showStatus('Escribe tu correo para continuar.', 'error');
+                return;
+            }
+            if (!continueBtn) return;
+            continueBtn.disabled = true;
+            continueBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando...';
+            try {
+                const res = await fetch(API_URL + '/check-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'No se pudo verificar el correo');
+                setMode(data.exists ? 'login' : 'register');
+                setStep('details');
+            } catch (err) {
+                showStatus(err.message || 'Error verificando el correo.', 'error');
+            } finally {
+                continueBtn.disabled = false;
+                continueBtn.innerHTML = '<i class="fas fa-arrow-right"></i> Continuar';
+            }
         }
 
         async function handleAuth(e) {
@@ -500,6 +537,12 @@
                 let endpoint = mode === 'register' ? '/register' : '/login';
                 let payload = { email, password };
                 if (mode === 'register') {
+                    if (!termsAccepted) {
+                        showStatus('Debes aceptar los Términos y Condiciones.', 'error');
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-fingerprint"></i> <span id="btnText">Crear Cuenta</span>';
+                        return;
+                    }
                     payload.name = name;
                     payload.termsAccepted = termsAccepted;
                 }
@@ -528,7 +571,8 @@
                         setTimeout(() => window.location.href = 'dashboard.html', 1000);
                     } else {
                         setTimeout(() => {
-                            switchTab('login');
+                            setMode('login');
+                            setStep('details');
                             document.getElementById('email').value = email;
                             btn.disabled = false;
                         }, 1500);
@@ -574,6 +618,10 @@
             el.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Conectando de forma segura con ${provider}...`;
 
             try {
+                if (!termsAccepted) {
+                    showStatus('Debes aceptar los Términos para crear cuenta con Google.', 'error');
+                    return;
+                }
                 let bodyData = { provider };
                 if (idToken) {
                     bodyData.token = idToken;
@@ -613,6 +661,27 @@
             // Ahora enviamos directamente el ID Token (la credencial) al backend para ser verificado oficialmente
             processSocialLogin('Google', null, null, response.credential);
         }
+
+        if (continueBtn) {
+            continueBtn.addEventListener('click', checkEmail);
+        }
+        const emailInput = document.getElementById('email');
+        if (emailInput) {
+            emailInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    checkEmail();
+                }
+            });
+        }
+        if (changeEmailBtn) {
+            changeEmailBtn.addEventListener('click', () => {
+                setStep('email');
+                if (emailInput) emailInput.focus();
+            });
+        }
+
+        setStep('email');
 
         // --- PARTICLES SCRIPT (Shared) ---
         const canvas = document.getElementById('gravityCanvas');

@@ -620,6 +620,20 @@ def register():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/check-email', methods=['POST'])
+def check_email():
+    try:
+        data = request.json or {}
+        email = str(data.get('email') or '').strip().lower()
+        if not email:
+            return jsonify({"error": "Email requerido"}), 400
+        conn = get_db_connection()
+        user = conn.execute('SELECT 1 FROM users WHERE email = ?', (email,)).fetchone()
+        conn.close()
+        return jsonify({"exists": bool(user)})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.json
