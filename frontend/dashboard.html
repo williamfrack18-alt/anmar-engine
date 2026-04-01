@@ -2077,25 +2077,21 @@
             return data.project_name;
         }
 
-        window.createProjectFromInput = async function () {
-            const input = document.getElementById('newProjectNameInput');
-            const phoneInput = document.getElementById('newProjectPhoneInput');
-            const name = (input?.value || '').trim();
-            const phone = (phoneInput?.value || '').trim();
-            if (!name) {
-                alert('Escribe un nombre para el proyecto.');
-                return;
+        window.openWelcomeNewProject = function () {
+            const welcome = document.getElementById('welcomeScreen');
+            if (welcome) {
+                welcome.classList.add('visible');
+                document.body.classList.add('welcome-mode');
             }
-            if (!phone) {
-                alert('Escribe tu número de teléfono.');
-                return;
-            }
-            try {
-                await createProjectByNameFallback(name, phone);
-                safeSwitchTab('build');
-            } catch (e) {
-                alert(e.message || 'Error de conexión creando proyecto.');
-            }
+            if (welcomePhoneStep) welcomePhoneStep.style.display = 'none';
+            if (welcomeInput) welcomeInput.value = '';
+            if (welcomePhoneInput) welcomePhoneInput.value = '';
+            if (welcomeBtn) welcomeBtn.disabled = true;
+            safeSwitchTab('projects');
+        };
+
+        window.createProjectFromInput = function () {
+            window.openWelcomeNewProject();
         };
 
         const welcomePhoneBtn = document.getElementById('welcomePhoneBtn');

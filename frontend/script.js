@@ -482,7 +482,6 @@ document.addEventListener('DOMContentLoaded', () => {
     checkUserCredits();
     hydrateProfile();
     renderBriefState();
-    initWelcomeScreen();
     (function handleCheckoutReturn() {
         const params = new URLSearchParams(window.location.search);
         const status = params.get('checkout');
@@ -642,6 +641,8 @@ document.addEventListener('DOMContentLoaded', () => {
         setWelcomeVisible(true);
         switchTab('projects');
     }
+
+    initWelcomeScreen();
 
     window.addEventListener('error', (event) => {
         try {
