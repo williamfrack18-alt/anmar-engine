@@ -595,6 +595,13 @@
             gap: 0.6rem;
         }
 
+        .chat-helper {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.68);
+            line-height: 1.4;
+            padding: 0 4px;
+        }
+
         textarea {
             background: transparent;
             border: none;
@@ -1228,6 +1235,7 @@
             grid-template-columns: var(--build-left-col) var(--build-right-col);
             gap: 22px;
             align-items: stretch;
+            padding: 20px 20px 12px !important;
         }
 
         #section-build .left-pane {
@@ -1239,6 +1247,7 @@
             gap: 6px !important;
             height: 100%;
             min-height: 0;
+            flex: 1 1 auto;
         }
 
         #section-build .preview-panel {
@@ -1246,6 +1255,20 @@
             width: auto !important;
             height: 100%;
             border-radius: 18px;
+        }
+
+        #section-build .claude-chat {
+            flex: 1 1 auto;
+            min-height: 0;
+        }
+
+        #section-build .terminal-wrapper {
+            flex: 1 1 auto;
+            min-height: 0;
+        }
+
+        #section-build .chat-input-area {
+            margin-top: auto;
         }
 
         .preview-hidden {
@@ -1761,10 +1784,13 @@
                         <!-- Input Area -->
                         <div class="chat-input-area">
                             <div class="input-glass">
+                                <div class="chat-helper" id="chatHelperText">
+                                    Paso 1: Cuéntanos qué necesitas. Paso 2: Te asignamos un ingeniero.
+                                </div>
                                 <!-- ID: businessIdea preserved -->
                                 <div class="chat-input-wrap">
                                     <textarea id="businessIdea"
-                                        placeholder="Describe tu idea... (ej. 'Un SaaS para gestión de clínicas dentales con pagos Stripe')"></textarea>
+                                        placeholder="Escribe aquí tu pedido. Ej: “Necesito una web para mi estudio con reservas.”"></textarea>
                                     <button id="generateBtn" class="chat-send-btn" title="Enviar">
                                         Enviar
                                     </button>

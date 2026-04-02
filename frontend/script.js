@@ -357,15 +357,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     let welcomeTyped = false;
+    const chatHelper = document.getElementById('chatHelperText');
 
     // React to Tab switch
     document.addEventListener('chatTabSwitched', (e) => {
         if (e.detail === 'Human') {
-            chatInput.placeholder = "Paso 1: Escribe tu primer mensaje y te asignamos un ingeniero. Ej: \"Necesito una web para mi estudio\"";
+            chatInput.placeholder = "Escribe aquí tu pedido. Ej: “Necesito una web para mi estudio con reservas.”";
+            if (chatHelper) {
+                chatHelper.textContent = "Paso 1: Cuéntanos qué necesitas. Paso 2: Te asignamos un ingeniero.";
+            }
         } else {
             chatInput.placeholder = interactionMode === 'edit'
                 ? "Describe qué quieres editar en el proyecto..."
                 : "Describe tu idea... (ej. 'Un SaaS para gestión con Stripe')";
+            if (chatHelper) {
+                chatHelper.textContent = "Describe tu idea y generamos el blueprint técnico automáticamente.";
+            }
         }
     });
 
