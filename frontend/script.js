@@ -361,7 +361,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // React to Tab switch
     document.addEventListener('chatTabSwitched', (e) => {
         if (e.detail === 'Human') {
-            chatInput.placeholder = "Escribe a nuestro equipo de ingenieros para solicitar ayuda o cambios manuales...";
+            chatInput.placeholder = "Paso 1: Escribe tu primer mensaje y te asignamos un ingeniero. Ej: \"Necesito una web para mi estudio\"";
         } else {
             chatInput.placeholder = interactionMode === 'edit'
                 ? "Describe qué quieres editar en el proyecto..."
