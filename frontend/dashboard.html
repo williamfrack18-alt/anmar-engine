@@ -635,6 +635,29 @@
             transition: transform 0.2s ease;
         }
 
+        .claude-chat {
+            background: rgba(8, 10, 12, 0.72);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 26px;
+            box-shadow: 0 26px 60px rgba(0, 0, 0, 0.55);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .claude-chat .console-header {
+            background: rgba(0, 0, 0, 0.28);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .claude-chat .terminal-wrapper {
+            background: rgba(0, 0, 0, 0.22);
+        }
+
+        .claude-chat .chat-input-area {
+            background: rgba(0, 0, 0, 0.28);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
         .glass-panel {
             background: rgba(8, 10, 12, 0.72);
             border: 1px solid rgba(255, 255, 255, 0.12);
@@ -1589,7 +1612,12 @@
                             conversación...</div>
                     </div>
 
-                    <section class="ai-console">
+                    <section class="ai-console claude-chat">
+                        <div class="welcome-auras">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
                         <div class="console-header" style="justify-content: space-between; padding: 0.75rem 1rem;">
                             <!-- HUMAN CHAT ONLY -->
                             <div style="display:flex; gap:8px; flex-shrink: 0;">
