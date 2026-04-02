@@ -829,25 +829,80 @@
 
         .pricing-grid {
             display: grid;
-            grid-template-columns: repeat(2, minmax(260px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(2, minmax(220px, 1fr));
+            gap: 16px;
             align-items: stretch;
         }
 
         .plan-card {
             background: #111;
             border: 1px solid #333;
-            padding: 26px;
-            border-radius: 16px;
+            padding: 18px;
+            border-radius: 14px;
             text-align: left;
             position: relative;
             display: flex;
             flex-direction: column;
-            min-height: 320px;
+            min-height: 240px;
         }
 
         .plan-card .plan-cta {
             margin-top: auto;
+        }
+
+        #pricing-modal .pricing-shell {
+            max-width: 860px !important;
+            width: 92%;
+            padding: 28px !important;
+            border-radius: 20px !important;
+            margin: 24px auto 40px;
+        }
+
+        #pricing-modal .pricing-title {
+            font-size: 1.6rem !important;
+            margin-bottom: 8px !important;
+        }
+
+        #pricing-modal .pricing-subtitle {
+            font-size: 0.92rem !important;
+        }
+
+        #pricing-modal .plan-icon {
+            width: 38px !important;
+            height: 38px !important;
+            border-radius: 10px !important;
+        }
+
+        #pricing-modal .plan-title {
+            font-size: 0.72rem !important;
+            margin: 10px 0 6px !important;
+            letter-spacing: 0.8px !important;
+        }
+
+        #pricing-modal .plan-price {
+            font-size: 1.8rem !important;
+            margin-bottom: 8px !important;
+        }
+
+        #pricing-modal .plan-price span {
+            font-size: 0.9rem !important;
+        }
+
+        #pricing-modal .plan-list {
+            font-size: 0.82rem !important;
+            line-height: 1.65 !important;
+            margin-bottom: 12px !important;
+        }
+
+        #pricing-modal .plan-cta {
+            padding: 10px !important;
+            font-size: 0.92rem !important;
+        }
+
+        #pricing-modal .plan-badge {
+            font-size: 0.62rem !important;
+            padding: 2px 8px !important;
+            top: -10px !important;
         }
 
         @media (max-width: 820px) {
@@ -2030,30 +2085,30 @@
 <!-- PRICING MODAL (Recharge Tokens) -->
     <div id="pricing-modal"
         style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:9999; background:rgba(0,0,0,0.9); backdrop-filter:blur(15px); align-items:center; justify-content:center; overflow-y:auto;">
-        <div
+        <div class="pricing-shell"
             style="background:#0a0a0a; border:1px solid #222; padding:40px; border-radius:24px; max-width:1000px; width:90%; position:relative; box-shadow:0 0 100px rgba(16, 185, 129, 0.1); margin-top:50px;">
 
         <button onclick="document.getElementById('pricing-modal').style.display='none'"
             style="position:absolute; top:20px; right:20px; background:transparent; border:none; color:#555; font-size:1.5rem; cursor:pointer;">&times;</button>
 
-        <div style="text-align:center; margin-bottom:40px;">
-            <h2 style="color:#fff; margin:0 0 10px 0; font-size:2rem;">Activa tu Plan Mensual</h2>
-            <p style="color:#666;">Elige el acceso que deseas antes de iniciar el chat con el equipo.</p>
+        <div style="text-align:center; margin-bottom:24px;">
+            <h2 class="pricing-title" style="color:#fff; margin:0 0 10px 0; font-size:2rem;">Activa tu Plan Mensual</h2>
+            <p class="pricing-subtitle" style="color:#666;">Elige el acceso que deseas antes de iniciar el chat con el equipo.</p>
         </div>
 
         <div class="pricing-grid">
 
             <!-- PLAN 0: INICIO -->
             <div class="plan-card">
-                <div style="width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);">
+                <div class="plan-icon" style="width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);">
                     <i class="fas fa-seedling" style="color:#fff;"></i>
                 </div>
-                <h3
+                <h3 class="plan-title"
                     style="color:#93c5fd; font-size:0.85rem; text-transform:uppercase; letter-spacing:1px; margin:14px 0 8px;">
                     Inicio</h3>
-                <div style="font-size:2.3rem; color:#fff; font-weight:bold; margin-bottom:10px;">$47<span
+                <div class="plan-price" style="font-size:2.3rem; color:#fff; font-weight:bold; margin-bottom:10px;">$47<span
                         style="font-size:1rem; color:#555;">/mes</span></div>
-                <ul
+                <ul class="plan-list"
                     style="list-style:none; padding:0; color:#c7c7c7; line-height:1.9; margin-bottom:18px; font-size:0.88rem;">
                     <li><i class="fas fa-check" style="color:#10b981;"></i> Tokens limitados</li>
                     <li><i class="fas fa-check" style="color:#10b981;"></i> Diagnóstico inicial</li>
@@ -2066,15 +2121,15 @@
 
             <!-- PLAN 1: IMPULSO -->
             <div class="plan-card">
-                <div style="width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);">
+                <div class="plan-icon" style="width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);">
                     <i class="fas fa-rocket" style="color:#fff;"></i>
                 </div>
-                <h3
+                <h3 class="plan-title"
                     style="color:#93c5fd; font-size:0.85rem; text-transform:uppercase; letter-spacing:1px; margin:14px 0 8px;">
                     Impulso</h3>
-                <div style="font-size:2.3rem; color:#fff; font-weight:bold; margin-bottom:10px;">$137<span
+                <div class="plan-price" style="font-size:2.3rem; color:#fff; font-weight:bold; margin-bottom:10px;">$137<span
                         style="font-size:1rem; color:#555;">/mes</span></div>
-                <ul
+                <ul class="plan-list"
                     style="list-style:none; padding:0; color:#c7c7c7; line-height:1.9; margin-bottom:18px; font-size:0.88rem;">
                     <li><i class="fas fa-check" style="color:#10b981;"></i> Más tokens (limitados)</li>
                     <li><i class="fas fa-check" style="color:#10b981;"></i> Optimización semanal</li>
@@ -2087,15 +2142,15 @@
 
             <!-- PLAN 2: MARKETING -->
             <div class="plan-card">
-                <div style="width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);">
+                <div class="plan-icon" style="width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);">
                     <i class="fas fa-bullhorn" style="color:#fff;"></i>
                 </div>
-                <h3
+                <h3 class="plan-title"
                     style="color:#93c5fd; font-size:0.85rem; text-transform:uppercase; letter-spacing:1px; margin:14px 0 8px;">
                     Marketing Ilimitado</h3>
-                <div style="font-size:2.3rem; color:#fff; font-weight:bold; margin-bottom:10px;">$297<span
+                <div class="plan-price" style="font-size:2.3rem; color:#fff; font-weight:bold; margin-bottom:10px;">$297<span
                         style="font-size:1rem; color:#555;">/mes</span></div>
-                <ul
+                <ul class="plan-list"
                     style="list-style:none; padding:0; color:#c7c7c7; line-height:1.9; margin-bottom:18px; font-size:0.88rem;">
                     <li><i class="fas fa-check" style="color:#10b981;"></i> Tokens ilimitados</li>
                     <li><i class="fas fa-check" style="color:#10b981;"></i> Ads + artes + growth</li>
@@ -2109,18 +2164,18 @@
             <!-- PLAN 3: MARKETING + CONSTRUCCIÓN -->
             <div class="plan-card"
                 style="border:1px solid #10b981; box-shadow:0 0 22px rgba(16, 185, 129, 0.2);">
-                <div
+                <div class="plan-badge"
                     style="position:absolute; top:-12px; left:50%; transform:translateX(-50%); background:#10b981; color:#000; padding:2px 10px; border-radius:12px; font-size:0.7rem; font-weight:bold;">
                     RECOMENDADO</div>
-                <div style="width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);">
+                <div class="plan-icon" style="width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);">
                     <i class="fas fa-cube" style="color:#fff;"></i>
                 </div>
-                <h3
+                <h3 class="plan-title"
                     style="color:#10b981; font-size:0.85rem; text-transform:uppercase; letter-spacing:1px; margin:14px 0 8px;">
                     Marketing + Construcción</h3>
-                <div style="font-size:2.3rem; color:#fff; font-weight:bold; margin-bottom:10px;">$397<span
+                <div class="plan-price" style="font-size:2.3rem; color:#fff; font-weight:bold; margin-bottom:10px;">$397<span
                         style="font-size:1rem; color:#555;">/mes</span></div>
-                <ul
+                <ul class="plan-list"
                     style="list-style:none; padding:0; color:#fff; line-height:1.9; margin-bottom:18px; font-size:0.88rem;">
                     <li><i class="fas fa-check" style="color:#10b981;"></i> Tokens ilimitados</li>
                     <li><i class="fas fa-check" style="color:#10b981;"></i> Web + software completo</li>
