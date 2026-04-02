@@ -362,9 +362,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // React to Tab switch
     document.addEventListener('chatTabSwitched', (e) => {
         if (e.detail === 'Human') {
-            chatInput.placeholder = "Escribe aquí tu pedido. Ej: “Necesito una web para mi estudio con reservas.”";
+            chatInput.placeholder = "Paso 1: Cuéntanos qué necesitas. Ej: “Necesito una web para mi estudio con reservas.”";
             if (chatHelper) {
-                chatHelper.textContent = "Paso 1: Cuéntanos qué necesitas. Paso 2: Te asignamos un ingeniero.";
+                chatHelper.textContent = "Paso 1: Cuéntanos qué necesitas. Paso 2: Te asignamos un ingeniero en minutos.";
             }
         } else {
             chatInput.placeholder = interactionMode === 'edit'

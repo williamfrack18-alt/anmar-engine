@@ -1235,7 +1235,8 @@
             grid-template-columns: var(--build-left-col) var(--build-right-col);
             gap: 22px;
             align-items: stretch;
-            padding: 20px 20px 12px !important;
+            padding: 16px 20px 6px !important;
+            height: calc(100vh - var(--header-height)) !important;
         }
 
         #section-build .left-pane {
@@ -1260,6 +1261,7 @@
         #section-build .claude-chat {
             flex: 1 1 auto;
             min-height: 0;
+            height: 100%;
         }
 
         #section-build .terminal-wrapper {
@@ -1785,12 +1787,12 @@
                         <div class="chat-input-area">
                             <div class="input-glass">
                                 <div class="chat-helper" id="chatHelperText">
-                                    Paso 1: Cuéntanos qué necesitas. Paso 2: Te asignamos un ingeniero.
+                                    Paso 1: Cuéntanos qué necesitas. Paso 2: Te asignamos un ingeniero en minutos.
                                 </div>
                                 <!-- ID: businessIdea preserved -->
                                 <div class="chat-input-wrap">
                                     <textarea id="businessIdea"
-                                        placeholder="Escribe aquí tu pedido. Ej: “Necesito una web para mi estudio con reservas.”"></textarea>
+                                        placeholder="Paso 1: Cuéntanos qué necesitas. Ej: “Necesito una web para mi estudio con reservas.”"></textarea>
                                     <button id="generateBtn" class="chat-send-btn" title="Enviar">
                                         Enviar
                                     </button>
