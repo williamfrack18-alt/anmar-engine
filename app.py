@@ -445,6 +445,15 @@ def init_db():
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS pending_tickets (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_email TEXT NOT NULL,
+            project_name TEXT,
+            history_json TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
     conn.commit()
 
     # Lightweight migration for existing DBs created with older schema.
@@ -1985,6 +1994,66 @@ def is_user_subscribed(email):
     except Exception:
         return False
 
+def is_guest_email(email):
+    if not email:
+        return False
+    lower = str(email).strip().lower()
+    return lower.startswith('guest_') or lower.endswith('@guest.anmar') or lower.endswith('@guest.local')
+
+def save_pending_ticket(email, project_name, history):
+    if not email or not history:
+        return
+    conn = get_db_connection()
+    # Remove any previous pending ticket for same email/project
+    if project_name:
+        conn.execute(
+            "DELETE FROM pending_tickets WHERE user_email = ? AND project_name = ?",
+            (email, project_name)
+        )
+    conn.execute(
+        "INSERT INTO pending_tickets (user_email, project_name, history_json) VALUES (?, ?, ?)",
+        (email, project_name, json.dumps(history))
+    )
+    conn.commit()
+    conn.close()
+
+def get_pending_tickets(email, project_name=None):
+    if not email:
+        return []
+    conn = get_db_connection()
+    if project_name:
+        rows = conn.execute(
+            "SELECT * FROM pending_tickets WHERE user_email = ? AND project_name = ? ORDER BY created_at ASC",
+            (email, project_name)
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            "SELECT * FROM pending_tickets WHERE user_email = ? ORDER BY created_at ASC",
+            (email,)
+        ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def delete_pending_ticket(ticket_id):
+    conn = get_db_connection()
+    conn.execute("DELETE FROM pending_tickets WHERE id = ?", (ticket_id,))
+    conn.commit()
+    conn.close()
+
+def submit_pending_tickets_for_email(email, project_name=None):
+    if not email or not is_user_subscribed(email):
+        return []
+    pending = get_pending_tickets(email, project_name=project_name)
+    results = []
+    for item in pending:
+        history = json.loads(item.get("history_json") or "[]")
+        proj_name = item.get("project_name") or ""
+        if history:
+            payload = build_ticket_from_history(history, email, proj_name)
+            results.append(payload)
+        delete_pending_ticket(item.get("id"))
+    return results
+
 def get_stripe_plan_map():
     return {
         "marketing": STRIPE_PRICE_MARKETING,
@@ -2495,6 +2564,10 @@ def stripe_webhook():
                 subscription_id=subscription_id,
                 status="active"
             )
+            try:
+                submit_pending_tickets_for_email(email)
+            except Exception as e:
+                print(f"Pending ticket auto-submit failed: {e}")
 
     if event_type in ('customer.subscription.updated', 'customer.subscription.deleted'):
         customer_id = data_object.get('customer')
@@ -2547,7 +2620,26 @@ def stripe_verify_session():
                 subscription_id=subscription_id,
                 status="active"
             )
+            try:
+                submit_pending_tickets_for_email(email)
+            except Exception as e:
+                print(f"Pending ticket auto-submit failed: {e}")
         return jsonify({"status": "ok"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/tickets/submit-pending', methods=['POST'])
+def submit_pending_tickets():
+    try:
+        data = request.json or {}
+        email = (data.get('user_email') or '').strip().lower()
+        project_name = (data.get('project_name') or '').strip().lower()
+        if not email:
+            return jsonify({"error": "Email requerido"}), 400
+        if not is_user_subscribed(email):
+            return jsonify({"error": "Plan requerido"}), 402
+        results = submit_pending_tickets_for_email(email, project_name=project_name or None)
+        return jsonify({"status": "ok", "tickets": results})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -2759,53 +2851,44 @@ def analyze_idea():
 
 # --- NEW: SYNTHESIS BRAIN ---
 # --- NEW: TICKET SYSTEM (Step 1: Chat -> Ticket) ---
-@app.route('/api/create-ticket', methods=['POST'])
-def create_ticket():
-    try:
-        data = request.json
-        history = data.get('history', [])
-        user_email = (data.get('user_email') or '').strip().lower()
-        project_name = (data.get('project_name') or '').strip().lower()
-        if not history:
-            return jsonify({"error": "History is required"}), 400
+def build_ticket_from_history(history, user_email, project_name):
+    brief = extract_brief_from_history(history)
+    memory = get_chat_memory(user_email, project_name=project_name) if user_email else {}
+    agent_memory = memory.get("agent_memory") if isinstance(memory, dict) else None
+    engineer_brief = build_engineer_brief(brief, history, agent_memory=agent_memory)
+    project_id = slugify_project_name(brief.get("project_name_seed"))
+    tech_stack = infer_tech_stack_from_text(brief.get("raw_text"))
+    summary = engineer_brief.get("vision") or brief.get("summary") or "Nuevo proyecto generado desde chat."
+    handoff_package = build_handoff_package(engineer_brief, tech_stack)
+    blueprint_md = generate_blueprint_markdown(brief, tech_stack)
+    priority = infer_priority_from_brief(brief)
+    sla_due_at = compute_sla_due_at(priority)
 
-        brief = extract_brief_from_history(history)
-        memory = get_chat_memory(user_email, project_name=project_name) if user_email else {}
-        agent_memory = memory.get("agent_memory") if isinstance(memory, dict) else None
-        engineer_brief = build_engineer_brief(brief, history, agent_memory=agent_memory)
-        project_id = slugify_project_name(brief.get("project_name_seed"))
-        tech_stack = infer_tech_stack_from_text(brief.get("raw_text"))
-        summary = engineer_brief.get("vision") or brief.get("summary") or "Nuevo proyecto generado desde chat."
-        handoff_package = build_handoff_package(engineer_brief, tech_stack)
-        blueprint_md = generate_blueprint_markdown(brief, tech_stack)
-        priority = infer_priority_from_brief(brief)
-        sla_due_at = compute_sla_due_at(priority)
+    # Optional AI enhancement. If it fails, deterministic blueprint remains.
+    ai_prompt = f"""
+    Eres arquitecto de software.
+    HISTORIAL: {history}
+    Devuelve JSON:
+    {{
+      "project_name": "snake_case",
+      "summary": "1 frase",
+      "tech_stack": ["stack1", "stack2"],
+      "blueprint_content": "markdown"
+    }}
+    """
+    ai_plan = call_ai_json(ai_prompt)
+    if ai_plan:
+        project_id = slugify_project_name(ai_plan.get("project_name", project_id))
+        summary = ai_plan.get("summary", summary)
+        if isinstance(ai_plan.get("tech_stack"), list) and ai_plan.get("tech_stack"):
+            tech_stack = [str(x) for x in ai_plan.get("tech_stack")]
+        blueprint_md = ai_plan.get("blueprint_content", blueprint_md)
 
-        # Optional AI enhancement. If it fails, deterministic blueprint remains.
-        ai_prompt = f"""
-        Eres arquitecto de software.
-        HISTORIAL: {history}
-        Devuelve JSON:
-        {{
-          "project_name": "snake_case",
-          "summary": "1 frase",
-          "tech_stack": ["stack1", "stack2"],
-          "blueprint_content": "markdown"
-        }}
-        """
-        ai_plan = call_ai_json(ai_prompt)
-        if ai_plan:
-            project_id = slugify_project_name(ai_plan.get("project_name", project_id))
-            summary = ai_plan.get("summary", summary)
-            if isinstance(ai_plan.get("tech_stack"), list) and ai_plan.get("tech_stack"):
-                tech_stack = [str(x) for x in ai_plan.get("tech_stack")]
-            blueprint_md = ai_plan.get("blueprint_content", blueprint_md)
+    # 2. CREATE FOLDER & HANDOFF (Immediate)
+    project_dir = os.path.join(projects_base_dir, project_id)
+    os.makedirs(project_dir, exist_ok=True)
 
-        # 2. CREATE FOLDER & HANDOFF (Immediate)
-        project_dir = os.path.join(projects_base_dir, project_id)
-        os.makedirs(project_dir, exist_ok=True)
-
-        handoff_content = f"""# ANMAR Handoff Document
+    handoff_content = f"""# ANMAR Handoff Document
 ID: {project_id}
 Date: {datetime.now().isoformat()}
 Summary: {summary}
@@ -2836,48 +2919,72 @@ Stack: {', '.join(tech_stack)}
 ## Technical Blueprint
 {blueprint_md}
 """
-        with open(os.path.join(project_dir, 'handoff.md'), 'w') as f:
-            f.write(handoff_content)
+    with open(os.path.join(project_dir, 'handoff.md'), 'w') as f:
+        f.write(handoff_content)
 
-        # 3. CREATE TICKET (Internal Alerts)
-        new_ticket = {
-            "id": f"TKT-{int(datetime.now().timestamp())}-{uuid.uuid4().hex[:4]}",
-            "project_name": project_id,
-            "client_email": user_email,
-            "client": user_email or "unknown@anmar.local",
-            "status": "pending",
-            "timestamp": datetime.now().isoformat(),
-            "updated_at": datetime.now().isoformat(),
-            "summary": summary,
-            "preview_url": "",
-            "delivery_note": "",
-            "engineer_brief": engineer_brief,
-            "handoff_package": handoff_package,
-            "tech_stack": tech_stack,
-            "blueprint_md": blueprint_md,
-            "priority": priority,
-            "sla_due_at": sla_due_at,
-            "events": [],
-        }
+    # 3. CREATE TICKET (Internal Alerts)
+    new_ticket = {
+        "id": f"TKT-{int(datetime.now().timestamp())}-{uuid.uuid4().hex[:4]}",
+        "project_name": project_id,
+        "client_email": user_email,
+        "client": user_email or "unknown@anmar.local",
+        "status": "pending",
+        "timestamp": datetime.now().isoformat(),
+        "updated_at": datetime.now().isoformat(),
+        "summary": summary,
+        "preview_url": "",
+        "delivery_note": "",
+        "engineer_brief": engineer_brief,
+        "handoff_package": handoff_package,
+        "tech_stack": tech_stack,
+        "blueprint_md": blueprint_md,
+        "priority": priority,
+        "sla_due_at": sla_due_at,
+        "events": [],
+    }
 
-        append_ticket_event(new_ticket, "pending", status_message("pending", project_id=project_id), actor="system")
+    append_ticket_event(new_ticket, "pending", status_message("pending", project_id=project_id), actor="system")
 
-        current_alerts = load_alerts()
-        current_alerts.insert(0, new_ticket)
-        save_alerts(current_alerts)
+    current_alerts = load_alerts()
+    current_alerts.insert(0, new_ticket)
+    save_alerts(current_alerts)
 
-        # 4. INITIAL STATUS (Client Feedback)
-        update_order_status(
-            project_id,
-            "pending",
-            log_entry="Ticket creado y enviado a ingeniería."
-        )
+    # 4. INITIAL STATUS (Client Feedback)
+    update_order_status(
+        project_id,
+        "pending",
+        log_entry="Ticket creado y enviado a ingeniería."
+    )
 
-        return jsonify({
-            "message": "Solicitud enviada a ingeniería.",
-            "project_id": project_id,
-            "status": "ticket_created"
-        })
+    return {
+        "message": "Solicitud enviada a ingeniería.",
+        "project_id": project_id,
+        "status": "ticket_created"
+    }
+
+
+@app.route('/api/create-ticket', methods=['POST'])
+def create_ticket():
+    try:
+        data = request.json
+        history = data.get('history', [])
+        user_email = (data.get('user_email') or '').strip().lower()
+        project_name = (data.get('project_name') or '').strip().lower()
+        if not history:
+            return jsonify({"error": "History is required"}), 400
+        if not user_email:
+            return jsonify({"error": "Email requerido"}), 400
+
+        if not is_user_subscribed(user_email):
+            save_pending_ticket(user_email, project_name, history)
+            return jsonify({
+                "requires_subscription": True,
+                "status": "pending_payment",
+                "message": "Tu proyecto está listo. Activa un plan para enviarlo a nuestro equipo."
+            }), 402
+
+        payload = build_ticket_from_history(history, user_email, project_name)
+        return jsonify(payload)
 
     except Exception as e:
         print(f"Ticket Error: {e}")
@@ -4722,12 +4829,6 @@ def continue_chat():
         engine = normalize_engine(data.get('engine'))
         user_email = (data.get('user_email') or '').strip().lower()
         project_name = (data.get('project_name') or '').strip().lower()
-        if is_subscription_required_after_preview(user_email, project_name):
-            return jsonify({
-                "error": "La previsualización inicial ya fue entregada. Suscríbete para continuar por chat.",
-                "code": "subscription_required_after_preview",
-                "requires_subscription": True
-            }), 402
         image_context = describe_image_for_chat(image_data_url) if image_data_url else ""
         enriched_input = current_input
         if image_context:
@@ -4737,13 +4838,7 @@ def continue_chat():
 
         if not enriched_input:
             return jsonify({"error": "message is required"}), 400
-        ok_tokens, token_msg, remaining = consume_chat_message_quota(
-            user_email,
-            project_name,
-            reason="enviar mensaje al chat"
-        )
-        if not ok_tokens:
-            return jsonify({"error": token_msg, "remaining_tokens": remaining}), 402
+        remaining = get_user_token_balance(user_email) if user_email else None
         if has_reset_intent(current_input):
             if user_email:
                 save_chat_memory(

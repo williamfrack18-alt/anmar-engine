@@ -972,6 +972,46 @@
             margin-top: auto;
         }
 
+        .paywall-email-gate {
+            display: none;
+            margin: 0 auto 18px;
+            max-width: 520px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(59, 130, 246, 0.35);
+            border-radius: 14px;
+            padding: 14px 16px;
+            text-align: left;
+        }
+
+        .paywall-email-gate p {
+            margin: 0 0 8px 0;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.78);
+        }
+
+        .paywall-email-gate input {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.4);
+            color: #fff;
+            font-size: 0.9rem;
+            outline: none;
+            margin-bottom: 8px;
+        }
+
+        .paywall-email-gate button {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: none;
+            background: #3b82f6;
+            color: #fff;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
         #pricing-modal .pricing-shell {
             max-width: 860px !important;
             width: 92%;
@@ -2230,6 +2270,12 @@
         <div style="text-align:center; margin-bottom:24px;">
             <h2 class="pricing-title" style="color:#fff; margin:0 0 10px 0; font-size:2rem;">Activa tu Plan Mensual</h2>
             <p class="pricing-subtitle" style="color:#666;">Elige el acceso que deseas antes de iniciar el chat con el equipo.</p>
+        </div>
+
+        <div id="paywallEmailGate" class="paywall-email-gate">
+            <p>Tu proyecto está listo. Ingresa tu correo para activarlo con el equipo.</p>
+            <input id="paywallEmailInput" type="email" placeholder="tu@correo.com" />
+            <button id="paywallEmailBtn" type="button">Continuar</button>
         </div>
 
         <div class="pricing-grid">

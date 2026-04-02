@@ -49,6 +49,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const notifCloseBtn = document.getElementById('notifCloseBtn');
     const paywallBanner = document.getElementById('paywallBanner');
     const paywallBtn = document.getElementById('paywallBtn');
+    const paywallEmailGate = document.getElementById('paywallEmailGate');
+    const paywallEmailInput = document.getElementById('paywallEmailInput');
+    const paywallEmailBtn = document.getElementById('paywallEmailBtn');
     const welcomeScreen = document.getElementById('welcomeScreen');
     const welcomeType = document.getElementById('welcomeType');
     const welcomeInput = document.getElementById('welcomeProjectInput');
@@ -70,6 +73,56 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.removeItem('currentUser');
         currentUser = null;
     }
+
+    const isGuestEmail = (email) => {
+        const lower = String(email || '').toLowerCase();
+        return lower.startsWith('guest_') || lower.endsWith('@guest.anmar') || lower.endsWith('@guest.local');
+    };
+
+    const setCurrentUserEmail = (email) => {
+        if (!email) return;
+        currentUser = currentUser || {};
+        currentUser.email = email.trim().toLowerCase();
+        if (!currentUser.name || currentUser.name === 'Invitado') {
+            currentUser.name = email.split('@')[0] || 'Cliente';
+        }
+        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+        localStorage.removeItem('guest_user');
+    };
+
+    const showEmailGate = () => {
+        if (paywallEmailGate) {
+            paywallEmailGate.style.display = 'block';
+        }
+        if (paywallEmailInput) {
+            paywallEmailInput.focus();
+        }
+    };
+
+    const ensureCheckoutIdentity = () => {
+        if (!currentUser || isGuestEmail(currentUser.email)) {
+            showEmailGate();
+            return false;
+        }
+        return true;
+    };
+
+    const ensureGuestUser = () => {
+        if (currentUser && currentUser.email) return;
+        const existingGuest = localStorage.getItem('guest_session_id');
+        const guestId = existingGuest || (crypto?.randomUUID ? crypto.randomUUID() : `g_${Date.now()}_${Math.floor(Math.random()*9999)}`);
+        localStorage.setItem('guest_session_id', guestId);
+        currentUser = {
+            name: 'Invitado',
+            email: `guest_${guestId}@guest.anmar`
+        };
+        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+        localStorage.setItem('guest_user', '1');
+    };
+
+    ensureGuestUser();
+
+    let pendingPlanId = null;
 
     // --- Human Chat Polling ---
     let humanChatInterval = null;
@@ -408,8 +461,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     if (!currentUser) {
-        window.location.href = 'login.html'; // Protect Dashboard
-        return;
+        ensureGuestUser();
     }
 
     // Initialize welcome screen greeting once user is known
@@ -488,6 +540,28 @@ document.addEventListener('DOMContentLoaded', () => {
         paywallBtn.addEventListener('click', () => {
             const modal = document.getElementById('pricing-modal');
             if (modal) modal.style.display = 'flex';
+            if (!ensureCheckoutIdentity()) {
+                showEmailGate();
+            }
+        });
+    }
+
+    if (paywallEmailBtn) {
+        paywallEmailBtn.addEventListener('click', () => {
+            const email = (paywallEmailInput?.value || '').trim().toLowerCase();
+            if (!email || !email.includes('@')) {
+                alert('Escribe un correo válido para continuar.');
+                return;
+            }
+            setCurrentUserEmail(email);
+            hydrateProfile();
+            refreshSubscriptionStatus(true);
+            if (paywallEmailGate) paywallEmailGate.style.display = 'none';
+            if (pendingPlanId) {
+                const nextPlan = pendingPlanId;
+                pendingPlanId = null;
+                window.purchasePlan(nextPlan);
+            }
         });
     }
 
@@ -521,7 +595,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let originalIdea = '';
 
     // Run on Load
-    checkUserCredits();
+    checkUserCredits().then(() => submitPendingTicketIfAny());
     hydrateProfile();
     renderBriefState();
     (function handleCheckoutReturn() {
@@ -533,10 +607,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (sessionId) {
                 fetch(`/api/stripe/verify-session?session_id=${encodeURIComponent(sessionId)}`)
                     .then(() => refreshSubscriptionStatus(true))
+                    .then(() => submitPendingTicketIfAny())
                     .catch(() => refreshSubscriptionStatus(true));
             } else {
                 setTimeout(() => {
-                    refreshSubscriptionStatus(true);
+                    refreshSubscriptionStatus(true).then(() => submitPendingTicketIfAny());
                 }, 1200);
             }
             addLog("✅ Pago confirmado. Tu plan ya está activo.", "success");
@@ -545,6 +620,25 @@ document.addEventListener('DOMContentLoaded', () => {
             addLog("Pago cancelado. Puedes intentar de nuevo cuando quieras.", "system");
         }
     })();
+
+    async function submitPendingTicketIfAny() {
+        const pendingProject = localStorage.getItem('pending_ticket_project') || '';
+        if (!pendingProject || !currentUser?.email) return;
+        try {
+            const res = await fetch('/api/tickets/submit-pending', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_email: currentUser.email, project_name: pendingProject })
+            });
+            const data = await res.json();
+            if (data && data.status === 'ok' && Array.isArray(data.tickets) && data.tickets.length) {
+                localStorage.removeItem('pending_ticket_project');
+                addLog("✅ Ticket enviado automáticamente al equipo.", "success");
+            }
+        } catch (e) {
+            console.warn('Pending ticket submit failed', e);
+        }
+    }
 
     function setInteractionMode(mode) {
         interactionMode = mode === 'edit' ? 'edit' : 'strategy';
@@ -881,6 +975,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (message) addLog(message, 'warning');
         const modal = document.getElementById('pricing-modal');
         if (modal) modal.style.display = 'flex';
+        if (!ensureCheckoutIdentity()) {
+            showEmailGate();
+        }
     }
 
     function renderBriefState(meta = {}) {
@@ -1712,6 +1809,10 @@ document.addEventListener('DOMContentLoaded', () => {
         showThinking("Transmitiendo a Central Anmar...");
 
         try {
+            if (!ensureCheckoutIdentity()) {
+                if (btn) { btn.disabled = false; btn.innerHTML = 'Confirmar y Enviar a Ingeniería'; }
+                return;
+            }
             const res = await fetch('/api/create-ticket', {
                 method: 'POST', body: JSON.stringify({ history: conversationHistory, user_email: currentUser.email, project_name: currentProjectName }),
                 headers: { 'Content-Type': 'application/json' }
@@ -1720,6 +1821,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
             stopThinking();
 
+            if (data.requires_subscription) {
+                const modal = document.getElementById('pricing-modal');
+                if (modal) modal.style.display = 'flex';
+                localStorage.setItem('pending_ticket_project', currentProjectName || '');
+                addSystemMessage(`<span style="color:#fbbf24;">🔒 Tu proyecto está listo. Elige un plan para enviarlo a nuestro equipo.</span>`);
+                if (btn) { btn.disabled = false; btn.innerHTML = 'Confirmar y Enviar a Ingeniería'; }
+                stopThinking();
+                return;
+            }
             if (data.error) throw new Error(data.error);
 
             // Update Chat UI
@@ -2887,7 +2997,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-            if (!currentUser) { alert("Error de sesión"); return; }
+            if (!currentUser || isGuestEmail(currentUser.email)) {
+                pendingPlanId = planId;
+                const modal = document.getElementById('pricing-modal');
+                if (modal) modal.style.display = 'flex';
+                showEmailGate();
+                if (btn) { btn.innerHTML = originalText; btn.style.opacity = '1'; }
+                return;
+            }
 
             const res = await fetch('/api/stripe/create-checkout-session', {
                 method: 'POST',
