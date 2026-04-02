@@ -6,6 +6,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // DOM Elements
     const chatInput = document.getElementById('businessIdea'); // Dual purpose: Idea or Edit
     const sendBtn = document.getElementById('generateBtn');
+    const chatCounter = document.getElementById('chatCounter');
+    const chatTypingIndicator = document.getElementById('chatTypingIndicator');
+    const chatWrap = document.querySelector('.chat-input-wrap');
+    const inputGlass = document.querySelector('.input-glass');
+    const CHAT_MAX_CHARS = 2000;
     const terminalContent = document.getElementById('terminalLog'); // UPDATED ID to match Dashboard HTML structure wrapper
     const resultSection = document.getElementById('resultSection'); // Container for Build Btn
     const buildBtn = document.getElementById('buildBtn');
@@ -359,6 +364,30 @@ document.addEventListener('DOMContentLoaded', () => {
     let welcomeTyped = false;
     const chatHelper = document.getElementById('chatHelperText');
 
+    const resizeChatInput = () => {
+        if (!chatInput) return;
+        chatInput.style.height = 'auto';
+        const maxHeight = 160;
+        const nextHeight = Math.min(chatInput.scrollHeight, maxHeight);
+        chatInput.style.height = `${nextHeight}px`;
+        chatInput.style.overflowY = chatInput.scrollHeight > maxHeight ? 'auto' : 'hidden';
+    };
+
+    const updateSendState = () => {
+        if (!chatInput || !sendBtn) return;
+        const len = chatInput.value.length;
+        const hasText = chatInput.value.trim().length > 0;
+        const hasAttachment = !!pendingImageDataUrl;
+        const overLimit = len > CHAT_MAX_CHARS;
+        const canSend = (hasText || hasAttachment) && !isProcessing && !overLimit;
+        sendBtn.disabled = !canSend;
+        sendBtn.classList.toggle('active', canSend);
+        if (chatWrap) chatWrap.classList.toggle('typing', len > 0);
+        if (chatCounter) {
+            chatCounter.textContent = `${len}/${CHAT_MAX_CHARS}`;
+            chatCounter.classList.toggle('over', overLimit);
+        }
+    };
     // React to Tab switch
     document.addEventListener('chatTabSwitched', (e) => {
         if (e.detail === 'Human') {
@@ -374,6 +403,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 chatHelper.textContent = "Describe tu idea y generamos el blueprint técnico automáticamente.";
             }
         }
+        resizeChatInput();
+        updateSendState();
     });
 
     if (!currentUser) {
@@ -480,6 +511,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let previewLockedByReview = false;
     let subscriptionActive = false;
     let subscriptionPlan = 'none';
+
+    // Init chat input UI after state is ready
+    resizeChatInput();
+    updateSendState();
 
     // Conversation State
     let chatStage = 'initial'; // 'initial', 'refinement', 'ready', 'blueprint', 'building'
@@ -964,6 +999,7 @@ document.addEventListener('DOMContentLoaded', () => {
         pendingImageName = '';
         if (imageUploadInput) imageUploadInput.value = '';
         updateAttachmentStatus();
+        updateSendState();
     }
 
     function initVoiceInput() {
@@ -996,6 +1032,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (transcript.trim()) {
                 chatInput.value = transcript.trim();
+                resizeChatInput();
+                updateSendState();
             }
         };
 
@@ -1110,6 +1148,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const log = document.getElementById('humanLog');
             if (log) log.scrollTop = log.scrollHeight;
             lastHumanChatCount++; // optimistic update
+            updateSendState();
 
             if (!window.__humanAssignedOnce) {
                 window.__humanAssignedOnce = true;
@@ -1167,6 +1206,8 @@ document.addEventListener('DOMContentLoaded', () => {
         setLoading(true);
         addUserMessage(userBubbleText);
         chatInput.value = '';
+        resizeChatInput();
+        updateSendState();
 
         try {
             if (interactionMode === 'edit') {
@@ -1202,9 +1243,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 } else {
                     addLog("Escribe 'Si' o usa el botón para confirmar la construcción.", 'warning');
-                }
-                return;
             }
+            return;
+        }
 
             // Case 4: Editing
             if (interactionMode === 'edit' && chatStage === 'construction_mode' && currentProjectName) {
@@ -1813,13 +1854,26 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 3000);
     }
     // ConfirmBuild removed (legacy)
-    // Support Enter key
-    chatInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
+    // Support Enter key (Shift+Enter = newline)
+    chatInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
             e.preventDefault();
             sendBtn.click();
         }
     });
+
+    if (chatInput) {
+        chatInput.addEventListener('input', () => {
+            resizeChatInput();
+            updateSendState();
+        });
+        chatInput.addEventListener('focus', () => {
+            if (inputGlass) inputGlass.classList.add('focused');
+        });
+        chatInput.addEventListener('blur', () => {
+            if (inputGlass && !chatInput.value.trim()) inputGlass.classList.remove('focused');
+        });
+    }
 
     // --- Logic: Generate Plan & Build ---
     async function handleGeneratePlan(idea) {
@@ -2141,9 +2195,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 pendingImageDataUrl = await toDataUrl(file);
                 pendingImageName = file.name || 'imagen';
                 updateAttachmentStatus();
+                updateSendState();
             } catch (err) {
                 addLog(`No se pudo cargar la imagen: ${err.message}`, 'error');
                 clearPendingAttachment();
+                updateSendState();
             }
         });
     }
@@ -2189,12 +2245,16 @@ document.addEventListener('DOMContentLoaded', () => {
         isProcessing = bool;
         sendBtn.disabled = bool;
         chatInput.disabled = bool;
+        if (chatTypingIndicator) {
+            chatTypingIndicator.classList.toggle('active', bool);
+        }
         if (bool) {
             sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         } else {
             sendBtn.innerHTML = '<i class="fas fa-arrow-up"></i>';
             chatInput.focus();
         }
+        updateSendState();
     }
 
     // --- Project Management ---

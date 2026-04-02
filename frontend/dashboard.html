@@ -604,6 +604,14 @@
             line-height: 1.4;
             padding: 0 8px;
             width: 100%;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+
+        .input-glass.focused .chat-helper {
+            opacity: 0;
+            transform: translateY(-6px);
+            height: 0;
+            overflow: hidden;
         }
 
         textarea {
@@ -616,7 +624,10 @@
             line-height: 1.4;
             outline: none;
             resize: none;
-            height: 72px;
+            min-height: 44px;
+            max-height: 160px;
+            height: 44px;
+            overflow-y: hidden;
         }
 
         .chat-input-wrap {
@@ -630,6 +641,7 @@
             padding: 10px 14px;
             box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
             width: 100%;
+            transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
         }
 
         .chat-input-wrap textarea {
@@ -639,15 +651,83 @@
             min-width: 0;
         }
 
+        .chat-input-wrap.typing {
+            border-color: rgba(16, 185, 129, 0.45);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12), 0 16px 34px rgba(0, 0, 0, 0.35);
+            transform: translateY(-1px);
+        }
+
+        .chat-icon-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            background: rgba(255, 255, 255, 0.05);
+            color: rgba(255, 255, 255, 0.75);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .chat-icon-btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+            color: #fff;
+        }
+
         .chat-send-btn {
-            background: #fff;
-            color: #000;
+            background: rgba(255, 255, 255, 0.12);
+            color: rgba(255, 255, 255, 0.75);
             border: none;
             border-radius: 14px;
             padding: 10px 16px;
             font-weight: 700;
             cursor: pointer;
             transition: transform 0.2s ease;
+        }
+
+        .chat-send-btn.active {
+            background: #10b981;
+            color: #001b12;
+            box-shadow: 0 10px 24px rgba(16, 185, 129, 0.25);
+        }
+
+        .chat-send-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.55;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .chat-send-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .chat-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 0 6px;
+            font-size: 0.78rem;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .char-counter.over {
+            color: #fca5a5;
+        }
+
+        .typing-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .typing-indicator.active {
+            opacity: 1;
         }
 
         .claude-chat {
@@ -1876,15 +1956,28 @@
                                 </div>
                                 <!-- ID: businessIdea preserved -->
                                 <div class="chat-input-wrap">
+                                    <button id="uploadImageBtn" class="chat-icon-btn" title="Adjuntar archivo">
+                                        <i class="fas fa-paperclip"></i>
+                                    </button>
                                     <textarea id="businessIdea"
-                                        placeholder="Paso 1: Cuéntanos qué necesitas. Ej: “Necesito una web para mi estudio con reservas.”"></textarea>
+                                        placeholder="Paso 1: Cuéntanos qué necesitas. Ej: “Necesito una web para mi estudio con reservas.”"
+                                        rows="1"></textarea>
+                                    <button id="voiceInputBtn" class="chat-icon-btn" title="Micrófono">
+                                        <i class="fas fa-microphone"></i>
+                                    </button>
                                     <button id="generateBtn" class="chat-send-btn" title="Enviar">
-                                        Enviar
+                                        <i class="fas fa-arrow-up"></i>
                                     </button>
                                 </div>
                                 <input id="imageUploadInput" type="file" accept="image/*" style="display:none;" />
                                 <div id="attachmentStatus"
                                     style="display:none; font-size:0.72rem; color:#93c5fd; padding:0 10px 2px 10px;">
+                                </div>
+                                <div class="chat-meta">
+                                    <span id="chatTypingIndicator" class="typing-indicator">
+                                        <i class="fas fa-circle-notch fa-spin"></i> IA escribiendo...
+                                    </span>
+                                    <span id="chatCounter" class="char-counter">0/2000</span>
                                 </div>
                                 <div class="action-bar" style="justify-content:flex-end; display:none;"></div>
                             </div>
