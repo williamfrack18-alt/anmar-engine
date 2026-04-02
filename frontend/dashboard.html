@@ -613,6 +613,7 @@
             padding: 10px;
             font-family: 'Inter', sans-serif;
             font-size: 1rem;
+            line-height: 1.4;
             outline: none;
             resize: none;
             height: 72px;
@@ -670,23 +671,33 @@
         }
 
         .claude-chat .console-header {
-            background: rgba(0, 0, 0, 0.35);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            padding: 12px 16px !important;
+            background: transparent;
+            border-bottom: none;
+            padding: 14px 18px !important;
         }
 
         .claude-chat .terminal-wrapper {
-            background: rgba(0, 0, 0, 0.22);
-            padding: 1.4rem 1.6rem !important;
-            gap: 0.85rem !important;
+            background: transparent;
+            padding: 1.4rem 1.8rem 0.8rem !important;
+            gap: 0.75rem !important;
             flex: 1 1 auto;
             min-height: 0;
         }
 
         .claude-chat .chat-input-area {
-            background: rgba(0, 0, 0, 0.28);
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            background: transparent;
+            border-top: none;
             margin-top: auto;
+            padding: 0.8rem 1.8rem 1.2rem !important;
+        }
+
+        .claude-chat .input-glass {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .claude-chat .chat-helper {
+            text-align: left;
         }
 
         .claude-chat #chatTabHuman {
@@ -728,13 +739,24 @@
         }
 
         .claude-chat .chat-input-wrap {
-            background: rgba(255, 255, 255, 0.06);
-            border: 1px solid rgba(255, 255, 255, 0.18);
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 12px 26px rgba(0, 0, 0, 0.35);
+            border-radius: 18px;
         }
 
         .claude-chat .chat-input-wrap:focus-within {
             border-color: rgba(16, 185, 129, 0.6);
             box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
+        }
+
+        .claude-chat .chat-send-btn {
+            background: rgba(255, 255, 255, 0.12);
+            color: #fff;
+        }
+
+        .claude-chat .chat-send-btn:hover {
+            transform: translateY(-1px);
         }
 
         .glass-panel {
