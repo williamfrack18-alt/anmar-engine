@@ -644,18 +644,79 @@
             overflow: hidden;
         }
 
+        .claude-chat::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 20% 0%, rgba(16, 185, 129, 0.12), transparent 55%),
+                radial-gradient(circle at 80% 100%, rgba(34, 211, 238, 0.1), transparent 50%);
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
         .claude-chat .console-header {
-            background: rgba(0, 0, 0, 0.28);
+            background: rgba(0, 0, 0, 0.35);
             border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 12px 16px !important;
         }
 
         .claude-chat .terminal-wrapper {
             background: rgba(0, 0, 0, 0.22);
+            padding: 1.4rem 1.6rem !important;
+            gap: 0.85rem !important;
         }
 
         .claude-chat .chat-input-area {
             background: rgba(0, 0, 0, 0.28);
             border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .claude-chat #chatTabHuman {
+            background: rgba(255, 255, 255, 0.08) !important;
+            color: #e5e7eb !important;
+            border: 1px solid rgba(255, 255, 255, 0.18) !important;
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25);
+            font-weight: 600 !important;
+        }
+
+        .claude-chat .status-badge {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+            font-size: 0.7rem;
+        }
+
+        .claude-chat .msg-row .ai-msg,
+        .claude-chat .msg-row .user-msg {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .claude-chat .msg-row .ai-msg {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 12px 14px;
+            border-radius: 16px;
+            max-width: 88%;
+        }
+
+        .claude-chat .msg-row .ai-msg:hover,
+        .claude-chat .msg-row .user-msg:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+        }
+
+        .claude-chat .msg-row.user > div {
+            background: rgba(16, 185, 129, 0.14);
+            border: 1px solid rgba(16, 185, 129, 0.28);
+        }
+
+        .claude-chat .chat-input-wrap {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+
+        .claude-chat .chat-input-wrap:focus-within {
+            border-color: rgba(16, 185, 129, 0.6);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
         }
 
         .glass-panel {
