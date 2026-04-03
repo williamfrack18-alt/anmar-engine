@@ -290,15 +290,24 @@ model = None
 _last_ai_reconnect_attempt_at = None
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "").strip()
 OPENAI_CODEX_MODEL = os.getenv("OPENAI_CODEX_MODEL", "gpt-5-mini")
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "").strip()
+ANTHROPIC_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-20250514").strip()
+ANTHROPIC_VERSION = os.getenv("ANTHROPIC_VERSION", "2023-06-01").strip()
+ANTHROPIC_MAX_TOKENS = int(os.getenv("ANTHROPIC_MAX_TOKENS", "1200"))
+ANTHROPIC_TEMPERATURE = float(os.getenv("ANTHROPIC_TEMPERATURE", "0.6"))
+ANTHROPIC_ENDPOINT = os.getenv("ANTHROPIC_ENDPOINT", "https://api.anthropic.com/v1/messages").strip()
 
 ENGINE_ANTIGRAVITY = "antigravity"
 ENGINE_OPENAI_CODEX = "openai_codex"
+ENGINE_ANTHROPIC = "anthropic"
 
 
 def normalize_engine(engine_value):
     raw = str(engine_value or "").strip().lower()
     if raw in {"codex", "openai", "openai_codex", "gpt", "gpt5", "gpt-5"}:
         return ENGINE_OPENAI_CODEX
+    if raw in {"anthropic", "claude", "sonnet", "claude-sonnet"}:
+        return ENGINE_ANTHROPIC
     return ENGINE_ANTIGRAVITY
 
 
@@ -385,6 +394,7 @@ def connect_ai_model(force=False):
             AI_RUNTIME["connected"] = False  # Se confirma en la primera llamada exitosa.
             AI_RUNTIME["model_name"] = candidate
             AI_RUNTIME["last_error"] = None
+            AI_RUNTIME["provider"] = "gemini"
             return True
         except Exception as e:
             last_error = str(e)
@@ -1215,6 +1225,64 @@ def call_openai_codex_json(prompt, timeout_seconds=28):
         return None
 
 
+def call_anthropic_text(prompt, system_prompt=None, timeout_seconds=22):
+    if not ANTHROPIC_API_KEY:
+        return None
+    system_payload = system_prompt if system_prompt is not None else SYSTEM_INSTRUCTION_TEXT
+    payload = {
+        "model": ANTHROPIC_MODEL or "claude-sonnet-4-20250514",
+        "max_tokens": max(1, int(ANTHROPIC_MAX_TOKENS)),
+        "temperature": float(ANTHROPIC_TEMPERATURE),
+        "system": system_payload,
+        "messages": [
+            {"role": "user", "content": str(prompt or "")}
+        ],
+    }
+    try:
+        response = requests.post(
+            ANTHROPIC_ENDPOINT,
+            headers={
+                "x-api-key": ANTHROPIC_API_KEY,
+                "anthropic-version": ANTHROPIC_VERSION,
+                "content-type": "application/json",
+            },
+            json=payload,
+            timeout=timeout_seconds,
+        )
+        if response.status_code >= 400:
+            AI_RUNTIME["connected"] = False
+            AI_RUNTIME["model_name"] = ANTHROPIC_MODEL
+            AI_RUNTIME["last_error"] = f"Anthropic {response.status_code}: {response.text[:300]}"
+            AI_RUNTIME["last_check_at"] = _now_iso()
+            log_debug(f"Anthropic error {response.status_code}: {response.text[:300]}")
+            return None
+        data = response.json() or {}
+        content_blocks = data.get("content") or []
+        text = "".join(
+            [block.get("text", "") for block in content_blocks if isinstance(block, dict) and block.get("type") == "text"]
+        ).strip()
+        if not text:
+            AI_RUNTIME["connected"] = False
+            AI_RUNTIME["model_name"] = ANTHROPIC_MODEL
+            AI_RUNTIME["last_error"] = "Empty response from Anthropic"
+            AI_RUNTIME["last_check_at"] = _now_iso()
+            return None
+        AI_RUNTIME["connected"] = True
+        AI_RUNTIME["model_name"] = ANTHROPIC_MODEL
+        AI_RUNTIME["candidate_models"] = [ANTHROPIC_MODEL]
+        AI_RUNTIME["last_error"] = None
+        AI_RUNTIME["last_check_at"] = _now_iso()
+        AI_RUNTIME["provider"] = "anthropic"
+        return text
+    except Exception as e:
+        AI_RUNTIME["connected"] = False
+        AI_RUNTIME["model_name"] = ANTHROPIC_MODEL
+        AI_RUNTIME["last_error"] = str(e)
+        AI_RUNTIME["last_check_at"] = _now_iso()
+        log_debug(f"Anthropic call failed: {e}")
+        return None
+
+
 def call_ai_json(prompt, engine=ENGINE_ANTIGRAVITY):
     normalized_engine = normalize_engine(engine)
     if normalized_engine == ENGINE_OPENAI_CODEX:
@@ -1234,6 +1302,10 @@ def call_ai_text(prompt, engine=ENGINE_ANTIGRAVITY):
         if codex_text:
             return codex_text.replace("```", "").strip()
         # Hard fallback to Antigravity/Gemini if OpenAI is unavailable.
+    if normalized_engine in {ENGINE_ANTHROPIC, ENGINE_ANTIGRAVITY} and ANTHROPIC_API_KEY:
+        anth_text = call_anthropic_text(prompt, system_prompt=SYSTEM_INSTRUCTION_TEXT)
+        if anth_text:
+            return anth_text.replace("```", "").strip()
     if not model:
         connect_ai_model(force=True)
     if not model:
@@ -4919,6 +4991,7 @@ def ai_health():
 
     return jsonify({
         "connected": bool(AI_RUNTIME.get("connected")),
+        "provider": AI_RUNTIME.get("provider"),
         "model_name": AI_RUNTIME.get("model_name"),
         "candidate_models": AI_RUNTIME.get("candidate_models", []),
         "last_error": AI_RUNTIME.get("last_error"),
