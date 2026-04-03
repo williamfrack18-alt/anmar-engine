@@ -23,6 +23,8 @@ load_dotenv()
 # App is at project root (anmar-engine/), frontend is a child (anmar-engine/frontend/)
 # App is at project root (anmar-engine/), frontend is a child (anmar-engine/frontend/)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# Ensure we always load the .env that lives next to app.py (important for systemd working dirs).
+load_dotenv(os.path.join(BASE_DIR, ".env"), override=False)
 frontend_path = os.path.abspath(os.path.join(BASE_DIR, 'frontend'))
 internal_path = os.path.abspath(os.path.join(BASE_DIR, 'internal'))
 
