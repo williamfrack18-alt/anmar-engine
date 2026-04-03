@@ -468,7 +468,7 @@ document.addEventListener('DOMContentLoaded', () => {
     typeWelcomeText();
 
     if (typeof switchChatTab === 'function') {
-        switchChatTab('Human');
+        switchChatTab('AI');
     }
 
     if (togglePreviewBtn && previewPanel && buildSection) {

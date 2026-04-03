@@ -2197,22 +2197,24 @@
 
     <!-- Inline Script for Tab Switch (to avoid adding it to script.js right away) -->
     <script>
-        let isHumanChatActive = true;
+        let isHumanChatActive = false;
         function switchChatTab(tab) {
             const logIA = document.getElementById('terminalLog');
             const logHuman = document.getElementById('humanLog');
-            isHumanChatActive = true;
+            const isHuman = String(tab || '').toLowerCase().includes('human');
+            isHumanChatActive = isHuman;
 
-            if (logIA) logIA.style.display = 'none';
-            if (logHuman) logHuman.style.display = 'flex';
+            if (logIA) logIA.style.display = isHuman ? 'none' : 'flex';
+            if (logHuman) logHuman.style.display = isHuman ? 'flex' : 'none';
 
-            if (logHuman) {
+            const activeLog = isHuman ? logHuman : logIA;
+            if (activeLog) {
                 setTimeout(() => {
-                    logHuman.scrollTop = logHuman.scrollHeight;
+                    activeLog.scrollTop = activeLog.scrollHeight;
                 }, 50);
             }
 
-            document.dispatchEvent(new CustomEvent('chatTabSwitched', { detail: 'Human' }));
+            document.dispatchEvent(new CustomEvent('chatTabSwitched', { detail: isHuman ? 'Human' : 'AI' }));
         }
     </script>
 </body>
