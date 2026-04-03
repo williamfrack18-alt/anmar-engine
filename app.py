@@ -893,6 +893,22 @@ def is_greeting_text(text):
     }
     return t in greetings
 
+def detect_language(text):
+    t = (text or "").lower()
+    if not t:
+        return "es"
+    score_es = 0
+    score_en = 0
+    if re.search(r"[áéíóúñ]", t):
+        score_es += 2
+    for token in [" el ", " la ", " los ", " las ", " de ", " que ", " para ", " con ", " una ", " un ", " necesito ", " quiero ", "hola", "buenas"]:
+        if token in f" {t} ":
+            score_es += 1
+    for token in [" the ", " and ", " for ", " with ", " i ", " i want ", " need ", " hello ", " my ", " a ", " an "]:
+        if token in f" {t} ":
+            score_en += 1
+    return "en" if score_en > score_es else "es"
+
 def is_short_followup_text(text):
     t = (text or "").strip()
     if not t:
@@ -1754,11 +1770,21 @@ def analyze_turn_state(history, current_input, existing_memory=None):
 
 def compose_consultant_reply(analysis, current_input, history, engine=ENGINE_ANTIGRAVITY):
     memory = analysis["memory"]
+    lang = detect_language(current_input)
+    def t(es, en):
+        return en if lang == "en" else es
+
     if is_greeting_text(current_input):
-        return "¡Hola! Cuéntame tu idea y te ayudo a convertirla en un brief técnico listo para ingeniería."
+        return t(
+            "¡Hola! Cuéntame tu idea y la convertimos en un brief claro para el equipo.",
+            "Hi! Tell me your idea and I’ll turn it into a clear brief for the team."
+        )
 
     if analysis["ready_to_build"]:
-        return "Perfecto. Orden confirmada. Activo la ejecución con nuestra Red de Ingenieros en New York."
+        return t(
+            "Perfecto. Orden confirmada. Activamos la ejecución con nuestro equipo.",
+            "Perfect. Confirmed. We’re activating execution with our team."
+        )
 
     known = []
     if memory.get("audience"):
@@ -1767,126 +1793,46 @@ def compose_consultant_reply(analysis, current_input, history, engine=ENGINE_ANT
         known.append(f"modelo: {memory.get('business_model')}")
     if memory.get("timeline"):
         known.append(f"plazo: {memory.get('timeline')}")
-    context_block = " | ".join(known) if known else "sin datos firmes todavía"
+    context_block = " | ".join(known) if known else t("sin datos firmes todavía", "no confirmed data yet")
 
-    domain = memory.get("domain", "general")
-    example_by_domain = {
-        "marketplace": "Ejemplo V1: onboarding, matching y pagos.",
-        "ecommerce": "Ejemplo V1: catálogo, checkout y tracking.",
-        "pet_shop": "Ejemplo V1: catálogo, reservas y recordatorios.",
-        "saas": "Ejemplo V1: dashboard, roles y métricas clave.",
-        "general": "Ejemplo V1: login, flujo principal y panel de control."
-    }
-    example_hint = example_by_domain.get(domain, example_by_domain["general"])
-
-    # Let AI craft strategic dialogue focused on execution, not interrogation.
     prompt = f"""
-    # ROLE: Senior Startup Architect (Execution-First)
-    Eres un arquitecto senior de producto y negocio. Tu trabajo es convertir ideas en un brief accionable para el equipo interno.
-
-    Contexto actual:
+    Contexto:
+    - idioma: {"English" if lang == "en" else "Spanish"}
     - fase actual: {analysis.get("phase")}
     - resumen: {analysis.get("summary","")}
     - conocido: {context_block}
     - faltantes: {analysis.get("missing_fields", [])}
-    - siguiente pregunta: {analysis.get("next_question", "")}
     - listo por datos: {analysis.get("ready_by_data")}
     - último mensaje del cliente: {current_input}
     - historial reciente: {history[-6:]}
 
-    Reglas de comportamiento:
-    - Formato Markdown estricto.
-    - Estructura obligatoria:
-      1) ## Entendido
-      2) ## Propuesta Pulida (MVP)
-      3) ## Blueprint Interno (listo para ejecutar)
-      4) ## Siguiente Acción
-    - Modo ejecución: NO hagas entrevistas largas ni listas de preguntas repetitivas.
-    - No repitas preguntas ya respondidas en historial/memoria.
-    - Si el usuario ya respondió un dato, construye encima en lugar de pedirlo de nuevo.
-    - Si falta algún dato, asume una opción razonable y marca "Supuesto".
-    - Haz como máximo 1 pregunta breve SOLO si bloquea completamente la ejecución.
-    - No uses frases genéricas sin contenido.
-    - Máximo 230 palabras.
-    - Si hay frustración, reconoce brevemente y reconduce.
-    - Prioriza siempre: capturar intención, pulir alcance, definir MVP, dejar paquete interno listo.
-    - Si está listo por datos, usa esta frase exacta:
-      "Estamos listos. He preparado el Blueprint Técnico. ¿Damos la orden de ejecución a nuestra Red de Ingenieros en New York?"
-    - Incluye: problema, usuario, monetización y MVP técnico.
+    Instrucciones:
+    - Responde como Anmar AI (consultor senior).
+    - Refleja la visión, propone 2-3 sugerencias inteligentes y haz SOLO 1 pregunta.
+    - Si listo por datos, entrega un resumen emocionante y pregunta confirmación.
+    - No menciones IA, precios, planes ni pagos.
+    - Responde únicamente con el texto final al cliente.
     """
     ai_text = call_ai_text(prompt, engine=engine)
     if ai_text:
         return ai_text
 
-    action = decide_next_action(analysis, current_input)
     missing = analysis.get("missing_fields", [])
-    missing_text = ", ".join([missing_label(k) for k in missing]) if missing else "ninguno"
-    summary = analysis.get("summary") or "Idea en definición."
-    tip = micro_strategy_tip(memory, analysis)
+    summary = analysis.get("summary") or t("tu idea", "your idea")
+    next_q = analysis.get("next_question") or t(
+        "¿Cuál es el objetivo principal que quieres lograr con este producto?",
+        "What is the main goal you want to achieve with this product?"
+    )
 
-    if action["type"] == "recover":
-        return (
-            "## Entendido\nTienes razón. Cortamos el modo formulario y pasamos a ejecución.\n\n"
-            "## Propuesta Pulida (MVP)\n"
-            f"- Producto: {summary}\n"
-            "- Enfoque: versión 1 con flujo principal, operación y métrica clave.\n"
-            "- Supuesto: monetización inicial por plan estándar para acelerar salida.\n\n"
-            "## Blueprint Interno (listo para ejecutar)\n"
-            "- Ticket preparado para ingeniería con alcance, prioridad y entregables.\n\n"
-            "## Siguiente Acción\n"
-            "Si te parece bien, escribe: `enviar a interno` y lo despachamos."
+    if analysis.get("ready_by_data"):
+        return t(
+            f"Perfecto. Esta es la visión que tengo: {summary}. ¿Es esta la visión correcta o cambiarías algo antes de enviarlo al equipo?",
+            f"Perfect. Here’s the vision I have: {summary}. Is this the right vision, or would you change anything before we send it to the team?"
         )
 
-    if action["type"] == "handoff_confirmed":
-        return (
-            "## Entendido\nPerfecto, decisión tomada.\n\n"
-            "## Propuesta Pulida (MVP)\n"
-            "- Brief completo y consistente para arranque.\n"
-            "- Riesgo principal controlado: no ampliar alcance en V1.\n\n"
-            "## Blueprint Interno (listo para ejecutar)\n"
-            "- Paquete técnico preparado con visión, stack y requerimientos críticos.\n\n"
-            "## Siguiente Acción\n"
-            "Activo la ejecución con nuestra Red de Ingenieros en New York."
-        )
-
-    if action["type"] == "handoff_ready":
-        return (
-            "## Entendido\nTu proyecto ya está maduro para ejecución.\n\n"
-            "## Propuesta Pulida (MVP)\n"
-            f"- Resumen: {summary}\n"
-            "- Usuario, modelo de negocio, timeline y funcionalidades base definidos.\n\n"
-            "## Blueprint Interno (listo para ejecutar)\n"
-            "- Handoff preparado para el equipo técnico interno.\n\n"
-            "## Siguiente Acción\n"
-            "Estamos listos. He preparado el Blueprint Técnico. ¿Damos la orden de ejecución a nuestra Red de Ingenieros en New York?"
-        )
-
-    if action["type"] == "refine_with_tradeoffs":
-        return (
-            "## Entendido\nVamos bien: ya hay base real para ejecución.\n\n"
-            "## Propuesta Pulida (MVP)\n"
-            f"- Resumen actual: {summary}\n"
-            f"- Ajustes pendientes: {missing_text}\n"
-            "- Tradeoff aplicado: alcance controlado para lanzar antes.\n\n"
-            "## Blueprint Interno (listo para ejecutar)\n"
-            "- Backlog inicial: flujo principal, panel operativo y métricas.\n"
-            "- Stack sugerido según dominio y velocidad de entrega.\n\n"
-            "## Siguiente Acción\n"
-            "Si estás de acuerdo con este enfoque, escribe: `enviar a interno`."
-        )
-
-    # discovery default
-    blocker = analysis.get("next_question") or "Confirma en una frase el resultado principal que quieres lograr."
-    return (
-        "## Entendido\nYa capturé tu dirección general.\n\n"
-        "## Propuesta Pulida (MVP)\n"
-        f"- Contexto actual: {summary}\n"
-        f"- Campos aún débiles: {missing_text}\n"
-        f"- Recomendación aplicada: {tip}\n\n"
-        "## Blueprint Interno (listo para ejecutar)\n"
-        "- Puedo avanzar con supuestos y dejar ticket interno utilizable hoy mismo.\n\n"
-        "## Siguiente Acción\n"
-        f"{blocker}"
+    return t(
+        f"Entiendo la base de tu idea y veo un camino claro para un MVP sólido con alcance controlado. {next_q}",
+        f"I understand the core of your idea and see a clear path to a strong MVP with focused scope. {next_q}"
     )
 
 def get_missing_brief_fields(brief):
