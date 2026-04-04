@@ -1434,178 +1434,6 @@ def trim_history_after_last_reset(history):
         return history
     return history[last_reset_idx + 1:]
 
-MARKETING_REQUIRED_FIELDS = [
-    "goal",
-    "audience",
-    "offer",
-    "channels",
-    "budget",
-    "timeline",
-    "brand_voice",
-    "key_message",
-]
-
-def _coerce_list(value):
-    if isinstance(value, list):
-        return [str(v).strip() for v in value if str(v).strip()]
-    if isinstance(value, str):
-        return [v.strip() for v in value.split(",") if v.strip()]
-    return []
-
-def normalize_marketing_brief(brief):
-    if not isinstance(brief, dict):
-        brief = {}
-    clean = dict(brief)
-    clean["channels"] = _coerce_list(clean.get("channels", []))
-    for key in MARKETING_REQUIRED_FIELDS:
-        if key not in clean:
-            clean[key] = "" if key != "channels" else []
-    return clean
-
-def compute_marketing_missing(brief):
-    missing = []
-    for field in MARKETING_REQUIRED_FIELDS:
-        if field == "channels":
-            if not isinstance(brief.get("channels"), list) or not brief.get("channels"):
-                missing.append(field)
-        else:
-            if not str(brief.get(field, "")).strip():
-                missing.append(field)
-    return missing
-
-def compute_marketing_score(missing):
-    total = len(MARKETING_REQUIRED_FIELDS)
-    if total == 0:
-        return 0
-    return max(0, min(100, round(((total - len(missing)) / total) * 100)))
-
-@app.route('/api/continue-marketing', methods=['POST'])
-def continue_marketing():
-    try:
-        data = request.json or {}
-        history = trim_history_after_last_reset(data.get('history', []))
-        current_input = str(data.get('message', '') or '').strip()
-        image_data_url = data.get('image_data_url', '')
-        user_email = (data.get('user_email') or '').strip().lower()
-        project_name = (data.get('project_name') or '').strip().lower()
-        if not user_email:
-            return jsonify({"error": "login_required"}), 401
-        if not project_name:
-            return jsonify({"error": "project_required"}), 400
-        if not current_input and not image_data_url:
-            return jsonify({"error": "message is required"}), 400
-
-        image_context = describe_image_for_chat(image_data_url) if image_data_url else ""
-        enriched_input = current_input
-        if image_context:
-            enriched_input = f"{current_input}\n\nContexto de imagen adjunta:\n{image_context}".strip()
-        elif image_data_url and not current_input:
-            enriched_input = "El usuario adjunto una imagen. Describe su contexto y sugiere activos de marketing."
-
-        if has_reset_intent(current_input):
-            if user_email:
-                save_chat_memory(
-                    user_email,
-                    reset_memory_payload(get_chat_memory(user_email, project_name=project_name) or {}),
-                    project_name=project_name
-                )
-            return jsonify({
-                "ai_reply": "Contexto de marketing reiniciado. Definamos objetivo, audiencia y oferta.",
-                "missing_fields": MARKETING_REQUIRED_FIELDS,
-                "brief_score": 0,
-                "ready_for_handoff": False,
-                "marketing_brief": {}
-            })
-
-        history_text = "\n".join(
-            [f"{m.get('role', 'user')}: {m.get('content', '')}" for m in history[-12:] if isinstance(m, dict)]
-        )
-
-        prompt = f"""
-Eres un director de marketing senior. Tu trabajo es crear un brief listo para produccion y previsualizacion.
-
-Proyecto: {project_name}
-Conversacion previa:
-{history_text}
-
-Mensaje actual:
-{enriched_input}
-
-Devuelve SOLO JSON valido con esta estructura:
-{{
-  "reply": "Respuesta corta y directa en espanol, con la siguiente pregunta o confirmacion.",
-  "brief": {{
-    "goal": "Objetivo de campana",
-    "audience": "Audiencia ideal",
-    "offer": "Oferta o propuesta de valor",
-    "channels": ["Instagram", "TikTok", "YouTube"],
-    "budget": "Presupuesto o rango",
-    "timeline": "Timeline o fecha",
-    "brand_voice": "Tono de marca",
-    "key_message": "Mensaje principal"
-  }},
-  "preview_assets": [
-    {{
-      "platform": "Instagram",
-      "format": "Reel",
-      "hook": "Hook de 1 linea",
-      "caption": "Copy de 1-2 lineas",
-      "cta": "CTA",
-      "hashtags": ["#hashtag"],
-      "metrics": {{"views": 12000, "ctr": 1.8, "cpc": 0.6}}
-    }},
-    {{
-      "platform": "TikTok",
-      "format": "Short",
-      "hook": "...",
-      "caption": "...",
-      "cta": "...",
-      "hashtags": ["#hashtag"],
-      "metrics": {{"views": 18000, "ctr": 2.1, "cpc": 0.5}}
-    }},
-    {{
-      "platform": "YouTube",
-      "format": "Shorts",
-      "hook": "...",
-      "caption": "...",
-      "cta": "...",
-      "hashtags": ["#hashtag"],
-      "metrics": {{"views": 14000, "ctr": 1.6, "cpc": 0.7}}
-    }}
-  ],
-  "ready_for_handoff": false,
-  "next_step": "Proxima accion sugerida"
-}}
-"""
-
-        parsed = call_ai_json(prompt) or {}
-        reply = str(parsed.get("reply") or parsed.get("next_step") or "Listo. Dame mas contexto de la campaña.").strip()
-        brief = normalize_marketing_brief(parsed.get("brief", {}))
-        preview_assets = parsed.get("preview_assets") if isinstance(parsed.get("preview_assets"), list) else []
-        missing_fields = compute_marketing_missing(brief)
-        brief_score = compute_marketing_score(missing_fields)
-        ready_for_handoff = bool(parsed.get("ready_for_handoff")) or (len(missing_fields) == 0)
-
-        if user_email:
-            stored = get_chat_memory(user_email, project_name=project_name) or {}
-            stored["marketing_brief"] = brief
-            stored["marketing_ready"] = ready_for_handoff
-            if preview_assets:
-                stored["marketing_preview_assets"] = preview_assets[:6]
-            stored["summary"] = brief.get("key_message") or brief.get("offer") or stored.get("summary", "")
-            save_chat_memory(user_email, stored, project_name=project_name)
-
-        return jsonify({
-            "ai_reply": reply,
-            "missing_fields": missing_fields,
-            "brief_score": brief_score,
-            "ready_for_handoff": ready_for_handoff,
-            "marketing_brief": brief,
-            "preview_assets": preview_assets
-        })
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
 def reset_memory_payload(existing=None):
     existing = existing or {}
     cleaned = dict(existing)
@@ -3555,12 +3383,6 @@ def save_human_chats(data):
     except Exception as e:
         print(f"Error saving human chats: {e}")
 
-def strip_channel_suffix(project_name):
-    name = str(project_name or "")
-    if name.endswith("__marketing"):
-        return name[:-11]
-    return name
-
 @app.route('/api/human-chat/send', methods=['POST'])
 def send_human_chat():
     try:
@@ -3609,7 +3431,6 @@ def send_human_chat():
             ticket = next((t for t in alerts if str(t.get("project_name", "")).lower() == project_name), None)
             now = datetime.now().isoformat()
             summary_text = content[:140]
-            base_project = strip_channel_suffix(project_name)
             if not ticket:
                 ticket = {
                     "id": str(uuid.uuid4())[:8],
@@ -3620,7 +3441,7 @@ def send_human_chat():
                     "updated_at": now,
                     "status": "pending",
                     "priority": "high",
-                    "preview_url": f"/projects/{base_project}/index.html",
+                    "preview_url": f"/projects/{project_name}/index.html",
                     "unread_messages": 0,
                     "events": []
                 }
