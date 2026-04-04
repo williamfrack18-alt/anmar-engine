@@ -119,47 +119,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let pendingPlanId = null;
 
-    // State
-    let currentProjectName = '';
-    let currentPlanContent = '';
-    let currentTicketProjectId = '';
-    let isProcessing = false;
-    let projectLimitReached = false;
-    let previewLoadTimer = null;
-    let pendingMemorySave = null;
-    let interactionMode = 'strategy'; // strategy | edit
-    let selectedEngine = 'antigravity';
-    let latestMissingFields = getRequiredFields().slice();
-    let latestBriefScore = 0;
-    let pendingImageDataUrl = '';
-    let pendingImageName = '';
-    let speechRecognition = null;
-    let isVoiceRecording = false;
-    let reviewOverlayTimer = null;
-    let previewLockedByReview = false;
-    let subscriptionActive = false;
-    let subscriptionPlan = 'none';
-    let chatLockedForSubscription = false;
-    const BUILD_REQUIRED_FIELDS = ['summary', 'audience', 'business_model', 'timeline', 'features'];
-    const MARKETING_REQUIRED_FIELDS = ['goal', 'audience', 'offer', 'channels', 'budget', 'timeline', 'brand_voice', 'key_message'];
-
-    let activeChannel = 'build'; // build | marketing
-    let currentMarketingBrief = null;
-    let currentMarketingAssets = [];
-
-    function isMarketingChannel() {
-        return activeChannel === 'marketing';
-    }
-
-    function getActiveProjectKey() {
-        if (!currentProjectName) return '';
-        return isMarketingChannel() ? `${currentProjectName}__marketing` : currentProjectName;
-    }
-
-    function getRequiredFields() {
-        return isMarketingChannel() ? MARKETING_REQUIRED_FIELDS : BUILD_REQUIRED_FIELDS;
-    }
-
     // --- Human Chat Polling ---
     let humanChatInterval = null;
     let lastHumanChatCount = 0;
@@ -665,6 +624,47 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.purchasePlan(nextPlan);
             }
         });
+    }
+
+    // State
+    let currentProjectName = '';
+    let currentPlanContent = '';
+    let currentTicketProjectId = '';
+    let isProcessing = false;
+    let projectLimitReached = false;
+    let previewLoadTimer = null;
+    let pendingMemorySave = null;
+    let interactionMode = 'strategy'; // strategy | edit
+    let selectedEngine = 'antigravity';
+    let latestMissingFields = getRequiredFields().slice();
+    let latestBriefScore = 0;
+    let pendingImageDataUrl = '';
+    let pendingImageName = '';
+    let speechRecognition = null;
+    let isVoiceRecording = false;
+    let reviewOverlayTimer = null;
+    let previewLockedByReview = false;
+    let subscriptionActive = false;
+    let subscriptionPlan = 'none';
+    let chatLockedForSubscription = false;
+    const BUILD_REQUIRED_FIELDS = ['summary', 'audience', 'business_model', 'timeline', 'features'];
+    const MARKETING_REQUIRED_FIELDS = ['goal', 'audience', 'offer', 'channels', 'budget', 'timeline', 'brand_voice', 'key_message'];
+
+    let activeChannel = 'build'; // build | marketing
+    let currentMarketingBrief = null;
+    let currentMarketingAssets = [];
+
+    function isMarketingChannel() {
+        return activeChannel === 'marketing';
+    }
+
+    function getActiveProjectKey() {
+        if (!currentProjectName) return '';
+        return isMarketingChannel() ? `${currentProjectName}__marketing` : currentProjectName;
+    }
+
+    function getRequiredFields() {
+        return isMarketingChannel() ? MARKETING_REQUIRED_FIELDS : BUILD_REQUIRED_FIELDS;
     }
 
     // Init chat input UI after state is ready
