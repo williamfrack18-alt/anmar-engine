@@ -79,6 +79,11 @@ document.addEventListener('DOMContentLoaded', () => {
         return lower.startsWith('guest_') || lower.endsWith('@guest.anmar') || lower.endsWith('@guest.local');
     };
 
+    if (!currentUser || isGuestEmail(currentUser.email)) {
+        window.location.href = 'login.html';
+        return;
+    }
+
     const setCurrentUserEmail = (email) => {
         if (!email) return;
         currentUser = currentUser || {};
@@ -101,26 +106,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const ensureCheckoutIdentity = () => {
         if (!currentUser || isGuestEmail(currentUser.email)) {
-            showEmailGate();
+            window.location.href = 'login.html';
             return false;
         }
         return true;
     };
-
-    const ensureGuestUser = () => {
-        if (currentUser && currentUser.email) return;
-        const existingGuest = localStorage.getItem('guest_session_id');
-        const guestId = existingGuest || (crypto?.randomUUID ? crypto.randomUUID() : `g_${Date.now()}_${Math.floor(Math.random()*9999)}`);
-        localStorage.setItem('guest_session_id', guestId);
-        currentUser = {
-            name: 'Invitado',
-            email: `guest_${guestId}@guest.anmar`
-        };
-        localStorage.setItem('currentUser', JSON.stringify(currentUser));
-        localStorage.setItem('guest_user', '1');
-    };
-
-    ensureGuestUser();
+    // Guest sessions are disabled for the strict flow.
 
     let pendingPlanId = null;
 
@@ -508,6 +499,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     addLog("🔒 Para chatear con el equipo necesitas activar un plan.", "system");
                 }
                 updatePaywallBanner();
+                if (subscriptionActive && chatLockedForSubscription) {
+                    setChatLocked(false);
+                }
+                syncChatLockWithPendingTicket();
             }
         } catch (e) {
             console.error("Auth Error", e);
@@ -521,6 +516,22 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             paywallBanner.style.display = 'flex';
         }
+    }
+
+    function setChatLocked(locked, message) {
+        chatLockedForSubscription = !!locked;
+        if (chatInput) chatInput.disabled = chatLockedForSubscription;
+        if (sendBtn) sendBtn.disabled = chatLockedForSubscription || !chatInput?.value?.trim();
+        if (chatWrap) chatWrap.classList.toggle('locked', chatLockedForSubscription);
+        if (locked && message) {
+            addLog(message, 'system');
+        }
+    }
+
+    function syncChatLockWithPendingTicket() {
+        const pendingProject = localStorage.getItem('pending_ticket_project') || '';
+        const shouldLock = !!pendingProject && !subscriptionActive && currentProjectName && pendingProject === currentProjectName;
+        setChatLocked(shouldLock);
     }
 
     async function checkUserCredits() {
@@ -585,6 +596,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let previewLockedByReview = false;
     let subscriptionActive = false;
     let subscriptionPlan = 'none';
+    let chatLockedForSubscription = false;
 
     // Init chat input UI after state is ready
     resizeChatInput();
@@ -595,7 +607,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let originalIdea = '';
 
     // Run on Load
-    checkUserCredits().then(() => submitPendingTicketIfAny());
+    checkUserCredits().then(() => submitPendingTicketIfAny()).then(() => syncChatLockWithPendingTicket());
     hydrateProfile();
     renderBriefState();
     (function handleCheckoutReturn() {
@@ -633,6 +645,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
             if (data && data.status === 'ok' && Array.isArray(data.tickets) && data.tickets.length) {
                 localStorage.removeItem('pending_ticket_project');
+                setChatLocked(false);
                 addLog("✅ Ticket enviado automáticamente al equipo.", "success");
             }
         } catch (e) {
@@ -1230,6 +1243,12 @@ document.addEventListener('DOMContentLoaded', () => {
             switchTab('projects');
             return;
         }
+        if (chatLockedForSubscription && !subscriptionActive) {
+            const modal = document.getElementById('pricing-modal');
+            if (modal) modal.style.display = 'flex';
+            addLog("🔒 Tu proyecto está listo. Activa un plan para continuar.", "system");
+            return;
+        }
 
         // --- NEW: HUMAN CHAT FLOW ---
         if (typeof isHumanChatActive !== 'undefined' && isHumanChatActive) {
@@ -1362,17 +1381,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    if (chatInput) {
-        chatInput.addEventListener('focus', async () => {
-            if (window.__pricingPromptedOnce) return;
-            if (!subscriptionActive) {
-                const ok = await requireSubscription();
-                if (!ok) {
-                    window.__pricingPromptedOnce = true;
-                }
-            }
-        });
-    }
+    // Chat stays open until the ticket submission step. No paywall on focus.
 
     // --- Logic: Generate Blueprint ---
     async function handleBlueprintGeneration(fullContext) {
@@ -1531,10 +1540,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
             const memory = data.memory || {};
             clearChatMessages();
-            if (Array.isArray(memory.conversation_history)) {
+            conversationHistory = [];
+            if (Array.isArray(memory.conversation_history) && memory.conversation_history.length) {
                 conversationHistory = memory.conversation_history.slice(-40);
             }
-            if (memory.chat_stage) chatStage = memory.chat_stage;
+            chatStage = memory.chat_stage || (conversationHistory.length ? 'conversing' : 'initial');
             setSelectedEngine(memory.engine_preference || selectedEngine);
             setTimelineVisible(chatStage === 'construction_mode' || chatStage === 'building');
             if (memory.current_ticket_project_id) currentTicketProjectId = memory.current_ticket_project_id;
@@ -1565,6 +1575,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 startPolling();
             }
             persistCurrentProject();
+            syncChatLockWithPendingTicket();
         } catch (e) {
             console.warn('Memory load failed', e);
         }
@@ -1825,7 +1836,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const modal = document.getElementById('pricing-modal');
                 if (modal) modal.style.display = 'flex';
                 localStorage.setItem('pending_ticket_project', currentProjectName || '');
-                addSystemMessage(`<span style="color:#fbbf24;">🔒 Tu proyecto está listo. Elige un plan para enviarlo a nuestro equipo.</span>`);
+                setChatLocked(true, "🔒 Tu proyecto está listo. Elige un plan para enviarlo a nuestro equipo.");
                 if (btn) { btn.disabled = false; btn.innerHTML = 'Confirmar y Enviar a Ingeniería'; }
                 stopThinking();
                 return;
@@ -2399,7 +2410,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             currentProjectName = data.project_name;
             currentTicketProjectId = data.project_id || '';
-            chatStage = 'construction_mode';
+            chatStage = 'initial';
             markWelcomeDone();
             setWelcomeVisible(false);
 
@@ -2409,16 +2420,19 @@ document.addEventListener('DOMContentLoaded', () => {
             humanChatInterval = setInterval(pollHumanChat, 3000);
             persistCurrentProject();
             setInteractionMode('strategy');
+            conversationHistory = [];
+            originalIdea = '';
+            latestMissingFields = ['summary', 'audience', 'business_model', 'timeline', 'features'];
+            latestBriefScore = 0;
+            setTimelineVisible(false);
+            clearChatMessages();
+            renderBriefState({ missing_fields: latestMissingFields, memory_summary: '' });
             await loadChatMemory();
             loadProjectPreview(currentProjectName);
             addLog(`Proyecto creado: ${currentProjectName}. Inicia la conversación estratégica en el chat.`, 'system');
             await loadProjects();
             switchTab('build');
             updatePaywallBanner();
-            if (!subscriptionActive) {
-                const modal = document.getElementById('pricing-modal');
-                if (modal) modal.style.display = 'flex';
-            }
             return true;
         } catch (e) {
             console.error(e);
@@ -2527,7 +2541,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 nameSpan.style.flexGrow = '1';
                 nameSpan.onclick = async () => {
                     currentProjectName = project;
-                    chatStage = 'construction_mode';
 
                     // Start polling human chat mapping
                     lastHumanChatCount = 0;
@@ -2998,11 +3011,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const currentUser = JSON.parse(localStorage.getItem('currentUser'));
             if (!currentUser || isGuestEmail(currentUser.email)) {
-                pendingPlanId = planId;
-                const modal = document.getElementById('pricing-modal');
-                if (modal) modal.style.display = 'flex';
-                showEmailGate();
-                if (btn) { btn.innerHTML = originalText; btn.style.opacity = '1'; }
+                window.location.href = 'login.html';
                 return;
             }
 

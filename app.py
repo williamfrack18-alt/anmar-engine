@@ -4774,6 +4774,8 @@ def create_empty_project():
         raw_name = data.get('project_name', '')
         user_email = str(data.get('user_email') or '').strip().lower()
         phone = str(data.get('phone') or '').strip()
+        if not user_email:
+            return jsonify({"error": "login_required"}), 401
         project_name = sanitize_project_name(raw_name)
         project_path = os.path.join(projects_base_dir, project_name)
 
@@ -4883,6 +4885,10 @@ def continue_chat():
         engine = normalize_engine(data.get('engine'))
         user_email = (data.get('user_email') or '').strip().lower()
         project_name = (data.get('project_name') or '').strip().lower()
+        if not user_email:
+            return jsonify({"error": "login_required"}), 401
+        if not project_name:
+            return jsonify({"error": "project_required"}), 400
         image_context = describe_image_for_chat(image_data_url) if image_data_url else ""
         enriched_input = current_input
         if image_context:
