@@ -40,6 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const togglePreviewBtn = document.getElementById('togglePreviewBtn');
     const previewPanel = document.getElementById('previewPanel');
     const buildSection = document.getElementById('section-build');
+    const marketingPreviewContainer = document.getElementById('marketingPreviewContainer');
     const notifBtn = document.getElementById('notifBtn');
     const notifBadge = document.getElementById('notifBadge');
     const notifToast = document.getElementById('notifToast');
@@ -125,7 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function pollHumanChat() {
         if (!currentProjectName) return;
         try {
-            const res = await fetch(`/api/human-chat/history?project_name=${encodeURIComponent(currentProjectName)}`);
+            const res = await fetch(`/api/human-chat/history?project_name=${encodeURIComponent(getActiveProjectKey())}`);
             const data = await res.json();
             const history = data.history || [];
             updateBlueprintNotifications(history);
@@ -342,7 +343,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (isClient) {
                 contentDiv.textContent = msg.content || '';
             } else {
-                const actor = escapeHtml(msg.actor || 'Ingeniero');
+                const defaultActor = isMarketingChannel() ? 'Marketing' : 'Ingeniero';
+                const actor = escapeHtml(msg.actor || defaultActor);
                 const content = escapeHtml(msg.content || '');
                 contentDiv.innerHTML = `<strong>[${actor}]</strong><br>${content}`;
             }
@@ -361,7 +363,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    project_name: currentProjectName,
+                    project_name: getActiveProjectKey(),
                     blueprint_id: blueprintId,
                     actor: currentUser?.name || 'Cliente',
                     client_email: currentUser?.email || ''
@@ -432,9 +434,25 @@ document.addEventListener('DOMContentLoaded', () => {
             chatCounter.classList.toggle('over', overLimit);
         }
     };
-    // React to Tab switch
-    document.addEventListener('chatTabSwitched', (e) => {
-        if (e.detail === 'Human') {
+    function updateChatCopy(tab = 'AI') {
+        if (!chatInput) return;
+        const isHuman = String(tab || '').toLowerCase().includes('human');
+        if (isMarketingChannel()) {
+            if (isHuman) {
+                chatInput.placeholder = "Paso 1: Cuéntanos el objetivo de marketing y el producto.";
+                if (chatHelper) {
+                    chatHelper.textContent = "Paso 1: Define la campaña. Paso 2: Asignamos estratega de marketing.";
+                }
+            } else {
+                chatInput.placeholder = "Describe objetivo, audiencia, oferta y presupuesto...";
+                if (chatHelper) {
+                    chatHelper.textContent = "La IA prepara la estrategia y copys para pauta en redes.";
+                }
+            }
+            return;
+        }
+
+        if (isHuman) {
             chatInput.placeholder = "Paso 1: Cuéntanos qué necesitas. Ej: “Necesito una web para mi estudio con reservas.”";
             if (chatHelper) {
                 chatHelper.textContent = "Paso 1: Cuéntanos qué necesitas. Paso 2: Te asignamos un ingeniero en minutos.";
@@ -447,6 +465,54 @@ document.addEventListener('DOMContentLoaded', () => {
                 chatHelper.textContent = "Describe tu idea y generamos el blueprint técnico automáticamente.";
             }
         }
+    }
+
+    function setPreviewMode(mode) {
+        const isMarketing = mode === 'marketing';
+        if (livePreviewFrame) livePreviewFrame.style.display = isMarketing ? 'none' : 'block';
+        if (marketingPreviewContainer) marketingPreviewContainer.style.display = isMarketing ? 'block' : 'none';
+        if (emptyState) {
+            if (isMarketing) {
+                emptyState.style.display = 'none';
+            } else if (!livePreviewFrame || !livePreviewFrame.src || livePreviewFrame.src === 'about:blank') {
+                emptyState.style.display = 'flex';
+            }
+        }
+        const urlBar = document.querySelector('.url-bar');
+        if (urlBar) urlBar.textContent = isMarketing ? 'ads.anmar.ai/preview' : (currentProjectName ? `anmar.app/projects/${currentProjectName}` : 'preview.anmar.ai');
+        const mobileBtnEl = document.getElementById('mobileViewBtn');
+        const desktopBtnEl = document.getElementById('desktopViewBtn');
+        if (mobileBtnEl) mobileBtnEl.style.display = isMarketing ? 'none' : 'inline-flex';
+        if (desktopBtnEl) desktopBtnEl.style.display = isMarketing ? 'none' : 'inline-flex';
+    }
+
+    function setActiveChannel(channel) {
+        activeChannel = channel === 'marketing' ? 'marketing' : 'build';
+        updateChatCopy(isHumanChatActive ? 'Human' : 'AI');
+        setPreviewMode(activeChannel);
+        if (paywallBanner) {
+            const slot = paywallBanner.querySelector('div');
+            if (slot) {
+                slot.innerHTML = isMarketingChannel()
+                    ? '<strong>Activa tu plan</strong> para habilitar el chat con marketing.'
+                    : '<strong>Activa tu plan</strong> para habilitar el chat con ingenieros.';
+            }
+        }
+        if (togglePreviewBtn) {
+            togglePreviewBtn.textContent = isMarketingChannel() ? 'Preview Marketing' : 'Preview';
+        }
+        if (isMarketingChannel()) {
+            renderMarketingPreview(currentMarketingAssets);
+        }
+        if (resultSection && isMarketingChannel()) resultSection.style.display = 'none';
+        if (statusTimeline) setTimelineVisible(!isMarketingChannel() && (chatStage === 'construction_mode' || chatStage === 'building'));
+        latestMissingFields = getRequiredFields().slice();
+        renderBriefState({ missing_fields: latestMissingFields, memory_summary: '' });
+    }
+
+    // React to Tab switch
+    document.addEventListener('chatTabSwitched', (e) => {
+        updateChatCopy(e.detail || 'AI');
         resizeChatInput();
         updateSendState();
     });
@@ -586,7 +652,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let pendingMemorySave = null;
     let interactionMode = 'strategy'; // strategy | edit
     let selectedEngine = 'antigravity';
-    let latestMissingFields = ['summary', 'audience', 'business_model', 'timeline', 'features'];
+    let latestMissingFields = [];
     let latestBriefScore = 0;
     let pendingImageDataUrl = '';
     let pendingImageName = '';
@@ -597,6 +663,27 @@ document.addEventListener('DOMContentLoaded', () => {
     let subscriptionActive = false;
     let subscriptionPlan = 'none';
     let chatLockedForSubscription = false;
+
+    const BUILD_REQUIRED_FIELDS = ['summary', 'audience', 'business_model', 'timeline', 'features'];
+    const MARKETING_REQUIRED_FIELDS = ['goal', 'audience', 'offer', 'channels', 'budget', 'timeline', 'brand_voice', 'key_message'];
+    let activeChannel = 'build'; // build | marketing
+    let currentMarketingBrief = null;
+    let currentMarketingAssets = [];
+
+    function isMarketingChannel() {
+        return activeChannel === 'marketing';
+    }
+
+    function getActiveProjectKey() {
+        if (!currentProjectName) return '';
+        return isMarketingChannel() ? `${currentProjectName}__marketing` : currentProjectName;
+    }
+
+    function getRequiredFields() {
+        return isMarketingChannel() ? MARKETING_REQUIRED_FIELDS : BUILD_REQUIRED_FIELDS;
+    }
+
+    latestMissingFields = getRequiredFields().slice();
 
     // Init chat input UI after state is ready
     resizeChatInput();
@@ -1000,7 +1087,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (typeof meta.brief_score === 'number') {
             latestBriefScore = Math.max(0, Math.min(100, meta.brief_score));
         } else {
-            latestBriefScore = Math.max(0, Math.min(100, Math.round(((5 - latestMissingFields.length) / 5) * 100)));
+            const total = getRequiredFields().length || 1;
+            latestBriefScore = Math.max(0, Math.min(100, Math.round(((total - latestMissingFields.length) / total) * 100)));
         }
 
         const summary = (meta.memory_summary || '').trim();
@@ -1013,7 +1101,7 @@ document.addEventListener('DOMContentLoaded', () => {
             briefSummaryText.textContent = summary || 'Esperando conversación...';
         }
         if (blueprintNowBtn) {
-            const canShow = latestBriefScore >= 80 && interactionMode === 'strategy' && chatStage !== 'construction_mode';
+            const canShow = !isMarketingChannel() && latestBriefScore >= 80 && interactionMode === 'strategy' && chatStage !== 'construction_mode';
             blueprintNowBtn.style.display = canShow ? 'block' : 'none';
         }
     }
@@ -1091,6 +1179,67 @@ document.addEventListener('DOMContentLoaded', () => {
         msgRow.innerHTML = `<div class="user-msg">${text}</div>`;
         terminalContent.insertBefore(msgRow, resultSection);
         terminalContent.scrollTop = terminalContent.scrollHeight;
+    }
+
+    function formatMetricValue(value, suffix = '') {
+        if (value === null || value === undefined || value === '') return '--';
+        const num = Number(value);
+        if (Number.isNaN(num)) return String(value);
+        if (suffix === '%') return `${num.toFixed(1)}%`;
+        if (suffix === '$') return `$${num.toFixed(2)}`;
+        if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+        if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
+        return String(Math.round(num));
+    }
+
+    function normalizePlatformLabel(raw) {
+        const name = String(raw || '').toLowerCase().trim();
+        if (!name) return '';
+        if (name.includes('instagram')) return 'Instagram';
+        if (name.includes('tiktok')) return 'TikTok';
+        if (name.includes('youtube')) return 'YouTube';
+        if (name.includes('facebook') || name.includes('meta')) return 'Facebook';
+        if (name.includes('google') || name.includes('search') || name.includes('ads')) return 'Google Ads';
+        if (name.includes('linkedin')) return 'LinkedIn';
+        if (name.includes('twitter') || name === 'x') return 'X';
+        if (name.includes('pinterest')) return 'Pinterest';
+        return raw;
+    }
+
+    function findPlatformCard(platformLabel) {
+        if (!marketingPreviewContainer) return null;
+        const cards = Array.from(marketingPreviewContainer.querySelectorAll('.social-card'));
+        const normalized = String(platformLabel || '').toLowerCase();
+        return cards.find(card => String(card.dataset.platform || '').toLowerCase() === normalized) || null;
+    }
+
+    function renderMarketingPreview(assets = []) {
+        if (!marketingPreviewContainer) return;
+        const list = Array.isArray(assets) ? assets : [];
+        if (!list.length) return;
+        list.forEach(asset => {
+            const platformLabel = normalizePlatformLabel(asset.platform || '');
+            const card = findPlatformCard(platformLabel);
+            if (!card) return;
+            const format = card.querySelector('.social-format');
+            const hook = card.querySelector('[data-role="hook"]');
+            const caption = card.querySelector('[data-role="caption"]');
+            const cta = card.querySelector('[data-role="cta"]');
+            const tags = card.querySelector('[data-role="hashtags"]');
+            if (format && asset.format) format.textContent = asset.format;
+            if (hook && asset.hook) hook.textContent = asset.hook;
+            if (caption && asset.caption) caption.textContent = asset.caption;
+            if (cta && asset.cta) cta.textContent = `CTA: ${asset.cta}`;
+            if (tags && Array.isArray(asset.hashtags) && asset.hashtags.length) tags.textContent = asset.hashtags.join(' ');
+
+            const metrics = asset.metrics || asset.metric_hint || {};
+            const viewsEl = card.querySelector('[data-metric="views"]');
+            const ctrEl = card.querySelector('[data-metric="ctr"]');
+            const cpcEl = card.querySelector('[data-metric="cpc"]');
+            if (viewsEl) viewsEl.textContent = formatMetricValue(metrics.views || metrics.reach || metrics.impressions || '');
+            if (ctrEl) ctrEl.textContent = formatMetricValue(metrics.ctr || metrics.engagement_rate || '', '%');
+            if (cpcEl) cpcEl.textContent = formatMetricValue(metrics.cpc || metrics.cpa || '', '$');
+        });
     }
 
     function updateAttachmentStatus() {
@@ -1233,6 +1382,134 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    async function handleMarketingChat(userInput, imageDataUrl = '') {
+        if (!currentProjectName) {
+            addLog("Primero crea o selecciona un proyecto en el módulo Proyectos.", "system");
+            switchTab('projects');
+            return;
+        }
+        if (isResetIntent(userInput)) {
+            try {
+                await fetch('/api/chat-memory/reset', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_email: currentUser.email,
+                        email: currentUser.email,
+                        project_name: getActiveProjectKey()
+                    })
+                });
+            } catch (_) { }
+            await resetContext();
+            return;
+        }
+
+        conversationHistory.push({ role: "user", content: userInput });
+        queueMemorySave();
+
+        showThinking("Analizando mercado y activos...");
+        try {
+            const res = await fetch('/api/continue-marketing', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    history: conversationHistory.slice(-28),
+                    message: userInput,
+                    image_data_url: imageDataUrl,
+                    user_email: currentUser.email,
+                    project_name: getActiveProjectKey()
+                })
+            });
+            const data = await res.json();
+            stopThinking();
+            if (!res.ok) {
+                throw new Error(data.error || 'Error de marketing');
+            }
+            if (data.ai_reply) {
+                await addSystemMessage(data.ai_reply);
+                conversationHistory.push({ role: "ai", content: data.ai_reply });
+            }
+            if (Array.isArray(data.preview_assets)) {
+                currentMarketingAssets = data.preview_assets;
+                renderMarketingPreview(currentMarketingAssets);
+            }
+            if (data.marketing_brief) {
+                currentMarketingBrief = data.marketing_brief;
+            }
+            if (Array.isArray(data.missing_fields)) {
+                latestMissingFields = data.missing_fields.slice();
+            }
+            if (typeof data.brief_score === 'number') {
+                latestBriefScore = data.brief_score;
+            }
+            renderBriefState({
+                missing_fields: latestMissingFields,
+                memory_summary: (data.marketing_brief && (data.marketing_brief.key_message || data.marketing_brief.offer)) || ''
+            });
+            if (data.ready_for_handoff) {
+                addSystemMessage(`
+                    <div style="background:rgba(56,189,248,0.1); border:1px solid rgba(56,189,248,0.35); padding:16px; border-radius:12px; margin-top:12px;">
+                        <h3 style="color:#38bdf8; margin:0 0 8px 0;">Brief listo para el equipo de marketing</h3>
+                        <p style="color:#cbd5f5; font-size:0.85rem; margin:0 0 10px 0;">¿Quieres enviar esto al equipo humano para producción y lanzamiento?</p>
+                        <button onclick="window.sendMarketingBrief()" style="background:#38bdf8; color:#0f172a; border:none; padding:10px 16px; border-radius:8px; font-weight:700; cursor:pointer; width:100%;">
+                            Enviar a Marketing
+                        </button>
+                    </div>
+                `);
+            }
+            queueMemorySave();
+        } catch (e) {
+            stopThinking();
+            addLog(`Error marketing: ${e.message}`, "error");
+        }
+    }
+
+    window.sendMarketingBrief = async function () {
+        if (!currentProjectName || !currentUser?.email) {
+            addLog("Selecciona un proyecto antes de enviar el brief.", "warning");
+            return;
+        }
+        const okSubscription = await requireSubscription();
+        if (!okSubscription) return;
+        const brief = currentMarketingBrief || {};
+        const assets = Array.isArray(currentMarketingAssets) ? currentMarketingAssets : [];
+        const summary = [
+            `Brief Marketing: ${brief.key_message || brief.goal || 'Campaña'}`,
+            brief.audience ? `Audiencia: ${brief.audience}` : '',
+            brief.offer ? `Oferta: ${brief.offer}` : '',
+            brief.channels ? `Canales: ${Array.isArray(brief.channels) ? brief.channels.join(', ') : brief.channels}` : '',
+            brief.timeline ? `Timeline: ${brief.timeline}` : '',
+            brief.budget ? `Presupuesto: ${brief.budget}` : ''
+        ].filter(Boolean).join('\n');
+
+        const assetLines = assets.map(item => {
+            const platform = item.platform || 'Social';
+            const hook = item.hook || '';
+            const caption = item.caption || '';
+            return `- ${platform}: ${hook} ${caption}`.trim();
+        }).join('\n');
+
+        const payloadText = `${summary}\n\nActivos sugeridos:\n${assetLines || 'Pendientes de definición.'}`;
+        try {
+            await fetch('/api/human-chat/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    project_name: getActiveProjectKey(),
+                    role: 'client',
+                    content: payloadText,
+                    actor: currentUser.name || 'Cliente',
+                    client_email: currentUser.email || ''
+                })
+            });
+            addLog("Brief enviado al equipo de marketing.", "success");
+            if (typeof switchChatTab === 'function') switchChatTab('Human');
+            pollHumanChat();
+        } catch (e) {
+            addLog(`No se pudo enviar el brief: ${e.message}`, "warning");
+        }
+    }
+
     // --- 1. Main Chat Handler ---
     sendBtn.addEventListener('click', async () => {
         const text = chatInput.value.trim();
@@ -1269,21 +1546,31 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!window.__humanAssignedOnce) {
                 window.__humanAssignedOnce = true;
                 const startAt = Date.now();
-                const searchRow = addHumanSystemMessage('Buscando ingeniero disponible... 0s');
+                const searchRow = addHumanSystemMessage(isMarketingChannel()
+                    ? 'Buscando estratega de marketing... 0s'
+                    : 'Buscando ingeniero disponible... 0s');
                 const searchEl = searchRow ? searchRow.querySelector('.ai-msg') : null;
                 if (window.__humanSearchTimer) clearInterval(window.__humanSearchTimer);
                 window.__humanSearchTimer = setInterval(() => {
                     const elapsed = Math.max(0, Math.floor((Date.now() - startAt) / 1000));
-                    if (searchEl) searchEl.textContent = `Buscando ingeniero disponible... ${elapsed}s`;
+                    if (searchEl) searchEl.textContent = isMarketingChannel()
+                        ? `Buscando estratega de marketing... ${elapsed}s`
+                        : `Buscando ingeniero disponible... ${elapsed}s`;
                 }, 1000);
                 setTimeout(() => {
-                    addHumanSystemMessage('Asignando ingeniero y revisando tu solicitud...');
+                    addHumanSystemMessage(isMarketingChannel()
+                        ? 'Asignando estratega y revisando tu brief...'
+                        : 'Asignando ingeniero y revisando tu solicitud...');
                 }, 2600);
                 setTimeout(() => {
                     if (window.__humanSearchTimer) clearInterval(window.__humanSearchTimer);
                     const total = Math.max(0, Math.floor((Date.now() - startAt) / 1000));
-                    if (searchEl) searchEl.textContent = `Ingeniero encontrado en ${total}s.`;
-                    addHumanSystemMessage('✅ William está conectado y listo para ayudarte.');
+                    if (searchEl) searchEl.textContent = isMarketingChannel()
+                        ? `Estratega encontrado en ${total}s.`
+                        : `Ingeniero encontrado en ${total}s.`;
+                    addHumanSystemMessage(isMarketingChannel()
+                        ? '✅ Equipo de marketing conectado y listo para ayudarte.'
+                        : '✅ William está conectado y listo para ayudarte.');
                 }, 5200);
             }
 
@@ -1292,10 +1579,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        project_name: currentProjectName,
-                        role: 'client',
-                        content: messageToSend,
-                        actor: currentUser.name || 'Cliente',
+                    project_name: getActiveProjectKey(),
+                    role: 'client',
+                    content: messageToSend,
+                    actor: currentUser.name || 'Cliente',
                         client_email: currentUser.email || ''
                     })
                 });
@@ -1310,6 +1597,24 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         // --- END HUMAN CHAT FLOW ---
+
+        if (isMarketingChannel()) {
+            const imageToSend = pendingImageDataUrl;
+            const imageNameToSend = pendingImageName;
+            const messageToSend = text || 'Necesito ayuda con marketing de este producto.';
+            const userBubbleText = imageToSend
+                ? `${messageToSend}\n\n[Imagen adjunta: ${imageNameToSend || 'archivo'}]`
+                : messageToSend;
+            clearPendingAttachment();
+            setLoading(true);
+            addUserMessage(userBubbleText);
+            chatInput.value = '';
+            resizeChatInput();
+            updateSendState();
+            await handleMarketingChat(messageToSend, imageToSend);
+            setLoading(false);
+            return;
+        }
 
         const imageToSend = pendingImageDataUrl;
         const imageNameToSend = pendingImageName;
@@ -1486,9 +1791,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const business_model = userMsgs.find(msg => /suscrip|comisi|freemium|pago|fee|fit|por video|por evento|monet/i.test(msg)) || '';
         const timeline = userMsgs.find(msg => /semana|mes|deadline|fecha|hoy|24h|48h/i.test(msg)) || '';
 
-        return {
+        const snapshot = {
             version: 1,
             chat_stage: chatStage,
+            active_channel: activeChannel,
             engine_preference: selectedEngine,
             current_project_name: currentProjectName,
             current_ticket_project_id: currentTicketProjectId,
@@ -1499,6 +1805,11 @@ document.addEventListener('DOMContentLoaded', () => {
             domain_hint: joined.includes('pet shop') || joined.includes('mascota') ? 'pet_shop' : 'general',
             conversation_history: conversationHistory.slice(-40)
         };
+        if (isMarketingChannel()) {
+            snapshot.marketing_brief = currentMarketingBrief || {};
+            snapshot.marketing_preview_assets = Array.isArray(currentMarketingAssets) ? currentMarketingAssets.slice(0, 8) : [];
+        }
+        return snapshot;
     }
 
     async function saveMemoryNow() {
@@ -1509,7 +1820,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     email: currentUser.email,
-                    project_name: currentProjectName,
+                    project_name: getActiveProjectKey(),
                     memory: buildMemorySnapshot()
                 })
             });
@@ -1529,13 +1840,13 @@ document.addEventListener('DOMContentLoaded', () => {
             conversationHistory = [];
             chatStage = 'initial';
             resetChatView();
-            latestMissingFields = ['summary', 'audience', 'business_model', 'timeline', 'features'];
+            latestMissingFields = getRequiredFields().slice();
             latestBriefScore = 0;
             renderBriefState();
             return;
         }
         try {
-            const res = await fetch(`/api/chat-memory?email=${encodeURIComponent(currentUser.email)}&project_name=${encodeURIComponent(currentProjectName)}`);
+            const res = await fetch(`/api/chat-memory?email=${encodeURIComponent(currentUser.email)}&project_name=${encodeURIComponent(getActiveProjectKey())}`);
             if (!res.ok) return;
             const data = await res.json();
             const memory = data.memory || {};
@@ -1555,22 +1866,36 @@ document.addEventListener('DOMContentLoaded', () => {
                 intro.innerHTML = `
                     <div class="ai-msg">
                         > Proyecto cargado: ${escapeHtml(currentProjectName)}<br><br>
-                        ${memory.summary ? `Retomando contexto: ${escapeHtml(memory.summary)}` : 'No hay conversación previa en este proyecto. Describe tu idea y empezamos.'}
+                        ${memory.summary ? `Retomando contexto: ${escapeHtml(memory.summary)}` : (isMarketingChannel() ? 'No hay conversación previa de marketing. Describe tu objetivo y empezamos.' : 'No hay conversación previa en este proyecto. Describe tu idea y empezamos.')}
                     </div>
                 `;
                 terminalContent.insertBefore(intro, resultSection);
             }
-
-            const inferredMissing = [];
-            if (!memory.summary) inferredMissing.push('summary');
-            if (!memory.audience) inferredMissing.push('audience');
-            if (!memory.business_model) inferredMissing.push('business_model');
-            if (!memory.timeline) inferredMissing.push('timeline');
-            if (!Array.isArray(memory.features) || memory.features.length < 2) inferredMissing.push('features');
-            renderBriefState({
-                missing_fields: inferredMissing,
-                memory_summary: memory.summary || ''
-            });
+            if (isMarketingChannel()) {
+                const brief = memory.marketing_brief || {};
+                currentMarketingBrief = brief;
+                currentMarketingAssets = Array.isArray(memory.marketing_preview_assets) ? memory.marketing_preview_assets : [];
+                renderMarketingPreview(currentMarketingAssets);
+                const inferredMissing = getRequiredFields().filter(field => {
+                    if (field === 'channels') return !Array.isArray(brief.channels) || brief.channels.length === 0;
+                    return !brief[field];
+                });
+                renderBriefState({
+                    missing_fields: inferredMissing,
+                    memory_summary: brief.key_message || brief.offer || memory.summary || ''
+                });
+            } else {
+                const inferredMissing = [];
+                if (!memory.summary) inferredMissing.push('summary');
+                if (!memory.audience) inferredMissing.push('audience');
+                if (!memory.business_model) inferredMissing.push('business_model');
+                if (!memory.timeline) inferredMissing.push('timeline');
+                if (!Array.isArray(memory.features) || memory.features.length < 2) inferredMissing.push('features');
+                renderBriefState({
+                    missing_fields: inferredMissing,
+                    memory_summary: memory.summary || ''
+                });
+            }
             if (currentTicketProjectId) {
                 startPolling();
             }
@@ -1607,7 +1932,9 @@ document.addEventListener('DOMContentLoaded', () => {
         intro.innerHTML = `
             <div class="ai-msg">
                 > Contexto reiniciado correctamente.<br><br>
-                Empecemos de cero. Describe tu nueva idea y la estructuramos juntos.
+                ${isMarketingChannel()
+                    ? 'Empecemos de cero. Define el objetivo de marketing y lo estructuramos juntos.'
+                    : 'Empecemos de cero. Describe tu nueva idea y la estructuramos juntos.'}
             </div>
         `;
         terminalContent.insertBefore(intro, resultSection);
@@ -1630,7 +1957,9 @@ document.addEventListener('DOMContentLoaded', () => {
         lastStatus = '';
         lastDeployedUrl = '';
         previewLockedByReview = false;
-        latestMissingFields = ['summary', 'audience', 'business_model', 'timeline', 'features'];
+        currentMarketingBrief = null;
+        currentMarketingAssets = [];
+        latestMissingFields = getRequiredFields().slice();
         latestBriefScore = 0;
         if (pollInterval) clearInterval(pollInterval);
         resetChatView();
@@ -1648,7 +1977,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     body: JSON.stringify({
                         user_email: currentUser.email,
                         email: currentUser.email,
-                        project_name: currentProjectName
+                        project_name: getActiveProjectKey()
                     })
                 });
                 await resetContext();
@@ -2422,7 +2751,9 @@ document.addEventListener('DOMContentLoaded', () => {
             setInteractionMode('strategy');
             conversationHistory = [];
             originalIdea = '';
-            latestMissingFields = ['summary', 'audience', 'business_model', 'timeline', 'features'];
+            currentMarketingBrief = null;
+            currentMarketingAssets = [];
+            latestMissingFields = getRequiredFields().slice();
             latestBriefScore = 0;
             setTimelineVisible(false);
             clearChatMessages();
@@ -2469,7 +2800,9 @@ document.addEventListener('DOMContentLoaded', () => {
             currentProjectName = '';
             persistCurrentProject();
             setInteractionMode('strategy');
-            latestMissingFields = ['summary', 'audience', 'business_model', 'timeline', 'features'];
+            currentMarketingBrief = null;
+            currentMarketingAssets = [];
+            latestMissingFields = getRequiredFields().slice();
             latestBriefScore = 0;
             renderBriefState({ missing_fields: latestMissingFields, memory_summary: '' });
             const iframe = document.getElementById('livePreviewFrame');
@@ -2697,12 +3030,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 3. Sections
         document.querySelectorAll('.section-view').forEach(sec => sec.classList.remove('active'));
-        const sec = document.getElementById(`section-${tab}`);
+        const sectionId = tab === 'market' ? 'section-build' : `section-${tab}`;
+        const sec = document.getElementById(sectionId);
         if (sec) sec.classList.add('active');
 
         // Feedback
-        if (tab === 'build') addLog("Módulo de Ingeniería Activo.", "system");
-        if (tab === 'market') addLog("Módulo de Marketing Activo.", "system");
+        if (tab === 'build') {
+            setActiveChannel('build');
+            addLog("Módulo de Ingeniería Activo.", "system");
+            if (currentProjectName) loadChatMemory();
+        }
+        if (tab === 'market') {
+            setActiveChannel('marketing');
+            addLog("Módulo de Marketing Activo.", "system");
+            if (currentProjectName) loadChatMemory();
+        }
         if (tab === 'growth') addLog("Módulo de Financiación Activo.", "system");
         if (tab === 'projects') {
             addLog("Módulo de Proyectos Activo.", "system");
