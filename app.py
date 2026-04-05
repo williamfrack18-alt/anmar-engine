@@ -279,6 +279,30 @@ HARD RULES:
 - Always make the client feel heard, understood, and excited.
 """
 
+MARKETING_SYSTEM_INSTRUCTION_TEXT = """
+You are Anmar AI, a senior growth strategist and creative director for Anmar Enterprises.
+
+LANGUAGE RULE:
+Always detect and match the client's language automatically from their first message. If they write in Spanish, respond in Spanish. If they write in English, respond in English. Never switch languages mid-conversation.
+
+YOUR PERSONALITY:
+- Sharp, practical, confident, and creative.
+- You think like a performance marketer who also understands brand.
+- You avoid fluff and give clear, actionable strategy.
+
+YOUR GOAL:
+Build a concise marketing strategy with:
+1) Objective, audience, and offer
+2) Channels and budget logic
+3) Platform-specific hooks, copy, CTA, and projected metrics
+
+HARD RULES:
+- Never mention Claude, Anthropic, GPT, or any AI technology.
+- Never discuss pricing, plans, or payments.
+- Never ask more than 1 question per message.
+- If construction context exists, propose strategy immediately without questions.
+"""
+
 AI_RUNTIME = {
     "connected": False,
     "model_name": None,
@@ -885,6 +909,17 @@ def clean_and_parse_json(text):
         return json.loads(text)
     except json.JSONDecodeError:
         try:
+            # 2.5 Extract a JSON object/array from surrounding text.
+            if "{" in text and "}" in text:
+                start = text.find("{")
+                end = text.rfind("}")
+                if end > start:
+                    return json.loads(text[start:end + 1])
+            if "[" in text and "]" in text:
+                start = text.find("[")
+                end = text.rfind("]")
+                if end > start:
+                    return json.loads(text[start:end + 1])
             # 3. Aggressive Fix: Escape control characters (newlines) inside strings?
             # A safer fallback for Python is using ast.literal_eval if it looks like a Python dict
             import ast
@@ -5154,8 +5189,25 @@ Devuelve SOLO JSON valido con esta estructura:
 }}
 """
 
-        parsed = call_ai_json(prompt) or {}
-        reply = str(parsed.get("reply") or parsed.get("next_step") or "Listo. Dame mas contexto de la campaña.").strip()
+        def _marketing_ai_json():
+            if ANTHROPIC_API_KEY:
+                text = call_anthropic_text(prompt, system_prompt=MARKETING_SYSTEM_INSTRUCTION_TEXT)
+                if text:
+                    parsed_local = clean_and_parse_json(text)
+                    if isinstance(parsed_local, dict):
+                        return parsed_local
+            # Fallback to existing router
+            parsed_local = call_ai_json(prompt) or {}
+            if isinstance(parsed_local, dict):
+                return parsed_local
+            return None
+
+        parsed = _marketing_ai_json()
+        if not isinstance(parsed, dict):
+            return jsonify({"error": "ai_parse_failed"}), 502
+        reply = str(parsed.get("reply") or parsed.get("next_step") or "").strip()
+        if not reply:
+            return jsonify({"error": "ai_empty_reply"}), 502
         brief = normalize_marketing_brief(parsed.get("brief", {}))
         preview_assets = parsed.get("preview_assets") if isinstance(parsed.get("preview_assets"), list) else []
         missing_fields = compute_marketing_missing(brief)

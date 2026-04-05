@@ -444,7 +444,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     chatHelper.textContent = "Paso 1: Define la campaña. Paso 2: Asignamos estratega de marketing.";
                 }
             } else {
-                chatInput.placeholder = "Describe objetivo, audiencia, oferta y presupuesto...";
+                chatInput.placeholder = "Tell me about your business or project — what are you looking to promote or grow?";
                 if (chatHelper) {
                     chatHelper.textContent = "La IA prepara la estrategia y copys para pauta en redes.";
                 }
