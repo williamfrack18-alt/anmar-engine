@@ -5189,36 +5189,35 @@ Devuelve SOLO JSON valido con esta estructura:
 }}
 """
 
-        def _marketing_ai_json():
+        def _marketing_ai_payload():
             text = None
+            parsed_local = None
             if ANTHROPIC_API_KEY:
                 text = call_anthropic_text(prompt, system_prompt=MARKETING_SYSTEM_INSTRUCTION_TEXT, timeout_seconds=12)
                 if text:
                     parsed_local = clean_and_parse_json(text)
-                    if isinstance(parsed_local, dict):
-                        return parsed_local
             else:
-                parsed_local = call_ai_json(prompt) or {}
-                if isinstance(parsed_local, dict):
-                    return parsed_local
-
-            # Fallback: return raw text as reply to avoid hard failure.
-            if text:
-                return {
-                    "reply": text.strip()[:1200],
-                    "brief": {},
-                    "preview_assets": [],
-                    "ready_for_handoff": False,
-                    "next_step": ""
-                }
-            return None
+                text = call_ai_text(prompt) or ""
+                parsed_local = clean_and_parse_json(text) if text else None
+            return parsed_local, text
 
         try:
-            parsed = _marketing_ai_json()
+            parsed, raw_text = _marketing_ai_payload()
         except Exception as e:
             return jsonify({"error": "ai_runtime_error", "detail": str(e)}), 502
         if not isinstance(parsed, dict):
-            return jsonify({"error": "ai_parse_failed"}), 502
+            # Fallback to raw text if JSON parse fails.
+            reply = str(raw_text or "").strip()
+            if not reply:
+                return jsonify({"error": "ai_parse_failed"}), 502
+            return jsonify({
+                "ai_reply": reply[:1400],
+                "missing_fields": MARKETING_REQUIRED_FIELDS,
+                "brief_score": 0,
+                "ready_for_handoff": False,
+                "marketing_brief": {},
+                "preview_assets": []
+            })
         reply = str(parsed.get("reply") or parsed.get("next_step") or "").strip()
         if not reply:
             return jsonify({"error": "ai_empty_reply"}), 502
