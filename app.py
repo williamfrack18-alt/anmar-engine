@@ -5190,16 +5190,27 @@ Devuelve SOLO JSON valido con esta estructura:
 """
 
         def _marketing_ai_json():
+            text = None
             if ANTHROPIC_API_KEY:
                 text = call_anthropic_text(prompt, system_prompt=MARKETING_SYSTEM_INSTRUCTION_TEXT, timeout_seconds=12)
                 if text:
                     parsed_local = clean_and_parse_json(text)
                     if isinstance(parsed_local, dict):
                         return parsed_local
-                return None
-            parsed_local = call_ai_json(prompt) or {}
-            if isinstance(parsed_local, dict):
-                return parsed_local
+            else:
+                parsed_local = call_ai_json(prompt) or {}
+                if isinstance(parsed_local, dict):
+                    return parsed_local
+
+            # Fallback: return raw text as reply to avoid hard failure.
+            if text:
+                return {
+                    "reply": text.strip()[:1200],
+                    "brief": {},
+                    "preview_assets": [],
+                    "ready_for_handoff": False,
+                    "next_step": ""
+                }
             return None
 
         try:
