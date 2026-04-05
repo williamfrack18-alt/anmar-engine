@@ -5191,18 +5191,21 @@ Devuelve SOLO JSON valido con esta estructura:
 
         def _marketing_ai_json():
             if ANTHROPIC_API_KEY:
-                text = call_anthropic_text(prompt, system_prompt=MARKETING_SYSTEM_INSTRUCTION_TEXT)
+                text = call_anthropic_text(prompt, system_prompt=MARKETING_SYSTEM_INSTRUCTION_TEXT, timeout_seconds=12)
                 if text:
                     parsed_local = clean_and_parse_json(text)
                     if isinstance(parsed_local, dict):
                         return parsed_local
-            # Fallback to existing router
+                return None
             parsed_local = call_ai_json(prompt) or {}
             if isinstance(parsed_local, dict):
                 return parsed_local
             return None
 
-        parsed = _marketing_ai_json()
+        try:
+            parsed = _marketing_ai_json()
+        except Exception as e:
+            return jsonify({"error": "ai_runtime_error", "detail": str(e)}), 502
         if not isinstance(parsed, dict):
             return jsonify({"error": "ai_parse_failed"}), 502
         reply = str(parsed.get("reply") or parsed.get("next_step") or "").strip()

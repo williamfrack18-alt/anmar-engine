@@ -579,8 +579,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         bootstrap: true
                     })
                 });
-                const data = await res.json();
+                const { data } = await safeReadJson(res);
                 stopThinking();
+                if (!data) {
+                    throw new Error(`Servidor devolvió HTML (status ${res.status}).`);
+                }
                 if (!res.ok) {
                     throw new Error(data.error || 'Error de marketing');
                 }
@@ -1283,6 +1286,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     window.addSystemMessage = addSystemMessage; // Expose globally
 
+    async function safeReadJson(res) {
+        const text = await res.text();
+        try {
+            return { data: JSON.parse(text), text };
+        } catch (_) {
+            return { data: null, text };
+        }
+    }
+
     function addUserMessage(text) {
         const msgRow = document.createElement('div');
         msgRow.className = 'msg-row user';
@@ -1530,8 +1542,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     project_name: getActiveProjectKey()
                 })
             });
-            const data = await res.json();
+            const { data } = await safeReadJson(res);
             stopThinking();
+            if (!data) {
+                throw new Error(`Servidor devolvió HTML (status ${res.status}).`);
+            }
             if (!res.ok) {
                 throw new Error(data.error || 'Error de marketing');
             }
