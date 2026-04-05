@@ -510,6 +510,116 @@ document.addEventListener('DOMContentLoaded', () => {
         renderBriefState({ missing_fields: latestMissingFields, memory_summary: '' });
     }
 
+    async function fetchConstructionContext() {
+        if (!currentUser?.email || !currentProjectName) return null;
+        try {
+            const res = await fetch(`/api/chat-memory?email=${encodeURIComponent(currentUser.email)}&project_name=${encodeURIComponent(currentProjectName)}`);
+            if (!res.ok) return null;
+            const data = await res.json();
+            const memory = data.memory || {};
+            const agent = memory.agent_memory || {};
+            const summary = String(memory.summary || '').trim();
+            const audience = String(memory.audience || agent.audience || '').trim();
+            const businessModel = String(memory.business_model || agent.business_model || '').trim();
+            const timeline = String(memory.timeline || agent.timeline || '').trim();
+            const features = Array.isArray(agent.features) ? agent.features.join(', ') : '';
+            const ticketId = String(memory.current_ticket_project_id || '').trim();
+            const pendingTicket = String(localStorage.getItem('pending_ticket_project') || '').trim();
+            const hasConversation = Array.isArray(memory.conversation_history) && memory.conversation_history.length > 0;
+
+            const hasContext = !!(summary || audience || businessModel || timeline || features || ticketId || hasConversation || (pendingTicket && pendingTicket === currentProjectName));
+            if (!hasContext) return null;
+
+            return {
+                summary,
+                audience,
+                businessModel,
+                timeline,
+                features,
+                ticketId
+            };
+        } catch (e) {
+            console.warn('Construction context lookup failed', e);
+            return null;
+        }
+    }
+
+    function formatConstructionContext(ctx) {
+        if (!ctx) return '';
+        const lines = [
+            ctx.summary ? `Producto: ${ctx.summary}` : '',
+            ctx.audience ? `Audiencia: ${ctx.audience}` : '',
+            ctx.businessModel ? `Modelo: ${ctx.businessModel}` : '',
+            ctx.timeline ? `Timeline: ${ctx.timeline}` : '',
+            ctx.features ? `Features: ${ctx.features}` : ''
+        ].filter(Boolean);
+        return lines.join(' | ');
+    }
+
+    async function bootstrapMarketingPhase() {
+        if (!isMarketingChannel()) return;
+        if (!currentProjectName) return;
+        if (conversationHistory.length) return;
+        if (currentMarketingBrief || (currentMarketingAssets && currentMarketingAssets.length)) return;
+
+        const ctx = await fetchConstructionContext();
+        if (ctx) {
+            // CASE A: Use construction context to propose immediately.
+            showThinking("Analizando contexto de construcción...");
+            try {
+                const res = await fetch('/api/continue-marketing', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        history: [],
+                        message: '',
+                        user_email: currentUser.email,
+                        project_name: getActiveProjectKey(),
+                        construction_context: formatConstructionContext(ctx),
+                        bootstrap: true
+                    })
+                });
+                const data = await res.json();
+                stopThinking();
+                if (!res.ok) {
+                    throw new Error(data.error || 'Error de marketing');
+                }
+                if (data.ai_reply) {
+                    await addSystemMessage(data.ai_reply);
+                    conversationHistory.push({ role: "ai", content: data.ai_reply });
+                }
+                if (Array.isArray(data.preview_assets)) {
+                    currentMarketingAssets = data.preview_assets;
+                    renderMarketingPreview(currentMarketingAssets);
+                }
+                if (data.marketing_brief) {
+                    currentMarketingBrief = data.marketing_brief;
+                }
+                if (Array.isArray(data.missing_fields)) {
+                    latestMissingFields = data.missing_fields.slice();
+                }
+                if (typeof data.brief_score === 'number') {
+                    latestBriefScore = data.brief_score;
+                }
+                renderBriefState({
+                    missing_fields: latestMissingFields,
+                    memory_summary: (data.marketing_brief && (data.marketing_brief.key_message || data.marketing_brief.offer)) || ''
+                });
+                queueMemorySave();
+                return;
+            } catch (e) {
+                stopThinking();
+                console.warn('Marketing bootstrap failed', e);
+            }
+        }
+
+        // CASE B: Ask one clean question when no construction context exists.
+        const question = "Tell me about your business or project — what are you looking to promote or grow?";
+        await addSystemMessage(question);
+        conversationHistory.push({ role: "ai", content: question });
+        queueMemorySave();
+    }
+
     // React to Tab switch
     document.addEventListener('chatTabSwitched', (e) => {
         updateChatCopy(e.detail || 'AI');
@@ -1901,6 +2011,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             persistCurrentProject();
             syncChatLockWithPendingTicket();
+            if (isMarketingChannel()) {
+                await bootstrapMarketingPhase();
+            }
         } catch (e) {
             console.warn('Memory load failed', e);
         }

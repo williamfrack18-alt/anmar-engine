@@ -5008,11 +5008,13 @@ def continue_marketing():
         image_data_url = data.get('image_data_url', '')
         user_email = (data.get('user_email') or '').strip().lower()
         project_name = (data.get('project_name') or '').strip().lower()
+        construction_context = str(data.get('construction_context') or '').strip()
+        bootstrap = bool(data.get('bootstrap'))
         if not user_email:
             return jsonify({"error": "login_required"}), 401
         if not project_name:
             return jsonify({"error": "project_required"}), 400
-        if not current_input and not image_data_url:
+        if not current_input and not image_data_url and not construction_context:
             return jsonify({"error": "message is required"}), 400
 
         image_context = describe_image_for_chat(image_data_url) if image_data_url else ""
@@ -5021,6 +5023,8 @@ def continue_marketing():
             enriched_input = f"{current_input}\n\nContexto de imagen adjunta:\n{image_context}".strip()
         elif image_data_url and not current_input:
             enriched_input = "El usuario adjunto una imagen. Describe su contexto y sugiere activos de marketing."
+        if not enriched_input and construction_context:
+            enriched_input = "Inicia la estrategia de marketing con el contexto de construcción."
 
         if has_reset_intent(current_input):
             if user_email:
@@ -5041,10 +5045,17 @@ def continue_marketing():
             [f"{m.get('role', 'user')}: {m.get('content', '')}" for m in history[-12:] if isinstance(m, dict)]
         )
 
+        context_block = f"Contexto de construcción:\n{construction_context}\n" if construction_context else ""
+        bootstrap_block = "INSTRUCCION: Comienza con propuesta directa. Primera linea debe mencionar que ya se esta construyendo el proyecto y que ahora toca marketing. No hagas preguntas en la primera respuesta.\n" if bootstrap else ""
+
         prompt = f"""
 Eres un director de marketing senior. Tu trabajo es crear un brief listo para produccion y previsualizacion.
+Reglas:
+- Si hay contexto de construccion, propone estrategia directa sin preguntas iniciales.
+- Si no hay contexto, haz UNA pregunta inicial y maximo 2 preguntas de seguimiento antes de proponer.
 
 Proyecto: {project_name}
+{context_block}{bootstrap_block}
 Conversacion previa:
 {history_text}
 
