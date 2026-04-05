@@ -5231,7 +5231,7 @@ Devuelve SOLO JSON valido con esta estructura:
             # Fallback to raw text if JSON parse fails.
             reply = str(raw_text or "").strip()
             if not reply:
-                return jsonify({"error": "ai_parse_failed"}), 502
+                reply = "Estoy listo para ayudarte con tu estrategia de marketing. ¿Cuál es tu objetivo principal con esta campaña?"
             return jsonify({
                 "ai_reply": reply[:1400],
                 "missing_fields": MARKETING_REQUIRED_FIELDS,
