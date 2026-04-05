@@ -1582,6 +1582,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 `);
             }
+            if (data.auto_handoff) {
+                await window.sendMarketingBrief();
+            }
             queueMemorySave();
         } catch (e) {
             stopThinking();
