@@ -770,7 +770,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let projectLimitReached = false;
     let previewLoadTimer = null;
     let pendingMemorySave = null;
-    let interactionMode = 'strategy'; // strategy | edit
+    // interactionMode defined earlier
     let selectedEngine = 'antigravity';
     let latestMissingFields = [];
     let latestBriefScore = 0;
