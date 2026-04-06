@@ -67,6 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Pre-init state used by early UI handlers
     let activeChannel = 'build'; // build | marketing
     let interactionMode = 'strategy'; // strategy | edit
+    // pendingImageDataUrl and pendingImageName defined earlier
     function isMarketingChannel() {
         return activeChannel === 'marketing';
     }
