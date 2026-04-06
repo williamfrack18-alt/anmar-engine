@@ -64,6 +64,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const welcomeCloseBtn = document.getElementById('welcomeCloseBtn');
     const newProjectPhoneInput = document.getElementById('newProjectPhoneInput');
 
+    // Pre-init state used by early UI handlers
+    let activeChannel = 'build'; // build | marketing
+    // interactionMode defined earlier
+    function isMarketingChannel() {
+        return activeChannel === 'marketing';
+    }
+
     // --- Session Management ---
     let currentUser = null;
     try {
@@ -779,13 +786,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const BUILD_REQUIRED_FIELDS = ['summary', 'audience', 'business_model', 'timeline', 'features'];
     const MARKETING_REQUIRED_FIELDS = ['goal', 'audience', 'offer', 'channels', 'budget', 'timeline', 'brand_voice', 'key_message'];
-    let activeChannel = 'build'; // build | marketing
     let currentMarketingBrief = null;
     let currentMarketingAssets = [];
-
-    function isMarketingChannel() {
-        return activeChannel === 'marketing';
-    }
 
     function getActiveProjectKey() {
         if (!currentProjectName) return '';
