@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Pre-init state used by early UI handlers
     let activeChannel = 'build'; // build | marketing
-    // interactionMode defined earlier
+    let interactionMode = 'strategy'; // strategy | edit
     function isMarketingChannel() {
         return activeChannel === 'marketing';
     }
@@ -770,7 +770,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let projectLimitReached = false;
     let previewLoadTimer = null;
     let pendingMemorySave = null;
-    // interactionMode defined earlier
     let selectedEngine = 'antigravity';
     let latestMissingFields = [];
     let latestBriefScore = 0;
