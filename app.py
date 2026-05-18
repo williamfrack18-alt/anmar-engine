@@ -15,9 +15,23 @@ from dotenv import load_dotenv
 import antigravity_sdk as antigravity
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
+from collections import defaultdict
+import time as _time
 
 # Load environment variables
 load_dotenv()
+
+# ── SIMPLE RATE LIMITER (in-memory) ──
+_rate_store = defaultdict(list)
+
+def _rate_limit(ip, max_requests=10, window=60):
+    """Returns True if request should be blocked."""
+    now = _time.time()
+    _rate_store[ip] = [t for t in _rate_store[ip] if now - t < window]
+    if len(_rate_store[ip]) >= max_requests:
+        return True
+    _rate_store[ip].append(now)
+    return False
 
 # --- CONFIGURATION ---
 # App is at project root (anmar-engine/), frontend is a child (anmar-engine/frontend/)
@@ -50,25 +64,79 @@ def resolve_projects_base_dir():
 projects_base_dir = resolve_projects_base_dir()
 
 app = Flask(__name__, static_folder=frontend_path, template_folder=frontend_path)
-app.secret_key = os.getenv("ANMAR_INTERNAL_SECRET", "anmar-internal-dev")
+
+# ── SESSION SECRET ── persist across restarts
+import secrets as _secrets
+_secret_file = os.path.join(BASE_DIR, 'backend', '.session_secret')
+def _get_or_create_secret():
+    env_secret = os.getenv("ANMAR_INTERNAL_SECRET", "").strip()
+    if env_secret:
+        return env_secret
+    os.makedirs(os.path.dirname(_secret_file), exist_ok=True)
+    if os.path.exists(_secret_file):
+        try:
+            with open(_secret_file, 'r') as f:
+                stored = f.read().strip()
+            if stored:
+                return stored
+        except Exception:
+            pass
+    new_secret = _secrets.token_hex(32)
+    try:
+        with open(_secret_file, 'w') as f:
+            f.write(new_secret)
+    except Exception:
+        pass
+    return new_secret
+
+app.secret_key = _get_or_create_secret()
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SECURE'] = not os.getenv('ANMAR_DEV_MODE')
+from datetime import timedelta
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 
 # --- STRIPE CONFIG ---
 STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "").strip()
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "").strip()
-STRIPE_PRICE_MARKETING = os.getenv("STRIPE_PRICE_MARKETING", "").strip()
-STRIPE_PRICE_MARKETING_BUILD = os.getenv("STRIPE_PRICE_MARKETING_BUILD", "").strip()
+# New plans
+STRIPE_PRICE_VALIDATE = os.getenv("STRIPE_PRICE_VALIDATE", "").strip()  # $147 one-time
+# MVP and Growth are custom-quoted — no Stripe price IDs needed
+
+# Legacy plan price IDs (kept for existing subscribers)
+STRIPE_PRICE_STARTER = os.getenv("STRIPE_PRICE_STARTER", "price_1TJcBI2NGoLMLWdpFt40LRtq").strip()
+STRIPE_PRICE_PRO = os.getenv("STRIPE_PRICE_PRO", "price_1TJcG82NGoLMLWdpr7skJOv6").strip()
+STRIPE_PRICE_MARKETING = os.getenv("STRIPE_PRICE_MARKETING", "price_1TFH2D2NGoLMLWdp2ZkgobuZ").strip()
+STRIPE_PRICE_MARKETING_BUILD = os.getenv("STRIPE_PRICE_MARKETING_BUILD", "price_1TNKHx2NGoLMLWdpZ3TPbhKx").strip()
+
+# Token packs (one-time payments) — set via env or replace with real Price IDs after creating in Stripe
+STRIPE_PRICE_PACK_50  = os.getenv("STRIPE_PRICE_PACK_50",  "").strip()   # $12 — 50 mensajes
+STRIPE_PRICE_PACK_150 = os.getenv("STRIPE_PRICE_PACK_150", "").strip()   # $29 — 150 mensajes
+STRIPE_PRICE_PACK_500 = os.getenv("STRIPE_PRICE_PACK_500", "").strip()   # $79 — 500 mensajes
+
+TOKEN_PACK_MAP = {
+    "tokens_50":  {"price_id": STRIPE_PRICE_PACK_50,  "tokens": 50,  "label": "Pack 50 Mensajes"},
+    "tokens_150": {"price_id": STRIPE_PRICE_PACK_150, "tokens": 150, "label": "Pack 150 Mensajes"},
+    "tokens_500": {"price_id": STRIPE_PRICE_PACK_500, "tokens": 500, "label": "Pack 500 Mensajes"},
+}
 
 stripe.api_key = STRIPE_SECRET_KEY
 
 STRIPE_PLAN_LABELS = {
-    "marketing": "Marketing",
-    "marketing_build": "Marketing + Construcción"
+    "validate": "Validate",
+    "mvp": "MVP",
+    "growth": "Growth",
+    # Legacy plan keys (still recognized for existing subscribers)
+    "starter": "Starter",
+    "pro": "Pro",
+    "marketing": "Growth",
+    "marketing_build": "Elite"
 }
 
 @app.route('/internal/<path:filename>')
 def serve_internal(filename):
     return send_from_directory(internal_path, filename)
-CORS(app)
+CORS(app, origins=["https://anmarenterprices.com"], supports_credentials=True)
 
 @app.route('/api/internal/status', methods=['GET'])
 def internal_status():
@@ -102,6 +170,7 @@ def internal_bootstrap():
             "created_at": datetime.now().isoformat()
         }
         save_internal_users([new_user])
+        session.permanent = True
         session['internal_user'] = {
             "id": new_user["id"],
             "name": new_user["name"],
@@ -111,7 +180,7 @@ def internal_bootstrap():
         }
         return jsonify({"status": "ok", "user": session['internal_user']})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 @app.route('/api/internal/login', methods=['POST'])
 def internal_login():
@@ -123,7 +192,8 @@ def internal_login():
             return jsonify({"error": "identifier and password are required"}), 400
         user = find_internal_user(identifier)
         if not user or not check_password_hash(user.get('password_hash', ''), password):
-            return jsonify({"error": "Credenciales inválidas"}), 401
+            return jsonify({"error": "Invalid credentials"}), 401
+        session.permanent = True
         session['internal_user'] = {
             "id": user.get("id"),
             "name": user.get("name"),
@@ -133,12 +203,89 @@ def internal_login():
         }
         return jsonify({"status": "ok", "user": session['internal_user']})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 @app.route('/api/internal/logout', methods=['POST'])
 def internal_logout():
     session.pop('internal_user', None)
     return jsonify({"status": "ok"})
+
+@app.route('/api/internal/google-login', methods=['POST'])
+def internal_google_login():
+    """Allow internal team members to log in with Google OAuth."""
+    try:
+        data = request.json or {}
+        id_token = data.get('token', '').strip()
+        if not id_token:
+            return jsonify({"error": "Token is required"}), 400
+
+        # Validate token with Google
+        import urllib.request as _urllib_req
+        import json as _json
+        try:
+            token_url = f"https://oauth2.googleapis.com/tokeninfo?id_token={id_token}"
+            with _urllib_req.urlopen(token_url, timeout=8) as resp:
+                google_data = _json.loads(resp.read().decode())
+        except Exception as e:
+            return jsonify({"error": "Invalid Google token"}), 401
+
+        email = google_data.get("email", "").strip().lower()
+        name = google_data.get("name") or google_data.get("given_name") or email.split("@")[0]
+        email_verified = google_data.get("email_verified") == "true"
+
+        if not email or not email_verified:
+            return jsonify({"error": "Google email not verified"}), 401
+
+        # Load existing internal users
+        users = load_internal_users()
+
+        # Check if this email is already an internal user
+        existing = next((u for u in users if u.get("email", "").lower() == email), None)
+
+        if existing:
+            # Existing user — log them in
+            user_session = {
+                "id": existing["id"],
+                "name": existing.get("name", name),
+                "username": existing.get("username", email.split("@")[0]),
+                "email": email,
+                "role": existing.get("role", "agent")
+            }
+        elif not users:
+            # No internal users exist — auto-bootstrap this Google account as first admin
+            import uuid as _uuid
+            new_user = {
+                "id": str(_uuid.uuid4())[:8],
+                "name": name,
+                "username": email.split("@")[0],
+                "email": email,
+                "password_hash": "",
+                "role": "admin",
+                "auth_method": "google",
+                "created_at": datetime.now().isoformat()
+            }
+            users.append(new_user)
+            save_internal_users(users)
+            user_session = {
+                "id": new_user["id"],
+                "name": name,
+                "username": new_user["username"],
+                "email": email,
+                "role": "admin"
+            }
+        else:
+            # Users exist but this email is not registered
+            return jsonify({
+                "error": "This email does not have internal access. Ask an administrator to add you."
+            }), 403
+
+        session['internal_user'] = user_session
+        session.permanent = True
+        return jsonify({"user": user_session, "message": f"Welcome, {name}"})
+
+    except Exception as e:
+        print(f"Internal Google Login Error: {e}")
+        return jsonify({"error": "Internal server error"}), 500
 
 @app.route('/api/internal/me', methods=['GET'])
 def internal_me():
@@ -156,6 +303,13 @@ def get_ai_suggestion():
         chat_history = str(data.get('chatHistory') or '').strip()
         project_status = str(data.get('projectStatus') or '').strip()
         project_identifier = str(data.get('projectIdentifier') or '').strip()
+        # Accept 'context' field as direct prompt (used by panel fallback)
+        direct_context = str(data.get('context') or '').strip()
+
+        if direct_context and not chat_history:
+            # Panel sent a direct context string — use it as-is
+            raw = call_ai_text(direct_context, engine=ENGINE_ANTIGRAVITY) or ""
+            return jsonify({"suggestion": raw, "response": raw})
 
         master_prompt = os.getenv('ANMAR_MASTER_PROMPT', '').strip()
         if not master_prompt:
@@ -168,7 +322,6 @@ def get_ai_suggestion():
                               .replace('[PROJECT_STATUS]', project_status)\
                               .replace('[PROJECT_IDENTIFIER]', project_identifier)
 
-        # Force JSON response
         json_prompt = f"""
 {prompt}
 
@@ -186,7 +339,7 @@ DEVUELVE SOLO JSON con esta forma:
             "Draft_Response": "Gracias por el detalle. Ya lo revisé y te confirmo el siguiente paso en breve."
         })
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 @app.route('/api/internal/users', methods=['POST'])
 def create_internal_user():
@@ -202,28 +355,42 @@ def create_internal_user():
     password = str(data.get('password') or '').strip()
     if not username and email:
         username = email.split("@")[0]
-    if not username or not password:
-        return jsonify({"error": "username and password are required"}), 400
+    if not username:
+        return jsonify({"error": "username is required"}), 400
     existing = find_internal_user(username) or (find_internal_user(email) if email else None)
     if existing:
-        return jsonify({"error": "User already exists"}), 409
+        return jsonify({"error": "This user or email already exists"}), 409
     users = load_internal_users()
-    users.append({
+    new_member = {
         "id": str(uuid.uuid4()),
         "name": name or username,
         "username": username,
         "email": email or "",
         "role": data.get("role") or "agent",
-        "password_hash": generate_password_hash(password),
+        "auth_method": "google" if not password else "password",
         "created_at": datetime.now().isoformat()
-    })
-    save_internal_users(users)
-    return jsonify({"status": "ok"})
+    }
+    if password:
+        new_member["password_hash"] = generate_password_hash(password)
+    save_internal_users(users + [new_member])
+    return jsonify({"status": "ok", "user": {"name": new_member["name"], "username": username, "role": new_member["role"]}})
+
+@app.route('/api/internal/team', methods=['GET'])
+def get_internal_team():
+    """Return list of internal team members (admins can see all)."""
+    if not require_internal_auth():
+        return jsonify({"error": "unauthorized"}), 401
+    users = load_internal_users()
+    safe = [{"id": u.get("id",""), "name": u.get("name",""), "username": u.get("username",""),
+             "email": u.get("email",""), "role": u.get("role","agent"),
+             "auth_method": u.get("auth_method","password"),
+             "created_at": u.get("created_at","")} for u in users]
+    return jsonify({"users": safe})
 
 # Google AI Setup
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "").strip()
 if not GOOGLE_API_KEY:
-    GOOGLE_API_KEY = "AIzaSyBmm6fOLCODWZueufCOsk8x2FDvucTCQEs"
+    print("[STARTUP] WARNING: GOOGLE_API_KEY not configured — AI chat will not work")
 
 # Configuración base para cualquier modelo Gemini seleccionado.
 generation_config = {
@@ -330,6 +497,116 @@ HARD RULES:
 - Always make the client feel their business has enormous potential
 """
 
+ORGANIC_CONTENT_SYSTEM_PROMPT = """
+You are Anmar AI, the official Organic Content & Community Manager strategist of Anmar Enterprises. You are not a generic chatbot. You are a world-class community builder and organic content expert who has grown hundreds of brands from zero to millions of followers without paid ads.
+
+LANGUAGE RULE:
+Always detect and match the client's language from their very first message. Never switch languages.
+
+YOUR PERSONALITY:
+Creative, energetic, culturally sharp, and data-aware. You speak like a top-tier content creator who also understands brand strategy. Every suggestion feels custom-built for their specific brand, tone, and audience.
+
+YOUR EXPERTISE:
+- Organic content strategy for TikTok, Instagram, YouTube, LinkedIn, X, Pinterest, Threads
+- Community building and engagement playbooks
+- Hook writing, caption formulas, storytelling frameworks
+- Content calendar and posting frequency
+- Creator economy and collaboration strategies
+- Brand voice and tone development
+- Viral content mechanics and trend-jacking
+- UGC (User Generated Content) strategy
+- SEO for YouTube and Google Discover
+
+YOUR APPROACH:
+STEP 1 — UNDERSTAND THE BRAND
+Ask ONE smart opening question to understand: What's the business, who's the audience, and what platforms they're already on (if any).
+
+STEP 2 — BUILD THE ORGANIC STRATEGY
+Once you have context, deliver a complete organic content strategy including:
+1. Platform recommendations with reasoning (which 2-3 platforms to focus on and why)
+2. Content pillars (3-4 core themes to rotate)
+3. Posting frequency and best times
+4. Hook formulas tailored to their niche
+5. Sample content calendar for 2 weeks
+6. Community engagement tactics (how to reply, DM strategy, collaborations)
+7. One viral content idea specific to their brand
+
+STEP 3 — CONFIRM AND GENERATE HANDOFF
+Present the strategy and ask for confirmation. Once confirmed, generate a complete brief for the Anmar content team.
+
+HARD RULES:
+- Never mention AI, Claude, or any technology behind this
+- Never discuss pricing or payments
+- Never ask more than 1 question per message
+- Every strategy must feel 100% custom to their brand
+- Always make them feel their organic potential is massive
+"""
+
+CAPITAL_SYSTEM_PROMPT = """
+You are Anmar AI, the official Capital & Investment strategist of Anmar Enterprises. You are not a basic chatbot. You are a world-class financial strategist and venture capital advisor who has helped hundreds of startups and businesses secure funding through multiple channels.
+
+LANGUAGE RULE:
+Always detect and match the client's language from their very first message. Never switch languages.
+
+YOUR PERSONALITY:
+Authoritative, strategic, reassuring, and results-oriented. You make clients feel their business is fundable and that there's a clear path to capital. Every response feels tailored to their specific business stage, industry, and funding needs. You speak like a seasoned CFO and investment banker combined.
+
+YOUR EXPERTISE:
+- Venture Capital fundraising (Seed, Series A-D)
+- Angel investor pitching and networks
+- Crowdfunding platforms (Wefunder, StartEngine, Republic)
+- SBA loans and bank credit lines
+- Government grants and programs (SBIR, STTR, state grants)
+- Revenue-based financing
+- Convertible notes and SAFEs
+- Pitch deck creation and financial modeling
+- Due diligence preparation
+- Valuation methodologies for startups
+
+YOUR APPROACH:
+STEP 1 — UNDERSTAND THE BUSINESS & FUNDING NEEDS
+If the client already has an active project in the Construction or Marketing module, use that context automatically. Start by asking ONE smart question:
+'Tell me about your business stage and how much capital you're looking to raise — I'll map out the best funding routes for you.'
+
+Ask maximum 2 follow-up questions to understand: revenue (if any), burn rate, team size, and what the capital will be used for.
+
+STEP 2 — BUILD THE FUNDING STRATEGY
+Once you have context, deliver a complete funding roadmap including:
+
+1. RECOMMENDED FUNDING ROUTES (ranked by fit)
+- For each route: why it fits their business, expected timeline, typical amounts, and success probability
+- Routes to consider: VC funding, angel investors, Wefunder/crowdfunding campaigns, bank loans (SBA 7(a), microloans), revenue-based financing, grants, accelerator programs
+
+2. PREPARATION CHECKLIST
+- What documents and metrics they need ready
+- Financial projections needed
+- Legal structure requirements
+- Pitch deck outline specific to their business
+
+3. ANMAR ADVANTAGE
+- Explain how Anmar's involvement (built the product, running the marketing, verifiable metrics) makes them a stronger candidate
+- Anmar can provide validation letters, technical due diligence support, and growth metrics to investors/banks
+
+4. TIMELINE & ACTION PLAN
+- Week-by-week plan for the next 30-60 days
+- Which funding sources to approach first and in what order
+- Key milestones to hit before approaching each source
+
+STEP 3 — CONFIRM AND GENERATE FUNDING TICKET
+Present the strategy and ask for confirmation. Once confirmed, generate a complete funding brief for the Anmar capital team to begin outreach and preparation.
+
+Close with: 'Your funding strategy is mapped out. Our capital team will review your profile and start connecting you with the right sources.'
+
+HARD RULES:
+- Never mention AI, Claude, or any technology behind this
+- Never guarantee funding amounts or approval — always frame as "strong candidates" or "high probability"
+- Never discuss Anmar's own pricing or payments — the platform handles that
+- Never ask more than 1 question per message
+- Every strategy must feel 100% custom to their business
+- Always make the client feel their business is fundable and exciting to investors
+- Reference specific programs, funds, or institutions when possible
+"""
+
 AI_RUNTIME = {
     "connected": False,
     "model_name": None,
@@ -344,9 +621,9 @@ _last_ai_reconnect_attempt_at = None
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "").strip()
 OPENAI_CODEX_MODEL = os.getenv("OPENAI_CODEX_MODEL", "gpt-5-mini")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "").strip()
-ANTHROPIC_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-20250514").strip()
+ANTHROPIC_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-5").strip()
 ANTHROPIC_VERSION = os.getenv("ANTHROPIC_VERSION", "2023-06-01").strip()
-ANTHROPIC_MAX_TOKENS = int(os.getenv("ANTHROPIC_MAX_TOKENS", "1200"))
+ANTHROPIC_MAX_TOKENS = int(os.getenv("ANTHROPIC_MAX_TOKENS", "2048"))
 ANTHROPIC_TEMPERATURE = float(os.getenv("ANTHROPIC_TEMPERATURE", "0.6"))
 ANTHROPIC_ENDPOINT = os.getenv("ANTHROPIC_ENDPOINT", "https://api.anthropic.com/v1/messages").strip()
 
@@ -551,6 +828,12 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS processed_webhooks (
+            session_id TEXT PRIMARY KEY,
+            processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
     conn.commit()
 
     # Lightweight migration for existing DBs created with older schema.
@@ -579,24 +862,69 @@ import threading
 import uuid
 from datetime import datetime
 import json
+# ── RESEND EMAIL CONFIG (module-level so we verify at startup) ──
+RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "").strip()
+RESEND_FROM = "Anmar Enterprises <noreply@anmarenterprices.com>"
+RESEND_ADMIN = os.environ.get("ANMAR_ADMIN_EMAIL", "anmar@anmarenterprices.com").strip()
+
+
+def _resend_send_email(to_addr, subject, html_body):
+    """Envía un email via Resend API usando requests. Retorna response body o lanza excepción."""
+    if not RESEND_API_KEY:
+        raise Exception("RESEND_API_KEY vacía — email no enviado")
+
+    r = requests.post(
+        "https://api.resend.com/emails",
+        headers={
+            "Authorization": f"Bearer {RESEND_API_KEY}",
+            "Content-Type": "application/json"
+        },
+        json={
+            "from": RESEND_FROM,
+            "to": [to_addr],
+            "subject": subject,
+            "html": html_body
+        },
+        timeout=15
+    )
+    if r.status_code >= 400:
+        raise Exception(f"Resend HTTP {r.status_code}: {r.text}")
+    return r.text
+
+
+@app.route('/api/test-email', methods=['GET'])
+def test_email_endpoint():
+    """Diagnóstico: GET /api/test-email?to=x@x.com — envía email de prueba. Requiere auth interna."""
+    if not require_internal_auth():
+        return jsonify({"error": "unauthorized"}), 401
+    if _rate_limit(request.remote_addr, max_requests=3, window=60):
+        return jsonify({"error": "Too many attempts. Wait a moment."}), 429
+    to = request.args.get('to', RESEND_ADMIN)
+    try:
+        result = _resend_send_email(
+            to_addr=to,
+            subject="Test desde Anmar API",
+            html_body="<div style='font-family:sans-serif;padding:20px;background:#000;color:#fff;border-radius:12px;'><h2 style='color:#10b981;'>Email de prueba</h2><p>Si ves esto, Resend funciona correctamente desde Python.</p></div>"
+        )
+        return jsonify({"ok": True, "to": to})
+    except Exception as e:
+        print(f"[TEST-EMAIL] Error: {e}")
+        return jsonify({"ok": False, "error": "Error al enviar email de prueba."}), 500
+
 
 def notify_new_registration(name, email):
-    """
-    Función en segundo plano para manejar notificaciones asíncronas de nuevos registros.
-    Envía email (bienvenida al usuario y aviso interno) y registra un ticket base.
-    """
+    """Envía emails de bienvenida + alerta admin en hilo separado."""
+
     def background_task():
-        # 1. NOTIFICACIÓN INTERNA: Crear un ticket inicial en internal_alerts.json
+
+        # 1. Ticket interno
         try:
             alerts_path = os.path.join(BASE_DIR, 'backend', 'internal_alerts.json')
             os.makedirs(os.path.dirname(alerts_path), exist_ok=True)
-            
             alerts = []
             if os.path.exists(alerts_path):
                 with open(alerts_path, 'r') as f:
                     alerts = json.load(f)
-                    
-            # Crear ticket tipo "NEW_USER" (o general) para que aparezca en Network
             new_alert = {
                 "id": str(uuid.uuid4())[:8],
                 "project_name": "NUEVO CLIENTE / LEAD",
@@ -608,159 +936,162 @@ def notify_new_registration(name, email):
                 "updated_at": datetime.now().isoformat(),
                 "status": "pending",
                 "priority": "high",
-                "sla_due_at": datetime.now().isoformat(), # Requeriría atención inmediata si es onboarding VIP
-                "events": [{
-                    "timestamp": datetime.now().isoformat(),
-                    "status": "pending",
-                    "actor": "system",
-                    "message": "Primera visita, usuario registrado exitosamente."
-                }]
+                "sla_due_at": datetime.now().isoformat(),
+                "events": [{"timestamp": datetime.now().isoformat(), "status": "pending", "actor": "system", "message": "User registered successfully."}]
             }
             alerts.insert(0, new_alert)
             with open(alerts_path, 'w') as f:
                 json.dump(alerts, f, indent=2)
-                
+            print(f"[NOTIFY] Ticket creado OK")
         except Exception as e:
-            print(f"Error generando ticket interno para nuevo usuario: {e}")
+            import traceback
+            print(f"[NOTIFY] Error ticket: {e}")
+            print(traceback.format_exc())
 
-        # 2. EMAIL NOTIFICATIONS VIA GOOGLE WORKSPACE SMTPLIB
-        import smtplib
-        import os
-        from email.mime.text import MIMEText
-        from email.mime.multipart import MIMEMultipart
+        # 2. Email bienvenida
+        _name = (name or "Nuevo usuario").strip()
+        try:
+            _resend_send_email(
+                to_addr=email,
+                subject="Bienvenido a Anmar Enterprises!",
+                html_body=f"""<div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:40px 32px;background:#000;color:#fff;border-radius:16px;">
+                    <h1 style="color:#10b981;">Bienvenido, {_name}</h1>
+                    <p style="color:rgba(255,255,255,0.7);line-height:1.7;">Tu cuenta en <strong>Anmar Enterprises</strong> fue creada exitosamente.</p>
+                    <a href="https://anmarenterprices.com/" style="display:inline-block;margin-top:20px;background:#10b981;color:#000;font-weight:700;padding:12px 28px;border-radius:10px;text-decoration:none;">Ingresar ahora</a>
+                    <p style="color:rgba(255,255,255,0.3);font-size:0.75rem;margin-top:32px;">Anmar Enterprises</p>
+                </div>"""
+            )
+        except Exception as e:
+            import traceback
+            print(f"[NOTIFY] ERROR bienvenida -> {email}: {e}")
+            print(traceback.format_exc())
 
-        # IMPORTANTE: Configuraremos estas credenciales en el servidor usando variables de entorno
-        # o aquí mismo, pero NUNCA compartas la clave final expuesta públicamente.
-        SMTP_SERVER = "smtp.gmail.com"
-        SMTP_PORT = 587
-        
-        sender_email = os.environ.get("ANMAR_SMTP_USER", "tu_correo@tudominio.com") 
-        sender_password = os.environ.get("ANMAR_SMTP_PASS", "")
-        admin_email = os.environ.get("ANMAR_ADMIN_EMAIL", sender_email) # A quién le llega la alerta interna
-        
-        if sender_password:
-            try:
-                # CORREO PARA EL CLIENTE (Bienvenida)
-                msg_client = MIMEMultipart()
-                msg_client['From'] = f"Anmar Enterprises <{sender_email}>"
-                msg_client['To'] = email
-                msg_client['Subject'] = "¡Bienvenido a Anmar Enterprises!"
-                
-                name_str = name if name else 'Nuevo usuario'
-                body_client = f"""Hola {name_str},
-                
-¡Bienvenido a Anmar Enterprises! Tu cuenta en el motor Supra ha sido creada exitosamente.
+        # 3. Email alerta admin
+        try:
+            _resend_send_email(
+                to_addr=RESEND_ADMIN,
+                subject=f"Nuevo lead: {email}",
+                html_body=f"""<div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:40px 32px;background:#000;color:#fff;border-radius:16px;">
+                    <h2 style="color:#10b981;">Nuevo lead registrado</h2>
+                    <p><strong>Nombre:</strong> {_name}</p>
+                    <p><strong>Email:</strong> {email}</p>
+                    <p><strong>Hora:</strong> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+                </div>"""
+            )
+        except Exception as e:
+            import traceback
+            print(f"[NOTIFY] ERROR alerta admin: {e}")
+            print(traceback.format_exc())
 
-Ya puedes ingresar a tu ecosistema, describir tu visión en el chat y empezar a construir junto a nuestra Inteligencia Artificial y Red de Ingenieros.
+        print(f"[NOTIFY] HILO COMPLETADO para {email}")
 
-Inicia sesión ahora: https://anmarenterprices.com/
-
-Atentamente,
-El Equipo de Anmar Enterprises
-"""
-                msg_client.attach(MIMEText(body_client, 'plain'))
-                
-                # CORREO PARA LA ADMINISTRACIÓN (Alerta Interna)
-                msg_admin = MIMEMultipart()
-                msg_admin['From'] = f"Sistema Anmar <{sender_email}>"
-                msg_admin['To'] = admin_email
-                msg_admin['Subject'] = f"🚨 NUEVO LEAD REGISTRADO: {email}"
-                
-                body_admin = f"""Se acaba de registrar un nuevo usuario en la plataforma Anmar Engine.
-                
-Nombre Autorizado: {name_str}
-Email del Lead: {email}
-Hora de registro: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-
-El Ticket también ha sido creado en el Operations Network.
-"""
-                msg_admin.attach(MIMEText(body_admin, 'plain'))
-
-                # ENVIAR CORREOS A TRAVÉS DE GOOGLE
-                server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-                server.starttls()
-                server.login(sender_email, sender_password)
-                server.send_message(msg_client)   # Enviar bienvenida al lead
-                server.send_message(msg_admin)    # Enviar alerta a ti
-                server.quit()
-                
-                print(f"[Sistema de Correos] Emails reales enviados para {email} sin errores.")
-            except Exception as e:
-                print(f"[Sistema de Correos] Error crítico enviando email vía Google: {e}")
-        else:
-            print("[Sistema de Correos] Advertencia: Credenciales ANMAR_SMTP_PASS no configuradas.")
-            print(f"[Simulación] Bienvenida a: {email}")
-        
-    # Lanzar hilo asíncrono para no bloquear la página web del usuario registrándose
-    threading.Thread(target=background_task).start()
+    threading.Thread(target=background_task, daemon=True).start()
+    print(f"[NOTIFY] Hilo lanzado para {email}")
 
 # --- AUTH ROUTES ---
 @app.route('/api/register', methods=['POST'])
 def register():
-    data = request.json
-    name = data.get('name')
-    email = data.get('email')
-    password = data.get('password')
+    if _rate_limit(request.remote_addr, max_requests=5, window=60):
+        return jsonify({"error": "Too many attempts. Try again in a minute."}), 429
+    data = request.json or {}
+    name = (data.get('name') or '').strip()
+    email = (data.get('email') or '').strip().lower()
+    password = data.get('password') or ''
     terms_accepted = data.get('termsAccepted')
 
     if not email or not password:
-        return jsonify({"error": "Faltan datos"}), 400
+        return jsonify({"error": "Missing data"}), 400
+    if len(password) < 6:
+        return jsonify({"error": "Password must be at least 6 characters."}), 400
     if not terms_accepted:
-        return jsonify({"error": "Debes aceptar los Términos y Condiciones para registrarte."}), 400
+        return jsonify({"error": "You must accept the Terms and Conditions to register."}), 400
 
     hashed_pw = generate_password_hash(password)
 
     try:
         conn = get_db_connection()
-        conn.execute('INSERT INTO users (name, email, password) VALUES (?, ?, ?)',
-                     (name, email, hashed_pw))
+        conn.execute('INSERT INTO users (name, email, password, tokens) VALUES (?, ?, ?, ?)',
+                     (name, email, hashed_pw, 8))
         conn.commit()
         conn.close()
-        
+
         # ACTIVATE NOTIFICATIONS
         notify_new_registration(name, email)
-        
-        return jsonify({"message": "Usuario creado exitosamente"})
+
+        return jsonify({"message": "Account created successfully", "user": {"name": name, "email": email, "tokens": 8}})
     except sqlite3.IntegrityError:
-        return jsonify({"error": "El correo ya está registrado"}), 409
+        return jsonify({"error": "Email is already registered"}), 409
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
+
+@app.route('/api/me', methods=['POST'])
+def api_me():
+    """Lightweight session validator — verifies the user still exists in DB and returns current tokens."""
+    data = request.json or {}
+    email = (data.get('email') or '').strip().lower()
+    if not email:
+        return jsonify({"error": "Not authenticated"}), 401
+
+    # Verify session and email match
+    session_email = session.get('user_email', '').strip().lower()
+    if not session_email:
+        return jsonify({"error": "You have not logged in"}), 401
+    if session_email != email:
+        return jsonify({"error": "Unauthorized"}), 403
+
+    conn = get_db_connection()
+    user = conn.execute('SELECT name, email, tokens FROM users WHERE email = ?', (email,)).fetchone()
+    conn.close()
+    if not user:
+        return jsonify({"error": "User not found"}), 401
+    tokens = int(user['tokens']) if user['tokens'] is not None else 0
+    return jsonify({"user": {"name": user['name'], "email": user['email'], "tokens": tokens}})
 
 @app.route('/api/check-email', methods=['POST'])
 def check_email():
+    if _rate_limit(request.remote_addr, max_requests=20, window=60):
+        return jsonify({"error": "Too many attempts. Try again in a minute."}), 429
     try:
         data = request.json or {}
         email = str(data.get('email') or '').strip().lower()
         if not email:
-            return jsonify({"error": "Email requerido"}), 400
+            return jsonify({"error": "Email is required"}), 400
         conn = get_db_connection()
         user = conn.execute('SELECT 1 FROM users WHERE email = ?', (email,)).fetchone()
         conn.close()
         return jsonify({"exists": bool(user)})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        print(f"Check email error: {e}")
+        return jsonify({"error": "Internal server error"}), 500
 
 @app.route('/api/login', methods=['POST'])
 def login():
-    data = request.json
-    email = data.get('email')
-    password = data.get('password')
+    if _rate_limit(request.remote_addr, max_requests=10, window=60):
+        return jsonify({"error": "Too many attempts. Try again in a minute."}), 429
+    data = request.json or {}
+    email = (data.get('email') or '').strip().lower()
+    password = data.get('password') or ''
 
     conn = get_db_connection()
     user = conn.execute('SELECT * FROM users WHERE email = ?', (email,)).fetchone()
     conn.close()
 
     if user and check_password_hash(user['password'], password):
+        tokens = int(user['tokens']) if user['tokens'] is not None else 0
+        session.permanent = True
+        session['user_email'] = user['email']
         return jsonify({
-            "message": "Login exitoso",
-            "user": {"name": user['name'], "email": user['email']}
+            "message": "Login successful",
+            "user": {"name": user['name'], "email": user['email'], "tokens": tokens}
         })
     else:
         return jsonify({"error": "Credenciales inválidas"}), 401
 
 @app.route('/api/social-login', methods=['POST'])
 def social_login():
-    data = request.json
+    if _rate_limit(request.remote_addr, max_requests=10, window=60):
+        return jsonify({"error": "Too many attempts. Try again in a minute."}), 429
+    data = request.json or {}
     provider = data.get('provider') # 'Google' or 'Apple'
     token = data.get('token')
     email = data.get('email')
@@ -769,7 +1100,7 @@ def social_login():
 
     if provider == 'Google':
         if not token:
-            return jsonify({"error": "Falta el token auténtico de Google para validar tu Gmail."}), 400
+            return jsonify({"error": "Missing authentic Google token to validate your Gmail."}), 400
 
         import requests
         try:
@@ -780,14 +1111,14 @@ def social_login():
                 name = google_data.get('name')
                 
                 if not email:
-                    return jsonify({"error": "La cuenta de Google no autorizó la entrega del email."}), 400
+                    return jsonify({"error": "Google account did not authorize email delivery."}), 400
             else:
-                return jsonify({"error": "Token de Google inválido o expirado"}), 401
+                return jsonify({"error": "Invalid or expired Google token"}), 401
         except Exception as e:
-            return jsonify({"error": f"Error verificando token de Google: {str(e)}"}), 500
+            return jsonify({"error": "Error verificando token de Google"}), 500
 
     if not email:
-        return jsonify({"error": "Faltan datos de la red social"}), 400
+        return jsonify({"error": "Missing social network data"}), 400
 
     conn = get_db_connection()
     user = conn.execute('SELECT * FROM users WHERE email = ?', (email,)).fetchone()
@@ -795,33 +1126,44 @@ def social_login():
     if not user:
         if not terms_accepted:
             conn.close()
-            return jsonify({"error": "Debes aceptar los Términos y Condiciones para crear tu cuenta."}), 400
+            return jsonify({"error": "You must accept the Terms and Conditions to create your account."}), 400
         # User doesn't exist, create automatically using social info
         import secrets
         random_password = secrets.token_urlsafe(16)  # Generate a long placeholder password
         from werkzeug.security import generate_password_hash
         hashed_pw = generate_password_hash(random_password)
         try:
-            conn.execute('INSERT INTO users (name, email, password) VALUES (?, ?, ?)', (name, email, hashed_pw))
+            conn.execute('INSERT INTO users (name, email, password, tokens) VALUES (?, ?, ?, ?)', (name, email, hashed_pw, 8))
             conn.commit()
-            user_data = {"name": name, "email": email}
-            
+            user_data = {"name": name, "email": email, "tokens": 8}
+
             # ACTIVATE NOTIFICATIONS FOR SOCIAL SIGNUP
             notify_new_registration(name, email)
-            
+
         except Exception as e:
             conn.close()
-            return jsonify({"error": str(e)}), 500
+            return jsonify({"error": "Internal server error"}), 500
     else:
         # User exists, log them in
-        user_data = {"name": user['name'], "email": user['email']}
-        
+        tokens = int(user['tokens']) if user['tokens'] is not None else 0
+        user_data = {"name": user['name'], "email": user['email'], "tokens": tokens}
+
     conn.close()
 
+    # Set session for authenticated user
+    session.permanent = True
+    session['user_email'] = email
+
     return jsonify({
-        "message": f"Autenticado con {provider} exitosamente",
+        "message": f"Authenticated with {provider} successfully",
         "user": user_data
     })
+
+@app.route('/api/logout', methods=['POST'])
+def logout():
+    """Clear user session."""
+    session.pop('user_email', None)
+    return jsonify({"status": "ok"})
 
 def _normalize_project_name(project_name):
     return str(project_name or "").strip().lower()
@@ -951,10 +1293,9 @@ def clean_and_parse_json(text):
             # A safer fallback for Python is using ast.literal_eval if it looks like a Python dict
             import ast
             return ast.literal_eval(text)
-        except:
-            # 4. Last Resort: Simple Regex Extraction if it's just keys we need
-            # Return a partial object or error
-            print(f"JSON PARSE FAILED. Raw Text: {text[:200]}...")
+        except Exception as e:
+            # 4. Last Resort: parsing failed
+            print(f"[JSON PARSE] Failed: {str(e)[:80]}")
             return None
 
 def is_greeting_text(text):
@@ -1024,11 +1365,11 @@ def extract_business_model_from_text(text):
     if "sin necesidad de pagar" in lower or "sin pagar" in lower:
         return ""
     if any(k in lower for k in ["suscrip", "subscription"]):
-        return "Suscripción"
+        return "Subscription"
     if any(k in lower for k in ["comisión", "commission"]):
-        return "Comisión"
+        return "Commission"
     if any(k in lower for k in ["pago único", "one-time", "unico"]):
-        return "Pago único"
+        return "One-time payment"
     # Handles colloquial answers like "pagan un fee/fit por video"
     if any(k in lower for k in ["fee", "fit", "fijo", "cobran", "cobrar", "por video", "por cámara", "por evento", "pago por uso"]):
         return "Pago por uso (por video/evento)"
@@ -1289,13 +1630,14 @@ def call_openai_codex_json(prompt, timeout_seconds=28):
         return None
 
 
-def call_anthropic_text(prompt, system_prompt=None, timeout_seconds=22):
+def call_anthropic_text(prompt, system_prompt=None, timeout_seconds=22, max_tokens_override=None):
     if not ANTHROPIC_API_KEY:
         return None
     system_payload = system_prompt if system_prompt is not None else SYSTEM_INSTRUCTION_TEXT
+    tokens = max_tokens_override if max_tokens_override else max(1, int(ANTHROPIC_MAX_TOKENS))
     payload = {
-        "model": ANTHROPIC_MODEL or "claude-sonnet-4-20250514",
-        "max_tokens": max(1, int(ANTHROPIC_MAX_TOKENS)),
+        "model": ANTHROPIC_MODEL or "claude-sonnet-4-5",
+        "max_tokens": tokens,
         "temperature": float(ANTHROPIC_TEMPERATURE),
         "system": system_payload,
         "messages": [
@@ -1344,6 +1686,95 @@ def call_anthropic_text(prompt, system_prompt=None, timeout_seconds=22):
         AI_RUNTIME["last_error"] = str(e)
         AI_RUNTIME["last_check_at"] = _now_iso()
         log_debug(f"Anthropic call failed: {e}")
+        return None
+
+
+def call_anthropic_chat(messages, system_prompt=None, timeout_seconds=30, max_tokens_override=None):
+    """
+    Llama a Anthropic con historial de conversación multi-turno real.
+    messages: lista de dicts con 'role' ('user'/'ai'/'assistant') y 'content'.
+    Convierte roles 'ai' -> 'assistant' y garantiza alternancia correcta.
+    """
+    if not ANTHROPIC_API_KEY:
+        return None
+
+    # Convertir roles y construir lista de mensajes válidos para Anthropic
+    api_messages = []
+    for msg in messages:
+        if not isinstance(msg, dict):
+            continue
+        role = str(msg.get('role') or 'user').strip().lower()
+        if role == 'ai':
+            role = 'assistant'
+        if role not in ('user', 'assistant'):
+            role = 'user'
+        content = str(msg.get('content') or '').strip()
+        if not content:
+            continue
+        # Combinar mensajes consecutivos del mismo rol (Anthropic no los acepta separados)
+        if api_messages and api_messages[-1]['role'] == role:
+            api_messages[-1]['content'] += '\n' + content
+        else:
+            api_messages.append({'role': role, 'content': content})
+
+    # Anthropic exige que el primer mensaje sea del usuario
+    while api_messages and api_messages[0]['role'] != 'user':
+        api_messages.pop(0)
+
+    if not api_messages:
+        return None
+
+    system_payload = system_prompt if system_prompt is not None else SYSTEM_INSTRUCTION_TEXT
+    tokens = max_tokens_override if max_tokens_override else max(1, int(ANTHROPIC_MAX_TOKENS))
+    payload = {
+        "model": ANTHROPIC_MODEL or "claude-sonnet-4-5",
+        "max_tokens": tokens,
+        "temperature": float(ANTHROPIC_TEMPERATURE),
+        "system": system_payload,
+        "messages": api_messages,
+    }
+    try:
+        response = requests.post(
+            ANTHROPIC_ENDPOINT,
+            headers={
+                "x-api-key": ANTHROPIC_API_KEY,
+                "anthropic-version": ANTHROPIC_VERSION,
+                "content-type": "application/json",
+            },
+            json=payload,
+            timeout=timeout_seconds,
+        )
+        if response.status_code >= 400:
+            AI_RUNTIME["connected"] = False
+            AI_RUNTIME["model_name"] = ANTHROPIC_MODEL
+            AI_RUNTIME["last_error"] = f"Anthropic chat {response.status_code}: {response.text[:300]}"
+            AI_RUNTIME["last_check_at"] = _now_iso()
+            log_debug(f"Anthropic chat error {response.status_code}: {response.text[:300]}")
+            return None
+        data = response.json() or {}
+        content_blocks = data.get("content") or []
+        text = "".join(
+            [block.get("text", "") for block in content_blocks
+             if isinstance(block, dict) and block.get("type") == "text"]
+        ).strip()
+        if not text:
+            AI_RUNTIME["connected"] = False
+            AI_RUNTIME["last_error"] = "Empty response from Anthropic chat"
+            AI_RUNTIME["last_check_at"] = _now_iso()
+            return None
+        AI_RUNTIME["connected"] = True
+        AI_RUNTIME["model_name"] = ANTHROPIC_MODEL
+        AI_RUNTIME["candidate_models"] = [ANTHROPIC_MODEL]
+        AI_RUNTIME["last_error"] = None
+        AI_RUNTIME["last_check_at"] = _now_iso()
+        AI_RUNTIME["provider"] = "anthropic"
+        return text
+    except Exception as e:
+        AI_RUNTIME["connected"] = False
+        AI_RUNTIME["model_name"] = ANTHROPIC_MODEL
+        AI_RUNTIME["last_error"] = str(e)
+        AI_RUNTIME["last_check_at"] = _now_iso()
+        log_debug(f"Anthropic chat call failed: {e}")
         return None
 
 
@@ -1473,7 +1904,16 @@ def should_mark_ready(message, brief):
 
 def has_ready_intent(message):
     text = (message or "").lower()
-    ready_words = ["build", "execute", "ready", "listo", "enviar", "manda", "procede", "arranca", "construye"]
+    ready_words = [
+        "build", "execute", "ready", "go ahead", "let's go", "start", "confirm",
+        "listo", "enviar", "manda", "procede", "arranca", "construye", "dale",
+        "hazlo", "confirmo", "confirmar", "adelante", "vamos", "si, ", "sí,",
+        "envía", "envia", "empezar", "crear", "empieza", "comienza",
+    ]
+    # Also match standalone "si" / "sí" / "yes" / "ok"
+    stripped = text.strip().rstrip('.!').strip()
+    if stripped in ("si", "sí", "yes", "ok", "okey", "vale", "claro", "dale", "va"):
+        return True
     return any(w in text for w in ready_words)
 
 def has_reset_intent(message):
@@ -1752,7 +2192,7 @@ def choose_next_question(memory):
     if pending:
         c = pending[-1]
         field = c.get("field", "dato")
-        return f"Detecté un cambio en {field}. ¿Confirmamos como versión final: \"{c.get('new')}\"?"
+        return f"I detected a change in {field}. Should we confirm as final version: \"{c.get('new')}\"?"
 
     questions = {
         "summary": "En una frase, ¿cuál es el resultado principal que debe lograr el usuario con el producto?",
@@ -1767,8 +2207,8 @@ def choose_next_question(memory):
     asked = memory.get("asked_question_keys", [])
     for key in missing:
         if key not in asked:
-            return questions.get(key, "¿Qué dato clave falta para cerrar el brief?")
-    return questions.get(missing[0], "¿Qué dato clave falta para cerrar el brief?")
+            return questions.get(key, "What key information is missing to close the brief?")
+    return questions.get(missing[0], "What key information is missing to close the brief?")
 
 def detect_user_frustration(text):
     t = (text or "").lower()
@@ -1814,23 +2254,23 @@ def micro_strategy_tip(memory, analysis):
     }
 
     if "audience" in missing:
-        return "Tip: define un nicho inicial; intentar abarcar a todos baja conversión."
+        return "Tip: define an initial niche; trying to reach everyone lowers conversion."
     if "business_model" in missing:
-        return "Tip: valida monetización simple primero (un solo modelo en V1)."
+        return "Tip: validate simple monetization first (one model only in V1)."
     if "timeline" in missing:
         return "Tip: fija una fecha concreta; sin deadline el MVP se alarga."
     if "features" in missing:
-        return "Tip: V1 con 2-3 funciones críticas, no más."
+        return "Tip: V1 with 2-3 critical features, no more."
 
     # When core data exists, provide a domain-specific strategic next move.
     if domain == "marketplace":
-        return "Tip: en marketplace, prioriza liquidez del lado más difícil (oferta o demanda)."
+        return "Tip: in marketplace, prioritize liquidity on the harder side (supply or demand)."
     if domain == "ecommerce":
-        return "Tip: optimiza checkout primero; suele mover más ingresos que rediseñar catálogo."
+        return "Tip: optimize checkout first; it usually generates more revenue than redesigning catalog."
     if domain == "pet_shop":
-        return "Tip: combina recurrencia (suscripción) con venta puntual para mejorar LTV."
+        return "Tip: combine recurrence (subscription) with one-time sales to improve LTV."
     if domain == "saas":
-        return "Tip: define una métrica norte (activación o retención) antes de escalar features."
+        return "Tip: define a north star metric (activation or retention) before scaling features."
     return "Tip: valida un caso de uso principal antes de ampliar alcance."
 
 def infer_conversation_phase(memory, analysis):
@@ -1919,7 +2359,10 @@ def analyze_turn_state(history, current_input, existing_memory=None):
     missing = get_missing_memory_fields(memory)
     explicit_ready = has_ready_intent(current_input)
     ready_by_data = len(missing) == 0 and len(memory.get("pending_clarifications", [])) == 0
-    ready_to_build = explicit_ready and ready_by_data
+    # When user explicitly says "enviar"/"listo"/etc., allow it if we have at least a summary
+    # Don't block on missing features — they can be inferred during ticket creation
+    has_minimum_context = bool(memory.get("summary"))
+    ready_to_build = explicit_ready and (ready_by_data or has_minimum_context)
 
     next_question = choose_next_question(memory) if not ready_by_data else ""
     phase_seed = {
@@ -1959,13 +2402,13 @@ def compose_consultant_reply(analysis, current_input, history, engine=ENGINE_ANT
     if is_greeting_text(current_input):
         return t(
             "¡Hola! Cuéntame tu idea y la convertimos en un brief claro para el equipo.",
-            "Hi! Tell me your idea and I’ll turn it into a clear brief for the team."
+            "Hi! Tell me your idea and I'll turn it into a clear brief for the team."
         )
 
     if analysis["ready_to_build"]:
         return t(
             "Perfecto. Orden confirmada. Activamos la ejecución con nuestro equipo.",
-            "Perfect. Confirmed. We’re activating execution with our team."
+            "Perfect. Confirmed. We're activating execution with our team."
         )
 
     known = []
@@ -1977,6 +2420,40 @@ def compose_consultant_reply(analysis, current_input, history, engine=ENGINE_ANT
         known.append(f"plazo: {memory.get('timeline')}")
     context_block = " | ".join(known) if known else t("sin datos firmes todavía", "no confirmed data yet")
 
+    # --- ESTRATEGIA PRIMARIA: Anthropic con historial multi-turno real ---
+    # Se construye un system prompt enriquecido con el contexto de la sesión
+    # y se envía el historial completo como mensajes usuario/asistente reales.
+    normalized_engine = normalize_engine(engine)
+    if ANTHROPIC_API_KEY and normalized_engine in {ENGINE_ANTHROPIC, ENGINE_ANTIGRAVITY}:
+        lang_label = "English" if lang == "en" else "Spanish (español)"
+        missing_label = ", ".join(analysis.get("missing_fields", [])) or t("ninguno", "none")
+        next_q_label = analysis.get("next_question", "")
+        consultant_context = f"""
+=== CONTEXTO ACTUAL DE LA SESIÓN ===
+- Idioma del cliente: {lang_label}
+- Fase: {analysis.get("phase", "initial")}
+- Resumen del proyecto: {analysis.get("summary", t("sin definir aún", "not defined yet"))}
+- Datos confirmados: {context_block}
+- Campos faltantes: {missing_label}
+- Listo por datos: {analysis.get("ready_by_data", False)}
+- Siguiente pregunta clave: {next_q_label}
+
+=== INSTRUCCIONES PARA ESTA RESPUESTA ===
+- Responde SOLO con el texto final al cliente, sin explicaciones internas.
+- Refleja su visión con profundidad y propone 2-3 sugerencias inteligentes.
+- Haz SOLO 1 pregunta (la más importante).
+- Si "listo por datos" es True: entrega un resumen emocionante y pide confirmación.
+- NO menciones IA, precios, planes ni pagos.
+- Responde en {lang_label}.
+"""
+        enhanced_system = SYSTEM_INSTRUCTION_TEXT + "\n" + consultant_context
+        # Usar últimos 12 turnos del historial para no exceder contexto
+        recent_history = history[-12:] if len(history) > 12 else history
+        ai_text = call_anthropic_chat(recent_history, system_prompt=enhanced_system, timeout_seconds=30)
+        if ai_text:
+            return ai_text.replace("```", "").strip()
+
+    # --- FALLBACK: Prompt único (Gemini u otro motor) ---
     prompt = f"""
     Contexto:
     - idioma: {"English" if lang == "en" else "Spanish"}
@@ -1986,7 +2463,6 @@ def compose_consultant_reply(analysis, current_input, history, engine=ENGINE_ANT
     - faltantes: {analysis.get("missing_fields", [])}
     - listo por datos: {analysis.get("ready_by_data")}
     - último mensaje del cliente: {current_input}
-    - historial reciente: {history[-6:]}
 
     Instrucciones:
     - Responde como Anmar AI (consultor senior).
@@ -1999,6 +2475,7 @@ def compose_consultant_reply(analysis, current_input, history, engine=ENGINE_ANT
     if ai_text:
         return ai_text
 
+    # --- FALLBACK DETERMINÍSTICO ---
     missing = analysis.get("missing_fields", [])
     summary = analysis.get("summary") or t("tu idea", "your idea")
     next_q = analysis.get("next_question") or t(
@@ -2009,7 +2486,7 @@ def compose_consultant_reply(analysis, current_input, history, engine=ENGINE_ANT
     if analysis.get("ready_by_data"):
         return t(
             f"Perfecto. Esta es la visión que tengo: {summary}. ¿Es esta la visión correcta o cambiarías algo antes de enviarlo al equipo?",
-            f"Perfect. Here’s the vision I have: {summary}. Is this the right vision, or would you change anything before we send it to the team?"
+            f"Perfect. Here's the vision I have: {summary}. Is this the right vision, or would you change anything before we send it to the team?"
         )
 
     return t(
@@ -2028,7 +2505,7 @@ def get_missing_brief_fields(brief):
 
 def fallback_consultant_reply(brief, current_input=""):
     if is_greeting_text(current_input):
-        return "¡Hola! Soy el arquitecto de Anmar. Cuéntame tu idea de negocio en una frase y te la convierto en un plan técnico listo para ingeniería."
+        return "Hi! I'm Anmar's architect. Tell me your business idea in one sentence and I'll convert it into a technical plan ready for engineering."
 
     domain = brief.get("domain", "general")
     summary = brief.get("summary", "Ya tengo el contexto inicial.").strip()
@@ -2037,7 +2514,7 @@ def fallback_consultant_reply(brief, current_input=""):
 
     missing = get_missing_brief_fields(brief)
     if not missing:
-        return f"Perfecto, ya tengo suficiente contexto para producir el ticket técnico de {summary}.\n\nSi estás de acuerdo, responde: `enviar a interno` y lo genero ahora."
+        return f"Perfect, I have enough context to generate the technical ticket for {summary}.\n\nIf you agree, reply: 'send to internal' and I'll generate it now."
 
     question_map = {
         "audience": "¿Quién es el usuario principal y cuál problema urgente le resuelves?",
@@ -2108,7 +2585,7 @@ def ensure_user_exists_for_tokens(conn, email):
 
 def consume_user_tokens(email, amount, reason=""):
     if not email:
-        return False, "No has iniciado sesión.", None
+        return False, "You have not logged in.", None
     if is_user_subscribed(email):
         return True, "subscribed", get_user_token_balance(email)
     try:
@@ -2119,14 +2596,20 @@ def consume_user_tokens(email, amount, reason=""):
         return True, "ok", None
 
     conn = get_db_connection()
-    user = ensure_user_exists_for_tokens(conn, email)
-    current = int(user['tokens'])
-    if current < amount:
-        conn.close()
-        return False, f"Créditos insuficientes para {reason or 'esta acción'} (requiere {amount}).", current
-
-    conn.execute('UPDATE users SET tokens = tokens - ? WHERE email = ?', (amount, email))
+    ensure_user_exists_for_tokens(conn, email)
+    # Atomic deduction: UPDATE only if sufficient tokens (prevents race condition / negative balance)
+    cursor = conn.execute(
+        'UPDATE users SET tokens = tokens - ? WHERE email = ? AND tokens >= ?',
+        (amount, email, amount)
+    )
     conn.commit()
+    if cursor.rowcount == 0:
+        # No rows updated = insufficient tokens
+        current = conn.execute('SELECT tokens FROM users WHERE email = ?', (email,)).fetchone()
+        conn.close()
+        current_balance = int(current['tokens']) if current else 0
+        return False, f"Insufficient credits for {reason or 'this action'} (requires {amount}).", current_balance
+
     updated = conn.execute('SELECT tokens FROM users WHERE email = ?', (email,)).fetchone()
     conn.close()
     return True, "ok", int(updated['tokens'])
@@ -2218,14 +2701,33 @@ def submit_pending_tickets_for_email(email, project_name=None):
 
 def get_stripe_plan_map():
     return {
+        # New plans
+        "validate": STRIPE_PRICE_VALIDATE,
+        # Legacy plans (kept for existing subscribers)
+        "starter": STRIPE_PRICE_STARTER,
+        "pro": STRIPE_PRICE_PRO,
         "marketing": STRIPE_PRICE_MARKETING,
         "marketing_build": STRIPE_PRICE_MARKETING_BUILD
     }
+
+# Plans that use one-time payment mode instead of subscription
+ONE_TIME_PLANS = {"validate"}
 
 def normalize_plan_label(plan_key):
     if not plan_key:
         return "none"
     return STRIPE_PLAN_LABELS.get(plan_key, plan_key)
+
+PLAN_TOKEN_ALLOTMENT = {
+    "validate":       0,  # Team service, no AI tokens
+    "mvp":            0,
+    "growth":         0,
+    # Legacy
+    "starter":        80,
+    "pro":            250,
+    "marketing":      800,
+    "marketing_build": 2000,
+}
 
 def set_user_subscription(email, active, plan_key=None, customer_id=None, subscription_id=None, status=None):
     if not email:
@@ -2238,6 +2740,11 @@ def set_user_subscription(email, active, plan_key=None, customer_id=None, subscr
     values = [sub_active, plan_label]
     if active:
         fields.append("subscription_started_at = CURRENT_TIMESTAMP")
+        # ADD tokens based on plan (don't overwrite existing balance)
+        tokens_to_grant = PLAN_TOKEN_ALLOTMENT.get(plan_key, 0)
+        if tokens_to_grant > 0:
+            fields.append("tokens = tokens + ?")
+            values.append(tokens_to_grant)
     if customer_id is not None:
         fields.append("stripe_customer_id = ?")
         values.append(customer_id)
@@ -2281,7 +2788,7 @@ def consume_chat_message_quota(email, project_name, reason="enviar mensaje al ch
     - After that, normal token deduction applies (until preview paywall blocks follow-ups).
     """
     if not email:
-        return False, "No has iniciado sesión.", None
+        return False, "You have not logged in.", None
     if is_user_subscribed(email):
         return consume_user_tokens(email, CHAT_MESSAGE_TOKEN_COST, reason=reason)
 
@@ -2300,7 +2807,7 @@ def consume_build_quota(email, project_name, reason="construir proyecto"):
     - First preview build per project is free for non-subscribed users.
     """
     if not email:
-        return False, "No has iniciado sesión.", None
+        return False, "You have not logged in.", None
     if is_user_subscribed(email):
         return consume_user_tokens(email, BUILD_TOKEN_COST, reason=reason)
 
@@ -2372,18 +2879,18 @@ def is_sla_overdue(ticket):
 
 def status_message(status, engineer=None, project_id=None):
     if status == "pending":
-        return "Esperando asignación de ingeniero en la red Anmar."
+        return "Waiting for engineer assignment from Anmar network."
     if status == "accepted":
-        prefix = f"{engineer} " if engineer else "Un ingeniero "
-        return f"{prefix}aceptó el proyecto. Preparando entorno de desarrollo."
+        prefix = f"{engineer} " if engineer else "An engineer "
+        return f"{prefix}accepted the project. Preparing development environment."
     if status == "developing":
-        prefix = f"{engineer} " if engineer else "El equipo "
-        return f"{prefix}está construyendo el MVP."
+        prefix = f"{engineer} " if engineer else "The team "
+        return f"{prefix}is building the MVP."
     if status == "blocked":
-        return "Orden bloqueada temporalmente. Esperando resolución interna."
+        return "Request temporarily blocked. Waiting for internal resolution."
     if status == "completed":
-        return "Proyecto completado y desplegado."
-    return f"Estado actualizado: {status}"
+        return "Project completed and deployed."
+    return f"Status updated: {status}"
 
 def normalize_preview_url(preview_url, project_id):
     value = str(preview_url or "").strip()
@@ -2411,8 +2918,15 @@ def load_alerts():
 
 def save_alerts(alerts):
     os.makedirs(os.path.dirname(ALERTS_FILE), exist_ok=True)
-    with open(ALERTS_FILE, 'w') as f:
-        json.dump(alerts, f, indent=2)
+    tmp_path = ALERTS_FILE + '.tmp'
+    try:
+        with open(tmp_path, 'w') as f:
+            json.dump(alerts, f, indent=2)
+        os.replace(tmp_path, ALERTS_FILE)
+    except Exception as e:
+        print(f"Error saving alerts: {e}")
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
 
 def append_ticket_event(ticket, status, message, actor="system"):
     events = ticket.setdefault("events", [])
@@ -2435,6 +2949,7 @@ def normalize_ticket_status(ticket):
         "blocked": "blocked",
         "completed": "completed",
         "delivered": "completed",
+        "pending_human_review": "pending",
     }
     normalized = mapping.get(raw, raw)
     if normalized not in TICKET_PROGRESS:
@@ -2444,6 +2959,39 @@ def normalize_ticket_status(ticket):
     if not ticket.get("sla_due_at"):
         ticket["sla_due_at"] = compute_sla_due_at(ticket["priority"])
     ticket["sla_overdue"] = is_sla_overdue(ticket)
+
+    # ── Normalize missing fields so panel always has what it needs ──
+    # created_at: some tickets use "timestamp" instead
+    if not ticket.get("created_at") and ticket.get("timestamp"):
+        ticket["created_at"] = ticket["timestamp"]
+    if not ticket.get("created_at"):
+        ticket["created_at"] = datetime.now().isoformat()
+
+    # updated_at
+    if not ticket.get("updated_at"):
+        ticket["updated_at"] = ticket.get("created_at", datetime.now().isoformat())
+
+    # user_email / client_email — unify
+    email = ticket.get("user_email") or ticket.get("client_email") or ticket.get("client") or ""
+    ticket["user_email"] = email
+    ticket["client_email"] = email
+
+    # channel — default to 'build'
+    if not ticket.get("channel"):
+        ticket["channel"] = "build"
+
+    # id — ensure it exists
+    if not ticket.get("id") and not ticket.get("ticket_id"):
+        ticket["id"] = str(uuid.uuid4())[:8]
+
+    # project_name — ensure readable
+    if not ticket.get("project_name"):
+        ticket["project_name"] = ticket.get("project_id") or ticket.get("id") or "sin-nombre"
+
+    # events — ensure list
+    if not isinstance(ticket.get("events"), list):
+        ticket["events"] = []
+
     return ticket
 
 def get_orders_map():
@@ -2474,8 +3022,15 @@ def get_orders_map():
 
 def save_orders_map(orders):
     os.makedirs(os.path.dirname(ORDER_STATUS_FILE), exist_ok=True)
-    with open(ORDER_STATUS_FILE, 'w') as f:
-        json.dump(orders, f, indent=2)
+    tmp_path = ORDER_STATUS_FILE + '.tmp'
+    try:
+        with open(tmp_path, 'w') as f:
+            json.dump(orders, f, indent=2)
+        os.replace(tmp_path, ORDER_STATUS_FILE)
+    except Exception as e:
+        print(f"Error saving orders: {e}")
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
 
 def update_order_status(project_id, status, log_entry=None, engineer=None, deployed_url=None):
     orders = get_orders_map()
@@ -2585,8 +3140,15 @@ def load_dispatch_state():
 
 def save_dispatch_state(state):
     os.makedirs(os.path.dirname(DISPATCH_STATE_FILE), exist_ok=True)
-    with open(DISPATCH_STATE_FILE, 'w') as f:
-        json.dump(state, f, indent=2)
+    tmp_path = DISPATCH_STATE_FILE + '.tmp'
+    try:
+        with open(tmp_path, 'w') as f:
+            json.dump(state, f, indent=2)
+        os.replace(tmp_path, DISPATCH_STATE_FILE)
+    except Exception as e:
+        print(f"Error saving dispatch state: {e}")
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
 
 def current_engineer_load(alerts):
     load = {e: 0 for e in ENGINEER_POOL}
@@ -2629,16 +3191,26 @@ def pending_queue_sorted(alerts):
 
 @app.route('/api/user-stats', methods=['GET'])
 def get_user_stats():
+    if _rate_limit(request.remote_addr, max_requests=10, window=60):
+        return jsonify({"error": "Too many attempts. Try again in a minute."}), 429
+
     email = request.args.get('email')
     if not email: return jsonify({"error": "No email provided"}), 400
-    
+
+    # Verify session and email match
+    session_email = session.get('user_email', '').strip().lower()
+    if not session_email:
+        return jsonify({"error": "You have not logged in"}), 401
+    if session_email != email.strip().lower():
+        return jsonify({"error": "Unauthorized"}), 403
+
     conn = get_db_connection()
     user = conn.execute(
         'SELECT tokens, created_at, subscription_active, subscription_plan, subscription_status FROM users WHERE email = ?',
         (email,)
     ).fetchone()
     conn.close()
-    
+
     if user:
         return jsonify({
             "tokens": user['tokens'],
@@ -2653,9 +3225,11 @@ def get_user_stats():
 # --- STRIPE CHECKOUT ---
 @app.route('/api/stripe/create-checkout-session', methods=['POST'])
 def stripe_create_checkout_session():
+    if _rate_limit(request.remote_addr, max_requests=5, window=60):
+        return jsonify({"error": "Too many attempts. Wait a moment."}), 429
     try:
         if not STRIPE_SECRET_KEY:
-            return jsonify({"error": "Stripe no configurado"}), 500
+            return jsonify({"error": "Stripe is not configured"}), 500
         data = request.json or {}
         email = (data.get('email') or '').strip().lower()
         plan_key = (data.get('plan') or '').strip()
@@ -2663,7 +3237,7 @@ def stripe_create_checkout_session():
         price_id = plan_map.get(plan_key)
 
         if not email or not price_id:
-            return jsonify({"error": "Email o plan inválido"}), 400
+            return jsonify({"error": "Invalid email or plan"}), 400
 
         origin = request.headers.get('Origin')
         if not origin:
@@ -2672,8 +3246,9 @@ def stripe_create_checkout_session():
         success_url = os.getenv("STRIPE_SUCCESS_URL", "").strip() or f"{origin}/dashboard.html?checkout=success&session_id={{CHECKOUT_SESSION_ID}}"
         cancel_url = os.getenv("STRIPE_CANCEL_URL", "").strip() or f"{origin}/dashboard.html?checkout=cancel"
 
+        checkout_mode = "payment" if plan_key in ONE_TIME_PLANS else "subscription"
         session = stripe.checkout.Session.create(
-            mode="subscription",
+            mode=checkout_mode,
             line_items=[{"price": price_id, "quantity": 1}],
             customer_email=email,
             client_reference_id=email,
@@ -2688,7 +3263,54 @@ def stripe_create_checkout_session():
 
         return jsonify({"url": session.url})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
+
+
+@app.route('/api/stripe/create-token-pack-session', methods=['POST'])
+def stripe_create_token_pack_session():
+    """One-time payment checkout for token packs (50/150/500 messages)."""
+    if _rate_limit(request.remote_addr, max_requests=5, window=60):
+        return jsonify({"error": "Too many attempts. Wait a moment."}), 429
+    try:
+        if not STRIPE_SECRET_KEY:
+            return jsonify({"error": "Stripe is not configured"}), 500
+        data = request.json or {}
+        email = (data.get('email') or '').strip().lower()
+        user_email = (data.get('user_email') or '').strip().lower()
+        pack_key = (data.get('pack') or '').strip()
+
+        # Verify requesting user's email matches - use user_email if provided, fallback to email
+        auth_email = user_email or email
+        if not auth_email or auth_email != email:
+            return jsonify({"error": "Unauthorized: email mismatch"}), 403
+
+        pack_info = TOKEN_PACK_MAP.get(pack_key)
+        if not email or not pack_info:
+            return jsonify({"error": "Invalid email or pack"}), 400
+        if not pack_info.get("price_id"):
+            return jsonify({"error": "This pack is not yet available. Contact us."}), 400
+
+        origin = request.headers.get('Origin') or request.host_url.rstrip('/')
+        success_url = os.getenv("STRIPE_SUCCESS_URL", "").strip() or f"{origin}/dashboard.html?checkout=success&pack={pack_key}"
+        cancel_url  = os.getenv("STRIPE_CANCEL_URL",  "").strip() or f"{origin}/dashboard.html?checkout=cancel"
+
+        checkout_session = stripe.checkout.Session.create(
+            mode="payment",
+            line_items=[{"price": pack_info["price_id"], "quantity": 1}],
+            customer_email=email,
+            client_reference_id=email,
+            success_url=success_url,
+            cancel_url=cancel_url,
+            metadata={
+                "type": "token_pack",
+                "pack": pack_key,
+                "tokens": str(pack_info["tokens"]),
+                "email": email
+            }
+        )
+        return jsonify({"url": checkout_session.url})
+    except Exception as e:
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @app.route('/api/stripe/webhook', methods=['POST'])
@@ -2706,7 +3328,7 @@ def stripe_webhook():
             secret=STRIPE_WEBHOOK_SECRET
         )
     except Exception as e:
-        return jsonify({"error": str(e)}), 400
+        return jsonify({"error": "Invalid request"}), 400
 
     event_type = event.get('type')
     data_object = (event.get('data') or {}).get('object') or {}
@@ -2714,22 +3336,51 @@ def stripe_webhook():
     if event_type == 'checkout.session.completed':
         email = (data_object.get('customer_email') or '').strip().lower()
         metadata = data_object.get('metadata') or {}
-        plan_key = (metadata.get('plan') or '').strip()
+        event_type_meta = (metadata.get('type') or '').strip()
         customer_id = data_object.get('customer')
-        subscription_id = data_object.get('subscription')
-        if email:
-            set_user_subscription(
-                email,
-                True,
-                plan_key=plan_key,
-                customer_id=customer_id,
-                subscription_id=subscription_id,
-                status="active"
-            )
-            try:
-                submit_pending_tickets_for_email(email)
-            except Exception as e:
-                print(f"Pending ticket auto-submit failed: {e}")
+
+        if event_type_meta == 'token_pack':
+            # One-time token pack purchase — verify tokens from server-side map, NOT metadata
+            pack_key = (metadata.get('pack') or '').strip()
+            pack_info = TOKEN_PACK_MAP.get(pack_key)
+            tokens_to_add = pack_info['tokens'] if pack_info else 0
+            # Idempotency: check if this checkout session was already processed
+            checkout_session_id = data_object.get('id', '')
+            if email and tokens_to_add > 0:
+                conn = get_db_connection()
+                ensure_user_exists_for_tokens(conn, email)
+                # Check idempotency — store processed session IDs
+                already = conn.execute(
+                    "SELECT 1 FROM processed_webhooks WHERE session_id = ?", (checkout_session_id,)
+                ).fetchone() if checkout_session_id else None
+                if not already:
+                    conn.execute('UPDATE users SET tokens = tokens + ? WHERE email = ?', (tokens_to_add, email))
+                    try:
+                        conn.execute("INSERT INTO processed_webhooks (session_id, processed_at) VALUES (?, CURRENT_TIMESTAMP)", (checkout_session_id,))
+                    except Exception:
+                        pass  # Table may not exist yet, tokens still granted
+                    conn.commit()
+                    print(f"[WEBHOOK] Added {tokens_to_add} tokens to {email} (pack: {pack_key}, session: {checkout_session_id})")
+                else:
+                    print(f"[WEBHOOK] Duplicate webhook ignored for session {checkout_session_id}")
+                conn.close()
+        else:
+            # Subscription plan purchase
+            plan_key = (metadata.get('plan') or '').strip()
+            subscription_id = data_object.get('subscription')
+            if email:
+                set_user_subscription(
+                    email,
+                    True,
+                    plan_key=plan_key,
+                    customer_id=customer_id,
+                    subscription_id=subscription_id,
+                    status="active"
+                )
+                try:
+                    submit_pending_tickets_for_email(email)
+                except Exception as e:
+                    print(f"Pending ticket auto-submit failed: {e}")
 
     if event_type in ('customer.subscription.updated', 'customer.subscription.deleted'):
         customer_id = data_object.get('customer')
@@ -2761,21 +3412,27 @@ def stripe_webhook():
 def stripe_verify_session():
     try:
         session_id = (request.args.get('session_id') or '').strip()
-        if not session_id:
-            return jsonify({"error": "Missing session_id"}), 400
+        user_email = (request.args.get('user_email') or '').strip().lower()
+        if not session_id or not user_email:
+            return jsonify({"error": "Missing session_id or user_email"}), 400
         if not STRIPE_SECRET_KEY:
-            return jsonify({"error": "Stripe no configurado"}), 500
+            return jsonify({"error": "Stripe is not configured"}), 500
 
         session_data = stripe.checkout.Session.retrieve(session_id)
-        email = (session_data.get('customer_email') or '').strip().lower()
+        stripe_email = (session_data.get('customer_email') or '').strip().lower()
+
+        # Verify requesting user matches the Stripe session's email
+        if stripe_email != user_email:
+            return jsonify({"error": "Unauthorized: email mismatch"}), 403
+
         metadata = session_data.get('metadata') or {}
         plan_key = (metadata.get('plan') or '').strip()
         customer_id = session_data.get('customer')
         subscription_id = session_data.get('subscription')
 
-        if email:
+        if stripe_email:
             set_user_subscription(
-                email,
+                stripe_email,
                 True,
                 plan_key=plan_key,
                 customer_id=customer_id,
@@ -2783,12 +3440,134 @@ def stripe_verify_session():
                 status="active"
             )
             try:
-                submit_pending_tickets_for_email(email)
+                submit_pending_tickets_for_email(stripe_email)
             except Exception as e:
                 print(f"Pending ticket auto-submit failed: {e}")
         return jsonify({"status": "ok"})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
+
+# ── RETENTION / CANCELLATION ROUTES ──────────────────────────────────────────
+
+def get_user_subscription_id(email):
+    """Obtiene el stripe_subscription_id del usuario desde la DB."""
+    conn = get_db_connection()
+    row = conn.execute('SELECT stripe_subscription_id, stripe_customer_id, subscription_plan FROM users WHERE email = ?', (email,)).fetchone()
+    conn.close()
+    return row if row else None
+
+@app.route('/api/stripe/cancel-subscription', methods=['POST'])
+def cancel_subscription():
+    """Cancela la suscripción al final del período actual (no inmediato)."""
+    try:
+        data = request.json or {}
+        email = (data.get('email') or '').strip().lower()
+        reason = (data.get('reason') or 'not_specified').strip()
+        if not email:
+            return jsonify({"error": "Email is required"}), 400
+        if not STRIPE_SECRET_KEY:
+            # Sin Stripe: solo marcar en DB
+            set_user_subscription(email, False, status='canceled')
+            return jsonify({"status": "canceled", "message": "Subscription canceled."})
+        row = get_user_subscription_id(email)
+        if not row or not row['stripe_subscription_id']:
+            set_user_subscription(email, False, status='canceled')
+            return jsonify({"status": "canceled", "message": "Subscription canceled."})
+        sub_id = row['stripe_subscription_id']
+        # Cancelar al final del período (no cortar inmediatamente)
+        stripe.Subscription.modify(sub_id, cancel_at_period_end=True, metadata={"cancel_reason": reason})
+        set_user_subscription(email, True, status='cancel_at_period_end')
+        print(f"[CANCEL] {email} — reason: {reason}")
+        return jsonify({"status": "cancel_at_period_end", "message": "Your subscription will cancel at the end of the billing period."})
+    except Exception as e:
+        return jsonify({"error": "Internal server error"}), 500
+
+@app.route('/api/stripe/pause-subscription', methods=['POST'])
+def pause_subscription():
+    """Pausa la suscripción por 30 días (sin cobro)."""
+    try:
+        data = request.json or {}
+        email = (data.get('email') or '').strip().lower()
+        if not email:
+            return jsonify({"error": "Email is required"}), 400
+        if not STRIPE_SECRET_KEY:
+            set_user_subscription(email, True, status='paused')
+            return jsonify({"status": "paused"})
+        row = get_user_subscription_id(email)
+        if not row or not row['stripe_subscription_id']:
+            return jsonify({"error": "No active subscription found"}), 404
+        sub_id = row['stripe_subscription_id']
+        resume_at = int((datetime.now() + timedelta(days=30)).timestamp())
+        stripe.Subscription.modify(sub_id, pause_collection={"behavior": "void", "resumes_at": resume_at})
+        set_user_subscription(email, True, status='paused')
+        print(f"[PAUSE] {email} — resumes in 30 days")
+        return jsonify({"status": "paused", "message": "Your subscription is paused for 30 days. You will not be charged and it will reactivate automatically."})
+    except Exception as e:
+        return jsonify({"error": "Internal server error"}), 500
+
+@app.route('/api/stripe/apply-retention-discount', methods=['POST'])
+def apply_retention_discount():
+    """Aplica cupón del 50% en el próximo mes."""
+    try:
+        data = request.json or {}
+        email = (data.get('email') or '').strip().lower()
+        if not email:
+            return jsonify({"error": "Email is required"}), 400
+        if not STRIPE_SECRET_KEY:
+            return jsonify({"status": "discount_applied", "message": "Discount applied (demo mode)."})
+        row = get_user_subscription_id(email)
+        if not row or not row['stripe_subscription_id']:
+            return jsonify({"error": "No active subscription found"}), 404
+        sub_id = row['stripe_subscription_id']
+        # Crear o recuperar cupón de retención 50% off por 1 mes
+        coupon_id = "RETENTION_50_1M"
+        try:
+            stripe.Coupon.retrieve(coupon_id)
+        except stripe.error.InvalidRequestError:
+            stripe.Coupon.create(
+                id=coupon_id,
+                percent_off=50,
+                duration="once",
+                name="Retención — 50% off 1 mes"
+            )
+        stripe.Subscription.modify(sub_id, coupon=coupon_id)
+        print(f"[DISCOUNT] {email} — 50% aplicado")
+        return jsonify({"status": "discount_applied", "message": "50% discount applied to your next month!"})
+    except Exception as e:
+        return jsonify({"error": "Internal server error"}), 500
+
+@app.route('/api/stripe/downgrade-plan', methods=['POST'])
+def downgrade_plan():
+    """Baja el plan al nivel inmediatamente inferior."""
+    try:
+        data = request.json or {}
+        email = (data.get('email') or '').strip().lower()
+        target_plan = (data.get('target_plan') or '').strip()
+        if not email or not target_plan:
+            return jsonify({"error": "Email y plan requeridos"}), 400
+        plan_map = get_stripe_plan_map()
+        new_price_id = plan_map.get(target_plan)
+        if not new_price_id:
+            return jsonify({"error": "Invalid plan"}), 400
+        if not STRIPE_SECRET_KEY:
+            set_user_subscription(email, True, plan_key=target_plan, status='active')
+            return jsonify({"status": "downgraded", "new_plan": target_plan})
+        row = get_user_subscription_id(email)
+        if not row or not row['stripe_subscription_id']:
+            return jsonify({"error": "No active subscription found"}), 404
+        sub_id = row['stripe_subscription_id']
+        sub = stripe.Subscription.retrieve(sub_id)
+        item_id = sub['items']['data'][0]['id']
+        stripe.Subscription.modify(sub_id, items=[{"id": item_id, "price": new_price_id}],
+                                   proration_behavior='none')
+        set_user_subscription(email, True, plan_key=target_plan, status='active')
+        print(f"[DOWNGRADE] {email} → {target_plan}")
+        return jsonify({"status": "downgraded", "new_plan": target_plan,
+                        "message": f"Plan changed to {normalize_plan_label(target_plan)} successfully."})
+    except Exception as e:
+        return jsonify({"error": "Internal server error"}), 500
+
+# ─────────────────────────────────────────────────────────────────────────────
 
 @app.route('/api/tickets/submit-pending', methods=['POST'])
 def submit_pending_tickets():
@@ -2797,32 +3576,41 @@ def submit_pending_tickets():
         email = (data.get('user_email') or '').strip().lower()
         project_name = (data.get('project_name') or '').strip().lower()
         if not email:
-            return jsonify({"error": "Email requerido"}), 400
+            return jsonify({"error": "Email is required"}), 400
         if not is_user_subscribed(email):
-            return jsonify({"error": "Plan requerido"}), 402
+            return jsonify({"error": "Plan is required"}), 402
         results = submit_pending_tickets_for_email(email, project_name=project_name or None)
         return jsonify({"status": "ok", "tickets": results})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 @app.route('/api/submit-ticket', methods=['POST'])
 def submit_ticket():
     try:
-        data = request.json
-        user_email = data.get('user_email')
-        project_name = data.get('project_name')
-        user_request = data.get('request')
-        
+        data = request.json or {}
+        user_email = (data.get('user_email') or '').strip().lower()
+        project_name = (data.get('project_name') or '').strip().lower()
+        user_request = data.get('request', '').strip()
+        channel = (data.get('channel') or 'build').strip().lower()
+
+        # Auth: verify session matches requested email
+        session_email = session.get('user_email', '').strip().lower()
+        if not session_email or session_email != user_email:
+            return jsonify({"error": "You must be logged in"}), 401
+
         if not all([user_email, project_name, user_request]):
-            return jsonify({"error": "Missing fields"}), 400
+            return jsonify({"error": "Missing required fields"}), 400
 
         ok_tokens, token_msg, remaining = consume_user_tokens(
             user_email,
             HUMAN_SUPPORT_TOKEN_COST,
-            reason="solicitar soporte humano"
+            reason="request human support"
         )
         if not ok_tokens:
             return jsonify({"error": token_msg, "remaining_tokens": remaining}), 402
+
+        # --- CONSOLIDATION CHECK: Look for existing open ticket ---
+        existing_ticket = find_existing_ticket(user_email, channel)
 
         # --- HYBRID AI LOGIC ---
         # 1. Read Current Project State to give context to AI
@@ -2838,11 +3626,11 @@ def submit_ticket():
         Project: {project_name}
         User Request: "{user_request}"
         Current HTML Snippet: {current_code}...
-        
+
         TASK:
         Generate the EXACT code change needed to fulfill this request.
         Do NOT apply it yet. Just provide the code block that the human engineer should copy-paste.
-        
+
         RETURN JSON:
         {{
             "ai_suggestion": "The code block or CSS needed..."
@@ -2851,19 +3639,35 @@ def submit_ticket():
         parsed = call_ai_json(prompt)
         ai_code = parsed.get('ai_suggestion', 'Manual review needed.') if parsed else "Manual review needed."
 
-        # 3. Save to DB for Human Review
+        # 3. Save to DB for Human Review or add to existing ticket
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute(
-            'INSERT INTO tickets (project_name, user_email, request, status, ai_suggestion) VALUES (?, ?, ?, ?, ?)',
-            (project_name, user_email, user_request, 'pending_human_review', ai_code)
-        )
-        ticket_id = cursor.lastrowid
+
+        if existing_ticket:
+            # UPDATE existing internal_alerts ticket with new message
+            ticket_id = existing_ticket["id"]
+            append_ticket_event(existing_ticket, existing_ticket["status"],
+                              f"User request: {user_request[:200]}", actor=user_email)
+            alerts = load_alerts()
+            save_alerts(alerts)
+            # Also log in database for tracking
+            cursor.execute(
+                'INSERT INTO tickets (project_name, user_email, request, status, ai_suggestion) VALUES (?, ?, ?, ?, ?)',
+                (project_name, user_email, user_request, 'consolidated', ai_code)
+            )
+        else:
+            # CREATE new ticket
+            cursor.execute(
+                'INSERT INTO tickets (project_name, user_email, request, status, ai_suggestion) VALUES (?, ?, ?, ?, ?)',
+                (project_name, user_email, user_request, 'pending_human_review', ai_code)
+            )
+            ticket_id = cursor.lastrowid
+
         conn.commit()
         conn.close()
-        
+
         return jsonify({
-            "message": "Ticket asignado al equipo experto.",
+            "message": "Support request assigned to expert team.",
             "ticket_id": ticket_id,
             "assigned_to": "George (Design Lead)" if "design" in user_request.lower() else "Marta (Senior Dev)",
             "remaining_tokens": remaining
@@ -2871,13 +3675,14 @@ def submit_ticket():
 
     except Exception as e:
         print(f"Ticket Error: {e}")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 # --- ADMIN ROUTES ---
 @app.route('/api/admin/tickets', methods=['GET'])
 def get_tickets():
-    # In production, require admin auth here
+    if not require_internal_auth():
+        return jsonify({"error": "unauthorized"}), 401
     conn = get_db_connection()
     tickets = conn.execute("SELECT * FROM tickets WHERE status != 'completed' ORDER BY created_at DESC").fetchall()
     conn.close()
@@ -2885,8 +3690,10 @@ def get_tickets():
 
 @app.route('/api/admin/resolve-ticket', methods=['POST'])
 def resolve_ticket():
+    if not require_internal_auth():
+        return jsonify({"error": "unauthorized"}), 401
     try:
-        data = request.json
+        data = request.json or {}
         ticket_id = data.get('ticket_id')
         code_snippet = data.get('code_snippet') # The approved code
         
@@ -2924,26 +3731,23 @@ def resolve_ticket():
         conn.commit()
         conn.close()
         
-        return jsonify({"message": "Ticket resuelto y código desplegado."})
+        return jsonify({"message": "Ticket resolved and code deployed."})
         
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 @app.route('/analyze-idea', methods=['POST'])
 def analyze_idea():
+    if _rate_limit(request.remote_addr, max_requests=10, window=60):
+        return jsonify({"error": "Rate limit exceeded"}), 429
     try:
-        data = request.json
+        data = request.json or {}
         idea = data.get('idea', '').strip()
         image_data_url = data.get('image_data_url', '')
         engine = normalize_engine(data.get('engine'))
         user_email = (data.get('user_email') or '').strip().lower()
         project_name = (data.get('project_name') or '').strip().lower()
-        if is_subscription_required_after_preview(user_email, project_name):
-            return jsonify({
-                "error": "Ya viste la previsualización inicial. Para continuar iterando debes suscribirte.",
-                "code": "subscription_required_after_preview",
-                "requires_subscription": True
-            }), 402
+        # Chat con IA es libre — paywall solo al enviar a equipo humano (/api/create-ticket)
         image_context = describe_image_for_chat(image_data_url) if image_data_url else ""
         enriched_idea = idea
         if image_context:
@@ -2966,7 +3770,7 @@ def analyze_idea():
                 )
             return jsonify({
                 "status": "chat",
-                "message": "Listo, reiniciamos contexto. Empecemos de cero: cuéntame tu nueva idea en una frase.",
+                "message": "Done, we reset context. Let's start fresh: tell me your new idea in one sentence.",
                 "ready_to_build": False
             })
         history = [{"role": "user", "content": enriched_idea}]
@@ -3009,11 +3813,29 @@ def analyze_idea():
 
     except Exception as e:
         print(f"Analyze Error: {e}")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 # --- NEW: SYNTHESIS BRAIN ---
 # --- NEW: TICKET SYSTEM (Step 1: Chat -> Ticket) ---
-def build_ticket_from_history(history, user_email, project_name):
+
+def find_existing_ticket(client_email, channel):
+    """
+    Find an existing open ticket for this client+channel combination.
+    Returns the ticket if found, otherwise None.
+    """
+    if not client_email:
+        return None
+
+    alerts = load_alerts()
+    for ticket in alerts:
+        if (ticket.get("client_email", "").lower() == client_email.lower() and
+            ticket.get("channel", "build").lower() == channel.lower() and
+            ticket.get("status") in ("pending", "accepted", "developing")):
+            return ticket
+    return None
+
+
+def build_ticket_from_history(history, user_email, project_name, channel="build"):
     brief = extract_brief_from_history(history)
     memory = get_chat_memory(user_email, project_name=project_name) if user_email else {}
     agent_memory = memory.get("agent_memory") if isinstance(memory, dict) else None
@@ -3084,42 +3906,82 @@ Stack: {', '.join(tech_stack)}
     with open(os.path.join(project_dir, 'handoff.md'), 'w') as f:
         f.write(handoff_content)
 
-    # 3. CREATE TICKET (Internal Alerts)
-    new_ticket = {
-        "id": f"TKT-{int(datetime.now().timestamp())}-{uuid.uuid4().hex[:4]}",
-        "project_name": project_id,
-        "client_email": user_email,
-        "client": user_email or "unknown@anmar.local",
-        "status": "pending",
-        "timestamp": datetime.now().isoformat(),
-        "updated_at": datetime.now().isoformat(),
-        "summary": summary,
-        "preview_url": "",
-        "delivery_note": "",
-        "engineer_brief": engineer_brief,
-        "handoff_package": handoff_package,
-        "tech_stack": tech_stack,
-        "blueprint_md": blueprint_md,
-        "priority": priority,
-        "sla_due_at": sla_due_at,
-        "events": [],
-    }
-
-    append_ticket_event(new_ticket, "pending", status_message("pending", project_id=project_id), actor="system")
-
+    # 3. CREATE OR UPDATE TICKET (Consolidate by client_email + channel)
     current_alerts = load_alerts()
-    current_alerts.insert(0, new_ticket)
+    existing_ticket = find_existing_ticket(user_email, channel)
+
+    if existing_ticket:
+        # UPDATE EXISTING TICKET: append event, update timestamp and summary
+        existing_ticket["updated_at"] = datetime.now().isoformat()
+        existing_ticket["summary"] = summary  # Update with latest summary
+        existing_ticket["engineer_brief"] = engineer_brief
+        existing_ticket["handoff_package"] = handoff_package
+        existing_ticket["tech_stack"] = tech_stack
+        existing_ticket["blueprint_md"] = blueprint_md
+        existing_ticket["priority"] = priority
+        existing_ticket["sla_due_at"] = sla_due_at
+        append_ticket_event(existing_ticket, existing_ticket["status"],
+                          f"Updated request from {user_email}. New blueprint generated.", actor="system")
+        ticket_id = existing_ticket["id"]
+    else:
+        # CREATE NEW TICKET
+        new_ticket = {
+            "id": f"TKT-{int(datetime.now().timestamp())}-{uuid.uuid4().hex[:4]}",
+            "project_name": project_id,
+            "client_email": user_email,
+            "client": user_email or "unknown@anmar.local",
+            "channel": channel,
+            "status": "pending",
+            "timestamp": datetime.now().isoformat(),
+            "updated_at": datetime.now().isoformat(),
+            "summary": summary,
+            "preview_url": "",
+            "delivery_note": "",
+            "engineer_brief": engineer_brief,
+            "handoff_package": handoff_package,
+            "tech_stack": tech_stack,
+            "blueprint_md": blueprint_md,
+            "priority": priority,
+            "sla_due_at": sla_due_at,
+            "events": [],
+        }
+        append_ticket_event(new_ticket, "pending", status_message("pending", project_id=project_id), actor="system")
+        current_alerts.insert(0, new_ticket)
+        ticket_id = new_ticket["id"]
+
     save_alerts(current_alerts)
 
     # 4. INITIAL STATUS (Client Feedback)
     update_order_status(
         project_id,
         "pending",
-        log_entry="Ticket creado y enviado a ingeniería."
+        log_entry="Ticket created and sent to engineering."
     )
 
+    # 5. INITIALIZE HUMAN CHAT with blueprint message
+    try:
+        chats = load_human_chats()
+        if project_id not in chats:
+            chats[project_id] = []
+        chats[project_id].append({
+            "id": str(uuid.uuid4()),
+            "role": "system",
+            "content": f"Blueprint generated for {project_id}. Channel: {channel}.",
+            "kind": "blueprint",
+            "payload": {
+                "title": project_id,
+                "summary": summary,
+                "blueprint_md": blueprint_md[:500]
+            },
+            "actor": "system",
+            "timestamp": datetime.now().isoformat()
+        })
+        save_human_chats(chats)
+    except Exception as e:
+        print(f"Warning: Could not init human chat: {e}")
+
     return {
-        "message": "Solicitud enviada a ingeniería.",
+        "message": "Request sent to engineering team.",
         "project_id": project_id,
         "status": "ticket_created"
     }
@@ -3128,29 +3990,30 @@ Stack: {', '.join(tech_stack)}
 @app.route('/api/create-ticket', methods=['POST'])
 def create_ticket():
     try:
-        data = request.json
+        data = request.json or {}
         history = data.get('history', [])
         user_email = (data.get('user_email') or '').strip().lower()
         project_name = (data.get('project_name') or '').strip().lower()
+        channel = (data.get('channel') or 'build').strip().lower()  # build | marketing | organic
         if not history:
             return jsonify({"error": "History is required"}), 400
         if not user_email:
-            return jsonify({"error": "Email requerido"}), 400
+            return jsonify({"error": "Email is required"}), 400
 
         if not is_user_subscribed(user_email):
             save_pending_ticket(user_email, project_name, history)
             return jsonify({
                 "requires_subscription": True,
                 "status": "pending_payment",
-                "message": "Tu proyecto está listo. Activa un plan para enviarlo a nuestro equipo."
+                "message": "Your project is ready. Activate a plan to send it to our team."
             }), 402
 
-        payload = build_ticket_from_history(history, user_email, project_name)
+        payload = build_ticket_from_history(history, user_email, project_name, channel=channel)
         return jsonify(payload)
 
     except Exception as e:
         print(f"Ticket Error: {e}")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 # --- STEP 2: ENGINEER ACCEPTANCE (Admin Panel -> Project Folder) ---
 @app.route('/api/accept-ticket', methods=['POST'])
@@ -3158,9 +4021,11 @@ def accept_ticket():
     try:
         if not require_internal_auth():
             return jsonify({"error": "unauthorized"}), 401
-        data = request.json
+        data = request.json or {}
         ticket_id = data.get('ticket_id')
         engineer = data.get('engineer', 'Staff Anmar')
+        if not ticket_id:
+            return jsonify({"error": "ticket_id is required"}), 400
         
         alerts = load_alerts()
         ticket = next((t for t in alerts if t.get('id') == ticket_id), None)
@@ -3193,12 +4058,14 @@ def accept_ticket():
         return jsonify({"success": True, "project_id": project_id})
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 @app.route('/api/deliver-ticket', methods=['POST'])
 def deliver_ticket():
     try:
-        data = request.json
+        if not require_internal_auth():
+            return jsonify({"error": "unauthorized"}), 401
+        data = request.json or {}
         ticket_id = data.get('ticket_id')
         preview_url = data.get('preview_url') or ''
         delivery_note = data.get('delivery_note') or ''
@@ -3223,7 +4090,7 @@ def deliver_ticket():
         return jsonify({"success": True, "ticket": ticket})
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 @app.route('/api/admin/update-ticket', methods=['POST'])
 def admin_update_ticket():
@@ -3289,7 +4156,7 @@ def admin_update_ticket():
             append_ticket_event(
                 ticket,
                 ticket.get("status", "pending"),
-                "Actualización interna: preview y/o notas de entrega.",
+                "Internal update: preview and/or delivery notes.",
                 actor=actor
             )
             save_alerts(alerts)
@@ -3297,7 +4164,7 @@ def admin_update_ticket():
             update_order_status(
                 project_id,
                 ticket.get("status", "pending"),
-                log_entry="Actualización interna aplicada al proyecto.",
+                log_entry="Internal update applied to project.",
                 engineer=ticket.get("engineer"),
                 deployed_url=(ticket.get("preview_url") or None)
             )
@@ -3305,7 +4172,7 @@ def admin_update_ticket():
 
         return jsonify({"success": True, "ticket": normalize_ticket_status(updated)})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 # --- POLLING ENDPOINTS ---
 @app.route('/api/project-status', methods=['GET'])
@@ -3338,6 +4205,21 @@ def get_internal_alerts():
             return jsonify({"error": "unauthorized"}), 401
         alerts = [normalize_ticket_status(a) for a in load_alerts()]
         alerts.sort(key=lambda a: a.get("updated_at", a.get("timestamp", "")), reverse=True)
+        # Enrich with client plan info
+        try:
+            conn = get_db()
+            for alert in alerts:
+                client_email = alert.get('user_email') or alert.get('client_email') or ''
+                if client_email:
+                    row = conn.execute('SELECT subscription_plan, subscription_active FROM users WHERE email = ?', (client_email,)).fetchone()
+                    if row:
+                        alert['client_plan'] = row['subscription_plan'] if row['subscription_plan'] else 'none'
+                        alert['client_plan_active'] = bool(row['subscription_active'])
+                    else:
+                        alert['client_plan'] = 'none'
+                        alert['client_plan_active'] = False
+        except Exception:
+            pass
         return jsonify(alerts)
     except Exception:
         return jsonify([])
@@ -3361,7 +4243,7 @@ def get_internal_queue():
             }
         })
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 @app.route('/api/internal/order-history', methods=['GET'])
 def get_internal_order_history():
@@ -3398,7 +4280,239 @@ def get_internal_order_history():
             }
         })
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
+
+@app.route('/api/client-tickets', methods=['GET'])
+def get_client_tickets():
+    """
+    Returns all tickets for a given client_email, grouped by project.
+    Requires internal authentication.
+    Query params: client_email (required)
+    """
+    try:
+        if not require_internal_auth():
+            return jsonify({"error": "unauthorized"}), 401
+
+        client_email = (request.args.get('client_email') or '').strip().lower()
+        if not client_email:
+            return jsonify({"error": "client_email parameter is required"}), 400
+
+        alerts = [normalize_ticket_status(a) for a in load_alerts()]
+        client_tickets = [
+            a for a in alerts
+            if str(a.get("client_email") or a.get("client") or "").strip().lower() == client_email
+        ]
+
+        # Group by project
+        grouped = {}
+        for ticket in client_tickets:
+            project = ticket.get("project_name", "unknown")
+            if project not in grouped:
+                grouped[project] = []
+            grouped[project].append(ticket)
+
+        # Sort each group by updated_at
+        for project in grouped:
+            grouped[project].sort(key=lambda t: t.get("updated_at", t.get("timestamp", "")), reverse=True)
+
+        return jsonify({
+            "client_email": client_email,
+            "tickets_by_project": grouped,
+            "meta": {
+                "total_tickets": len(client_tickets),
+                "projects_count": len(grouped),
+                "open_tickets": len([t for t in client_tickets if t.get("status") in ("pending", "accepted", "developing")])
+            }
+        })
+    except Exception as e:
+        print(f"Error in get_client_tickets: {e}")
+        return jsonify({"error": "Internal server error"}), 500
+
+
+@app.route('/api/internal/clients', methods=['GET'])
+def get_internal_clients():
+    """
+    Returns a consolidated list of clients (one entry per unique email).
+    Merges data from the users table and alerts/tickets.
+    """
+    try:
+        if not require_internal_auth():
+            return jsonify({"error": "unauthorized"}), 401
+
+        conn = get_db()
+        # Get all users from the users table
+        users_rows = conn.execute(
+            'SELECT email, name, subscription_plan, subscription_active, created_at, stripe_customer_id FROM users ORDER BY created_at DESC'
+        ).fetchall()
+
+        # Get all alerts/tickets
+        alerts = [normalize_ticket_status(a) for a in load_alerts()]
+
+        # Build a map of client email → ticket data
+        ticket_map = {}
+        for a in alerts:
+            email = (a.get('user_email') or a.get('client_email') or '').strip().lower()
+            if not email:
+                continue
+            if email not in ticket_map:
+                ticket_map[email] = {
+                    'tickets': [],
+                    'channels': set(),
+                    'latest_activity': None
+                }
+            ticket_map[email]['tickets'].append(a)
+            ch = a.get('channel') or 'build'
+            ticket_map[email]['channels'].add(ch)
+            ts = a.get('updated_at') or a.get('created_at') or a.get('timestamp') or ''
+            if ts and (not ticket_map[email]['latest_activity'] or ts > ticket_map[email]['latest_activity']):
+                ticket_map[email]['latest_activity'] = ts
+
+        # Build consolidated client list
+        clients = []
+        seen_emails = set()
+        for row in users_rows:
+            email = row['email'].strip().lower() if row['email'] else ''
+            if not email or email in seen_emails:
+                continue
+            seen_emails.add(email)
+            tdata = ticket_map.get(email, {})
+            tickets = tdata.get('tickets', [])
+            open_tickets = [t for t in tickets if t.get('status') in ('pending', 'pending_human_review', 'accepted', 'developing')]
+            clients.append({
+                'email': email,
+                'name': row['name'] or email.split('@')[0],
+                'plan': row['subscription_plan'] or 'none',
+                'plan_active': bool(row['subscription_active']),
+                'stripe_customer_id': row['stripe_customer_id'] or '',
+                'created_at': row['created_at'] or '',
+                'total_tickets': len(tickets),
+                'open_tickets': len(open_tickets),
+                'channels': list(tdata.get('channels', [])),
+                'latest_activity': tdata.get('latest_activity', row['created_at'] or ''),
+            })
+
+        # Also add clients from tickets that aren't in users table
+        for email, tdata in ticket_map.items():
+            if email in seen_emails:
+                continue
+            seen_emails.add(email)
+            tickets = tdata.get('tickets', [])
+            open_tickets = [t for t in tickets if t.get('status') in ('pending', 'pending_human_review', 'accepted', 'developing')]
+            clients.append({
+                'email': email,
+                'name': email.split('@')[0],
+                'plan': 'none',
+                'plan_active': False,
+                'stripe_customer_id': '',
+                'created_at': '',
+                'total_tickets': len(tickets),
+                'open_tickets': len(open_tickets),
+                'channels': list(tdata.get('channels', [])),
+                'latest_activity': tdata.get('latest_activity', ''),
+            })
+
+        # Sort: paying clients first, then by latest activity
+        clients.sort(key=lambda c: (
+            0 if c['plan'] != 'none' and c['plan_active'] else 1,
+            c.get('latest_activity') or ''
+        ), reverse=False)
+        # Actually we want paying first (0 < 1), then newest activity first
+        clients.sort(key=lambda c: (
+            0 if c['plan'] != 'none' and c['plan_active'] else 1,
+            -(len(c.get('latest_activity') or ''))  # rough sort
+        ))
+        # Better sort
+        def client_sort_key(c):
+            is_paying = 1 if (c['plan'] != 'none' and c['plan_active']) else 0
+            activity = c.get('latest_activity') or '0'
+            return (-is_paying, activity)
+        clients.sort(key=client_sort_key, reverse=True)
+
+        return jsonify({"clients": clients, "total": len(clients)})
+    except Exception as e:
+        print(f"Error in get_internal_clients: {e}")
+        return jsonify({"error": "Internal server error"}), 500
+
+
+@app.route('/api/internal/upgrade-client', methods=['POST'])
+def internal_upgrade_client():
+    """
+    Upgrade or change a client's plan internally.
+    Admin-only. Updates subscription_plan and subscription_active in the users table.
+    Optionally creates a Stripe subscription for MVP/Growth.
+    """
+    try:
+        if not require_internal_auth():
+            return jsonify({"error": "unauthorized"}), 401
+        # Check admin role
+        internal_user = session.get('internal_user', {})
+        if internal_user.get('role') != 'admin':
+            return jsonify({"error": "Admin access required"}), 403
+
+        data = request.json or {}
+        client_email = (data.get('client_email') or '').strip().lower()
+        new_plan = (data.get('plan') or '').strip().lower()
+        custom_price = (data.get('stripe_price_id') or '').strip()
+
+        if not client_email:
+            return jsonify({"error": "client_email is required"}), 400
+        if new_plan not in ('validate', 'mvp', 'growth', 'none'):
+            return jsonify({"error": "Invalid plan. Must be validate, mvp, growth, or none"}), 400
+
+        conn = get_db()
+        user = conn.execute('SELECT email, stripe_customer_id FROM users WHERE email = ?', (client_email,)).fetchone()
+        if not user:
+            return jsonify({"error": "Client not found in database"}), 404
+
+        # Update the plan in database
+        if new_plan == 'none':
+            conn.execute(
+                'UPDATE users SET subscription_plan = ?, subscription_active = 0 WHERE email = ?',
+                ('none', client_email)
+            )
+        else:
+            conn.execute(
+                'UPDATE users SET subscription_plan = ?, subscription_active = 1, subscription_started_at = CURRENT_TIMESTAMP WHERE email = ?',
+                (new_plan, client_email)
+            )
+        conn.commit()
+
+        # Optionally create Stripe subscription for MVP/Growth
+        stripe_result = None
+        if custom_price and new_plan in ('mvp', 'growth') and STRIPE_SECRET_KEY:
+            try:
+                customer_id = user['stripe_customer_id'] if user['stripe_customer_id'] else None
+                if not customer_id:
+                    # Create a Stripe customer
+                    customer = stripe.Customer.create(email=client_email)
+                    customer_id = customer.id
+                    conn.execute('UPDATE users SET stripe_customer_id = ? WHERE email = ?', (customer_id, client_email))
+                    conn.commit()
+
+                # Create subscription with custom price
+                subscription = stripe.Subscription.create(
+                    customer=customer_id,
+                    items=[{"price": custom_price}],
+                    metadata={"plan": new_plan, "email": client_email, "source": "internal_upgrade"}
+                )
+                # Store subscription ID
+                conn.execute('UPDATE users SET stripe_subscription_id = ? WHERE email = ?', (subscription.id, client_email))
+                conn.commit()
+                stripe_result = {"subscription_id": subscription.id, "status": subscription.status}
+            except Exception as stripe_err:
+                print(f"Stripe error during internal upgrade: {stripe_err}")
+                stripe_result = {"error": str(stripe_err)}
+
+        return jsonify({
+            "status": "ok",
+            "client_email": client_email,
+            "new_plan": new_plan,
+            "stripe": stripe_result
+        })
+    except Exception as e:
+        print(f"Error in internal_upgrade_client: {e}")
+        return jsonify({"error": "Internal server error"}), 500
+
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 HUMAN_CHATS_FILE = os.path.join(BASE_DIR, 'backend', 'human_chats.json')
@@ -3417,12 +4531,16 @@ def load_project_owners():
         return {}
 
 def save_project_owners(data):
+    os.makedirs(os.path.dirname(PROJECT_OWNERS_FILE), exist_ok=True)
+    tmp_path = PROJECT_OWNERS_FILE + '.tmp'
     try:
-        os.makedirs(os.path.dirname(PROJECT_OWNERS_FILE), exist_ok=True)
-        with open(PROJECT_OWNERS_FILE, 'w') as f:
+        with open(tmp_path, 'w') as f:
             json.dump(data, f, indent=2)
+        os.replace(tmp_path, PROJECT_OWNERS_FILE)
     except Exception as e:
         print(f"Error saving project owners: {e}")
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
 
 def load_project_meta():
     if not os.path.exists(PROJECT_META_FILE):
@@ -3435,12 +4553,16 @@ def load_project_meta():
         return {}
 
 def save_project_meta(data):
+    os.makedirs(os.path.dirname(PROJECT_META_FILE), exist_ok=True)
+    tmp_path = PROJECT_META_FILE + '.tmp'
     try:
-        os.makedirs(os.path.dirname(PROJECT_META_FILE), exist_ok=True)
-        with open(PROJECT_META_FILE, 'w') as f:
+        with open(tmp_path, 'w') as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
+        os.replace(tmp_path, PROJECT_META_FILE)
     except Exception as e:
         print(f"Error saving project meta: {e}")
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
 
 def load_internal_users():
     if not os.path.exists(INTERNAL_USERS_FILE):
@@ -3453,12 +4575,16 @@ def load_internal_users():
         return []
 
 def save_internal_users(users):
+    os.makedirs(os.path.dirname(INTERNAL_USERS_FILE), exist_ok=True)
+    tmp_path = INTERNAL_USERS_FILE + '.tmp'
     try:
-        os.makedirs(os.path.dirname(INTERNAL_USERS_FILE), exist_ok=True)
-        with open(INTERNAL_USERS_FILE, 'w') as f:
+        with open(tmp_path, 'w') as f:
             json.dump(users, f, indent=2)
+        os.replace(tmp_path, INTERNAL_USERS_FILE)
     except Exception as e:
         print(f"Error saving internal users: {e}")
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
 
 def find_internal_user(identifier):
     ident = str(identifier or '').strip().lower()
@@ -3480,14 +4606,22 @@ def load_human_chats():
     try:
         with open(HUMAN_CHATS_FILE, 'r') as f:
             return json.load(f)
-    except:
+    except Exception:
         return {}
 
 def save_human_chats(data):
+    import tempfile
     try:
         os.makedirs(os.path.dirname(HUMAN_CHATS_FILE), exist_ok=True)
-        with open(HUMAN_CHATS_FILE, 'w') as f:
-            json.dump(data, f, indent=2)
+        tmp_path = HUMAN_CHATS_FILE + '.tmp'
+        try:
+            with open(tmp_path, 'w') as f:
+                json.dump(data, f, indent=2)
+            os.replace(tmp_path, HUMAN_CHATS_FILE)
+        except Exception as e:
+            print(f"Error saving human chats: {e}")
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
     except Exception as e:
         print(f"Error saving human chats: {e}")
 
@@ -3497,20 +4631,35 @@ def send_human_chat():
         data = request.json or {}
         project_name = (data.get('project_name') or '').strip().lower()
         role = data.get('role', 'human') # 'human' or 'client'
-        content = data.get('content', '').strip()
-        actor = data.get('actor', '')
+        content = (data.get('content') or data.get('message') or '').strip()
+        actor = data.get('actor') or data.get('sender') or ''
         client_email = (data.get('client_email') or '').strip().lower()
         kind = (data.get('kind') or '').strip().lower()
         payload = data.get('payload')
 
-        if role == 'human' or kind == 'blueprint':
+        if role in ('human', 'internal') or kind == 'blueprint':
             if not require_internal_auth():
                 return jsonify({"error": "unauthorized"}), 401
+            # For internal users, override actor with verified session identity
+            internal_user = session.get('internal_user', '')
+            if internal_user:
+                actor = internal_user
         if role == 'client':
             if not client_email:
-                return jsonify({"error": "No has iniciado sesión."}), 401
+                return jsonify({"error": "You have not logged in."}), 401
             if not is_user_subscribed(client_email):
-                return jsonify({"error": "Plan requerido para chatear con el equipo.", "code": "subscription_required"}), 402
+                return jsonify({"error": "Plan is required to chat with the team.", "code": "subscription_required"}), 402
+            # For clients, get verified name from DB to prevent spoofing
+            try:
+                conn = get_db_connection()
+                user_row = conn.execute('SELECT name FROM users WHERE email = ?', (client_email,)).fetchone()
+                conn.close()
+                if user_row and user_row['name']:
+                    actor = user_row['name']
+                else:
+                    actor = client_email
+            except Exception:
+                actor = client_email
         
         if not project_name or not content:
             return jsonify({"error": "Missing parameters"}), 400
@@ -3524,6 +4673,7 @@ def send_human_chat():
             "role": role,
             "content": content,
             "actor": actor,
+            "sender": actor,
             "timestamp": datetime.now().isoformat()
         }
         if kind:
@@ -3574,7 +4724,7 @@ def send_human_chat():
 
         return jsonify({"status": "success"})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 @app.route('/api/human-chat/history', methods=['GET'])
 def get_human_chat_history():
@@ -3583,7 +4733,23 @@ def get_human_chat_history():
         mark_read = str(request.args.get('mark_read', '')).lower() in ('1', 'true', 'yes')
         if not project_name:
             return jsonify({"error": "Missing project_name"}), 400
-            
+
+        # Auth: allow internal users OR the client who owns the project
+        client_email = (request.args.get('client_email') or request.args.get('email') or '').strip().lower()
+        is_internal = require_internal_auth()
+        if not is_internal:
+            # Verify client owns this project by checking alerts/tickets
+            if not client_email:
+                return jsonify({"error": "Authentication required"}), 401
+            alerts = load_alerts()
+            project_owner = next(
+                (t.get('client_email', '') for t in alerts if str(t.get('project_name', '')).lower() == project_name),
+                None
+            )
+            # Allow if project doesn't exist in alerts (new chat) or email matches
+            if project_owner and project_owner.lower() != client_email:
+                return jsonify({"error": "You do not have access to this project"}), 403
+
         chats = load_human_chats()
         history = chats.get(project_name, [])
         if mark_read:
@@ -3598,7 +4764,7 @@ def get_human_chat_history():
                 print(f"Error marking chat read: {e}")
         return jsonify({"history": history})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 @app.route('/api/human-chat/accept-blueprint', methods=['POST'])
 def accept_blueprint():
@@ -3606,10 +4772,21 @@ def accept_blueprint():
         data = request.json or {}
         project_name = (data.get('project_name') or '').strip().lower()
         blueprint_id = str(data.get('blueprint_id') or '').strip()
-        actor = str(data.get('actor') or 'Cliente').strip()
+        actor = str(data.get('actor') or 'Client').strip()
         client_email = (data.get('client_email') or '').strip().lower()
         if not project_name or not blueprint_id:
             return jsonify({"error": "Missing parameters"}), 400
+
+        # Auth: require client email and verify they own the project
+        if not client_email:
+            return jsonify({"error": "Authentication required"}), 401
+        alerts = load_alerts()
+        project_ticket = next(
+            (t for t in alerts if str(t.get('project_name', '')).lower() == project_name),
+            None
+        )
+        if project_ticket and project_ticket.get('client_email', '').lower() != client_email:
+            return jsonify({"error": "You do not have permission to approve this blueprint"}), 403
 
         chats = load_human_chats()
         if project_name not in chats:
@@ -3633,7 +4810,7 @@ def accept_blueprint():
         chats[project_name].append({
             "id": str(uuid.uuid4()),
             "role": "client",
-            "content": "✅ Blueprint aprobado. Pueden iniciar.",
+            "content": "✅ Blueprint approved. Ready to start.",
             "actor": actor,
             "timestamp": datetime.now().isoformat(),
             "kind": "blueprint_accept"
@@ -3651,14 +4828,14 @@ def accept_blueprint():
                 if ticket_ref:
                     ticket_ref["unread_messages"] = int(ticket_ref.get("unread_messages") or 0) + 1
                     ticket_ref["updated_at"] = datetime.now().isoformat()
-                    append_ticket_event(ticket_ref, ticket_ref.get("status", "developing"), "Blueprint aprobado por el cliente.", actor=actor)
+                    append_ticket_event(ticket_ref, ticket_ref.get("status", "developing"), "Blueprint approved by client.", actor=actor)
                     save_alerts(refreshed)
         except Exception as e:
             print(f"Error updating ticket after blueprint accept: {e}")
 
         return jsonify({"status": "ok"})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 @app.route('/api/internal/ai-reply', methods=['POST'])
 def internal_ai_reply():
@@ -3709,7 +4886,7 @@ Devuelve 3 opciones, una por línea, sin numeración.
 
         return jsonify({"suggestions": suggestions})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 @app.route('/api/dispatch/auto-assign', methods=['POST'])
 def auto_assign_dispatch():
@@ -3752,7 +4929,7 @@ def auto_assign_dispatch():
             "message": f"{len(assigned)} ticket(s) assigned."
         })
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 # --- ENGINEER TOOLS (The "Antigravity" for Maria) ---
 
@@ -3761,102 +4938,140 @@ def manage_project_file():
     try:
         if not require_internal_auth():
             return jsonify({"error": "unauthorized"}), 401
-        project_id = request.args.get('project_id') or request.json.get('project_id')
-        filename = request.args.get('filename') or request.json.get('filename')
-        
-        if not project_id: return jsonify({"error": "Missing project_id"}), 400
-        
-        file_path = os.path.join(projects_base_dir, project_id, filename)
-        
+
+        json_data = request.json or {} if request.is_json else {}
+        project_id = request.args.get('project_id') or json_data.get('project_id') or request.args.get('project_name') or json_data.get('project_name')
+        filename = request.args.get('filename') or json_data.get('filename')
+
+        if not project_id:
+            return jsonify({"error": "Missing project_id"}), 400
+        if not filename:
+            return jsonify({"error": "Missing filename"}), 400
+
+        # Validate project_id has no path traversal
+        if '..' in project_id or '/' in project_id or '\\' in project_id:
+            return jsonify({"error": "Invalid project ID"}), 400
+
+        # Validate filename has no path traversal
+        if '..' in filename or '/' in filename or '\\' in filename:
+            return jsonify({"error": "Invalid filename"}), 400
+
+        # Security: only allow safe filenames
+        safe_name = os.path.basename(filename)
+        project_dir = os.path.join(projects_base_dir, project_id)
+        file_path = os.path.join(project_dir, safe_name)
+
         # Security check: ensure path is within project dir
-        if not os.path.abspath(file_path).startswith(os.path.abspath(projects_base_dir)):
+        if not os.path.abspath(file_path).startswith(os.path.abspath(project_dir) + os.sep):
             return jsonify({"error": "Invalid path"}), 403
 
         if request.method == 'GET':
-            if not os.path.exists(file_path): return "", 404
+            if not os.path.exists(file_path):
+                return jsonify({"content": "", "exists": False}), 200
             with open(file_path, 'r') as f:
-                return jsonify({"content": f.read()})
-                
+                return jsonify({"content": f.read(), "exists": True})
+
         if request.method == 'POST':
-            content = request.json.get('content', '')
+            content = json_data.get('content', '')
+            os.makedirs(project_dir, exist_ok=True)
             with open(file_path, 'w') as f:
                 f.write(content)
             return jsonify({"success": True})
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 @app.route('/api/engineer/ai-assist', methods=['POST'])
 def engineer_ai_assist():
     try:
         if not require_internal_auth():
             return jsonify({"error": "unauthorized"}), 401
-        data = request.json
-        project_id = data.get('project_id')
-        instruction = data.get('instruction') 
-        target_file = data.get('target_file') 
-        current_content = data.get('file_content', '') # Content from Editor
-        
-        # 1. Context Gathering (Read other files to be smart)
-        context_files = ""
-        project_dir = os.path.join(projects_base_dir, project_id)
-        
-        # If editing HTML, read CSS for context
-        if target_file.endswith('.html'):
-            css_path = os.path.join(project_dir, 'style.css')
-            if os.path.exists(css_path):
-                with open(css_path, 'r') as f: context_files += f"\n/* style.css context */\n{f.read()[:1000]}"
-                
-        # If editing JS, read HTML for context
-        if target_file.endswith('.js'):
-            html_path = os.path.join(project_dir, 'index.html')
-            if os.path.exists(html_path):
-                 with open(html_path, 'r') as f: context_files += f"\n<!-- index.html context -->\n{f.read()[:1000]}"
+        data = request.json or {}
+        # Accept both field-name conventions (panel sends project_name/context/prompt/history)
+        project_id = data.get('project_id') or data.get('project_name') or ''
+        instruction = data.get('instruction') or data.get('prompt') or ''
+        target_file = data.get('target_file') or ''
+        current_content = data.get('file_content', '')
+        extra_context = data.get('context', '')
+        history = data.get('history') or []
 
-        # 2. Prompt Gemini
+        if not instruction:
+            return jsonify({"error": "instruction/prompt is required"}), 400
+
+        # ----- Mode A: Code editing (target_file provided) -----
+        if target_file and project_id:
+            context_files = ""
+            project_dir = os.path.join(projects_base_dir, project_id)
+            if target_file.endswith('.html'):
+                css_path = os.path.join(project_dir, 'style.css')
+                if os.path.exists(css_path):
+                    with open(css_path, 'r') as f: context_files += f"\n/* style.css context */\n{f.read()[:1000]}"
+            if target_file.endswith('.js'):
+                html_path = os.path.join(project_dir, 'index.html')
+                if os.path.exists(html_path):
+                    with open(html_path, 'r') as f: context_files += f"\n<!-- index.html context -->\n{f.read()[:1000]}"
+
+            prompt = f"""
+ACT AS: Senior Lead Developer (Co-pilot).
+CONTEXT: We are building '{project_id}'.
+TARGET FILE: {target_file}
+
+OTHER CONTEXT FILES:
+{context_files}
+
+CURRENT CONTENT OF {target_file}:
+```
+{current_content}
+```
+
+USER INSTRUCTION: "{instruction}"
+
+TASK:
+1. Analyze the instruction and the current code.
+2. Rewrite the code to fulfill the instruction.
+3. Maintain existing functionality unless asked to change.
+4. Use modern best practices.
+
+RETURN FORMAT (JSON):
+{{"thought": "Brief explanation of changes (1-2 sentences)", "code": "FULL new content for the file"}}
+"""
+            response = model.generate_content(prompt)
+            text = response.text.strip()
+            if text.startswith('```json'): text = text[7:]
+            if text.startswith('```'): text = text[3:]
+            if text.endswith('```'): text = text[:-3]
+            try:
+                ai_response = json.loads(text.strip())
+            except Exception:
+                ai_response = {"thought": "Respuesta generada.", "code": text.strip()}
+            return jsonify(ai_response)
+
+        # ----- Mode B: Conversational AI assistant (panel chat) -----
+        history_text = ""
+        if history:
+            for msg in history[-10:]:
+                role = msg.get('role', 'user')
+                content = msg.get('content', '')
+                history_text += f"\n{role}: {content}"
+
         prompt = f"""
-        ACT AS: Senior Lead Developer (Maria's Co-pilot).
-        CONTEXT: We are building '{project_id}'.
-        TARGET FILE: {target_file}
-        
-        OTHER CONTEXT FILES:
-        {context_files}
-        
-        CURRENT CONTENT OF {target_file}:
-        ```
-        {current_content}
-        ```
-        
-        USER INSTRUCTION: "{instruction}"
-        
-        TASK:
-        1. Analyze the instruction and the current code.
-        2. Rewrite the code to fulfill the instruction.
-        3. Maintain existing functionality unless asked to change.
-        4. Use modern best practices.
-        
-        RETURN FORMAT (JSON):
-        {{
-            "thought": "Brief explanation of changes (1-2 sentences)",
-            "code": "FULL new content for the file"
-        }}
-        """
-        
-        response = model.generate_content(prompt)
-        # Parse JSON from response
-        text = response.text.strip()
-        # Handle potential markdown wrappers
-        if text.startswith('```json'): text = text[7:]
-        if text.endswith('```'): text = text[:-3]
-        
-        ai_response = json.loads(text)
-        
-        return jsonify(ai_response)
+Eres un asistente técnico senior de ANMAR Enterprises. Ayuda al ingeniero con el proyecto '{project_id}'.
+
+{extra_context}
+
+Historial de conversación:
+{history_text}
+
+Solicitud actual del ingeniero: "{instruction}"
+
+Responde de forma clara, concisa y útil en español. Si te piden código, entrégalo listo para producción.
+"""
+        raw = call_ai_text(prompt, engine=ENGINE_ANTIGRAVITY) or "No pude generar una respuesta."
+        return jsonify({"response": raw, "suggestion": raw})
 
     except Exception as e:
-        print(f"AI Error: {e}")
-        # Fallback for parsing errors
-        return jsonify({"thought": "Error processing logic, but here is a raw attempt.", "code": "// Error generating code"}), 500
+        print(f"AI Assist Error: {e}")
+        return jsonify({"response": "Error interno procesando solicitud.", "thought": "Error processing.", "code": "// Error"}), 500
 
 @app.route('/api/engineer/ai-generate', methods=['POST'])
 def engineer_ai_generate():
@@ -3864,43 +5079,69 @@ def engineer_ai_generate():
         if not require_internal_auth():
             return jsonify({"error": "unauthorized"}), 401
         data = request.json or {}
-        project_id = data.get('project_id')
-        instruction = data.get('instruction', '')
+        project_id = data.get('project_id') or data.get('project_name') or ''
+        instruction = data.get('instruction') or data.get('context') or ''
         engine = data.get('engine', ENGINE_ANTIGRAVITY)
+        filename = data.get('filename', 'index.html')
 
         if not project_id or not instruction:
             return jsonify({"error": "project_id and instruction are required"}), 400
 
-        prompt = f"""
-Eres un ingeniero senior de ANMAR. Genera un sitio web completo en un solo archivo HTML (con CSS y JS inline si aplica).
+        # Determine file type for the prompt
+        is_css = filename.endswith('.css')
+        is_js = filename.endswith('.js')
+        is_html = filename.endswith('.html')
+
+        if is_css:
+            prompt = f"""Eres un ingeniero senior de ANMAR. Genera CSS profesional y moderno.
+Instrucción: \"\"\"{instruction}\"\"\"
+Entrega SOLO el CSS, sin markdown ni backticks."""
+        elif is_js:
+            prompt = f"""Eres un ingeniero senior de ANMAR. Genera JavaScript profesional y moderno.
+Instrucción: \"\"\"{instruction}\"\"\"
+Entrega SOLO el JavaScript, sin markdown ni backticks."""
+        else:
+            prompt = f"""Eres un ingeniero senior de ANMAR. Genera un sitio web completo en un solo archivo HTML (con CSS y JS inline si aplica).
 Debe ser una primera versión presentable para mostrar al cliente como preview.
 Usa diseño moderno, tipografía limpia y secciones claras.
 Instrucción del cliente:
 \"\"\"{instruction}\"\"\"
+Entrega SOLO el HTML completo, sin markdown ni backticks."""
 
-Entrega SOLO el HTML completo, sin markdown.
-"""
-        html = call_ai_text(prompt, engine=engine) or ""
-        if not html.strip().lower().startswith('<!doctype'):
-            html = f"<!DOCTYPE html>\\n{html}"
+        code = call_ai_text(prompt, engine=engine) or ""
+        # Strip markdown code fences if present
+        code = code.strip()
+        if code.startswith('```'):
+            first_nl = code.find('\n')
+            if first_nl != -1:
+                code = code[first_nl+1:]
+            if code.endswith('```'):
+                code = code[:-3]
+            code = code.strip()
 
+        if is_html and not code.strip().lower().startswith('<!doctype'):
+            code = f"<!DOCTYPE html>\n{code}"
+
+        safe_name = os.path.basename(filename)
         project_dir = os.path.join(projects_base_dir, project_id)
         os.makedirs(project_dir, exist_ok=True)
-        file_path = os.path.join(project_dir, 'index.html')
+        file_path = os.path.join(project_dir, safe_name)
         with open(file_path, 'w') as f:
-            f.write(html)
+            f.write(code)
 
         return jsonify({
             "status": "ok",
+            "code": code,
+            "content": code,
             "preview_url": f"/projects/{project_id}/index.html"
         })
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 @app.route('/create-blueprint', methods=['POST'])
 def create_blueprint():
     try:
-        data = request.json
+        data = request.json or {}
         idea = data.get('idea', '')
         
         prompt = f"""
@@ -3930,7 +5171,7 @@ def create_blueprint():
 @app.route('/generate-plan', methods=['POST'])
 def generate_plan():
     try:
-        data = request.json
+        data = request.json or {}
         business_idea = data.get('idea')
         if not business_idea: return jsonify({"error": "No idea provided"}), 400
 
@@ -3958,7 +5199,7 @@ def generate_plan():
             })
     except Exception as e:
         print(f"Generation Error: {e}")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 @app.route('/edit-project', methods=['POST'])
 def edit_project():
@@ -3975,13 +5216,7 @@ def edit_project():
             return jsonify({"error": "project_name is required"}), 400
         if not instruction:
             return jsonify({"error": "instruction is required"}), 400
-        if is_subscription_required_after_preview(user_email, project_name):
-            return jsonify({
-                "error": "La previsualización ya fue entregada. Debes suscribirte para seguir editando.",
-                "code": "subscription_required_after_preview",
-                "requires_subscription": True
-            }), 402
-
+        # Edición libre — paywall solo al enviar a equipo humano
         ok_tokens, token_msg, remaining = consume_user_tokens(
             user_email,
             CHAT_MESSAGE_TOKEN_COST,
@@ -4290,32 +5525,38 @@ pulse('ctaTop'); pulse('ctaHero');
 
     except Exception as e:
         print(f"Edit Error: {e}")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 # --- ORDER STATUS MANAGER ---
 # Implemented above with normalized status handling and event logs.
 
 @app.route('/api/recharge-tokens', methods=['POST'])
 def recharge_tokens():
+    if _rate_limit(request.remote_addr, max_requests=5, window=60):
+        return jsonify({"error": "Too many attempts. Try again in a minute."}), 429
+
+    if not require_internal_auth():
+        return jsonify({"error": "Unauthorized"}), 401
+
     try:
-        data = request.json
+        data = request.json or {}
         email = data.get('email')
         plan = data.get('plan_id')
-        
+
         if not email: return jsonify({"error": "Missing email"}), 400
-        
+
         tokens_to_add = 0
         if plan == 'starter': tokens_to_add = 10
         elif plan == 'pro': tokens_to_add = 50
         elif plan == 'agency': tokens_to_add = 9999 # Unlimited simulation
-        
+
         conn = get_db_connection()
         user = conn.execute('SELECT tokens FROM users WHERE email = ?', (email,)).fetchone()
-        
+
         if not user:
             conn.close()
             return jsonify({"error": "User not found"}), 404
-            
+
         new_balance = user['tokens'] + tokens_to_add
         conn.execute(
             'UPDATE users SET tokens = ?, subscription_active = 1, subscription_plan = ?, subscription_started_at = CURRENT_TIMESTAMP WHERE email = ?',
@@ -4323,23 +5564,29 @@ def recharge_tokens():
         )
         conn.commit()
         conn.close()
-        
+
         return jsonify({"status": "success", "new_balance": new_balance, "added": tokens_to_add})
-        
+
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 @app.route('/create-project', methods=['POST'])
 def create_project():
     try:
-        data = request.json
+        data = request.json or {}
         project_name = data.get('project_name')
         plan_content = data.get('plan')
         theme = data.get('theme', 'Modern Startup')
         user_email = data.get('user_email') # Must be sent from frontend
 
+        # Auth: verify session matches requested email
+        session_email = session.get('user_email', '').strip().lower()
+        user_email_clean = (user_email or '').strip().lower()
+        if not session_email or session_email != user_email_clean:
+            return jsonify({"error": "You must be logged in"}), 401
+
         if not user_email:
-            return jsonify({"error": "No has iniciado sesión."}), 401
+            return jsonify({"error": "You must be logged in"}), 401
         ok_tokens, token_msg, remaining = consume_build_quota(
             user_email,
             project_name,
@@ -4576,11 +5823,18 @@ document.getElementById('ctaBtn')?.addEventListener('click', () => {
             if os.path.exists(alerts_path):
                 with open(alerts_path, 'r') as af:
                     try: current_alerts = json.load(af)
-                    except: pass
+                    except Exception: pass
             
             current_alerts.insert(0, new_alert)
-            with open(alerts_path, 'w') as af:
-                json.dump(current_alerts, af, indent=2)
+            tmp_alerts_path = alerts_path + '.tmp'
+            try:
+                with open(tmp_alerts_path, 'w') as af:
+                    json.dump(current_alerts, af, indent=2)
+                os.replace(tmp_alerts_path, alerts_path)
+            except Exception:
+                if os.path.exists(tmp_alerts_path):
+                    os.remove(tmp_alerts_path)
+                raise
                 
             print(f"✅ Alert generated for {project_name}")
 
@@ -4599,13 +5853,13 @@ document.getElementById('ctaBtn')?.addEventListener('click', () => {
 
     except Exception as e:
         print(f"Creation Error: {e}")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 # --- MARKETING MODULE ---
 @app.route('/api/generate-marketing', methods=['POST'])
 def generate_marketing():
     try:
-        data = request.json
+        data = request.json or {}
         project_name = data.get('project_name')
         focus = data.get('focus', 'Conversion') # Brand Awareness, Conversion, Retention
         
@@ -4648,19 +5902,23 @@ def generate_marketing():
         return jsonify(campaign)
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 # --- ADMIN COMMAND CENTER ENDPOINTS ---
 @app.route('/api/admin/alerts', methods=['GET'])
 def get_admin_alerts():
+    if not require_internal_auth():
+        return jsonify({"error": "unauthorized"}), 401
     alerts = [normalize_ticket_status(a) for a in load_alerts()]
     alerts.sort(key=lambda a: a.get("updated_at", a.get("timestamp", "")), reverse=True)
     return jsonify(alerts)
 
 @app.route('/api/admin/reclaim', methods=['POST'])
 def reclaim_project():
+    if not require_internal_auth():
+        return jsonify({"error": "unauthorized"}), 401
     try:
-        data = request.json
+        data = request.json or {}
         full_project_name = data.get('project_id') # Usually full path or name
         engineer = data.get('engineer', 'Maria')
         
@@ -4682,7 +5940,7 @@ def reclaim_project():
                 update_order_status(
                     alert.get("project_name"),
                     "accepted",
-                    log_entry=f"{engineer} tomó el proyecto desde admin reclaim.",
+                    log_entry=f"{engineer} took the project from admin reclaim.",
                     engineer=engineer
                 )
                 updated = True
@@ -4695,7 +5953,7 @@ def reclaim_project():
             return jsonify({"error": "Project not found"}), 404
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 # --- ORDER STATUS MANAGER ---
 # Implemented above with normalized status handling and event logs.
@@ -4712,7 +5970,7 @@ def check_status(project_id):
 @app.route('/api/claim-task', methods=['POST'])
 def claim_task():
     try:
-        data = request.json
+        data = request.json or {}
         project_id = data.get('project_id')
         engineer = data.get('engineer', 'Maria')
         
@@ -4734,12 +5992,12 @@ def claim_task():
         
         return jsonify({"status": "success", "message": f"Project {project_id} claimed by {engineer}"})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 @app.route('/api/deliver-work', methods=['POST'])
 def deliver_work():
     try:
-        data = request.json
+        data = request.json or {}
         project_id = data.get('project_id')
         code = data.get('code')
         
@@ -4769,7 +6027,7 @@ def deliver_work():
         update_order_status(
             project_id,
             "completed",
-            log_entry="Código entregado desde /api/deliver-work.",
+            log_entry="Code delivered from /api/deliver-work.",
             deployed_url=f"/projects/{project_id}/index.html"
         )
                 
@@ -4777,12 +6035,13 @@ def deliver_work():
 
     except Exception as e:
         print(f"Delivery Error: {e}")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
     return jsonify([])
 
 @app.route('/api/admin/system-status', methods=['GET'])
 def get_system_status():
-    # Simulate Team Load
+    if not require_internal_auth():
+        return jsonify({"error": "unauthorized"}), 401
     import random
     return jsonify({
         "george_status": random.choice(["Free", "Busy", "Designing"]),
@@ -4816,7 +6075,7 @@ def list_projects():
             return jsonify(filtered)
         return jsonify(projects)
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 @app.route('/api/projects-meta', methods=['GET'])
 def projects_meta():
@@ -4832,7 +6091,7 @@ def projects_meta():
                 filtered[project] = meta.get(project)
         return jsonify(filtered)
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 @app.route('/delete-project', methods=['POST'])
 def delete_project():
@@ -4846,7 +6105,7 @@ def delete_project():
             owners = load_project_owners()
             owner = owners.get(project_name)
             if owner and owner != user_email:
-                return jsonify({"error": "No tienes permiso para eliminar este proyecto."}), 403
+                return jsonify({"error": "You do not have permission to delete this project."}), 403
         project_path = os.path.join(projects_base_dir, project_name)
         if not os.path.abspath(project_path).startswith(os.path.abspath(projects_base_dir)):
             return jsonify({"error": "Invalid project path"}), 403
@@ -4864,7 +6123,7 @@ def delete_project():
             return jsonify({"message": "Deleted", "project_name": project_name})
         return jsonify({"error": "Not found"}), 404
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 def sanitize_project_name(raw_name):
@@ -4889,7 +6148,12 @@ def create_empty_project():
         project_path = os.path.join(projects_base_dir, project_name)
 
         if os.path.exists(project_path):
-            return jsonify({"error": "Ese proyecto ya existe. Usa otro nombre."}), 409
+            # Si el proyecto ya existe y le pertenece al mismo usuario, retornarlo como éxito
+            owners = load_project_owners()
+            existing_owner = owners.get(project_name, '')
+            if existing_owner == user_email:
+                return jsonify({"project_name": project_name, "project_id": project_name, "resumed": True}), 200
+            return jsonify({"error": "That project name is already taken. Please choose a different name."}), 409
 
         os.makedirs(project_path, exist_ok=True)
 
@@ -4899,11 +6163,13 @@ def create_empty_project():
             owners[project_name] = user_email
             save_project_owners(owners)
 
-        # Save metadata (phone, owner)
+        # Save metadata (phone, owner, description)
+        description = str(data.get('description') or '').strip()[:500]
         meta = load_project_meta()
         meta[project_name] = {
             "phone": phone,
             "owner": user_email,
+            "description": description,
             "created_at": datetime.utcnow().isoformat()
         }
         save_project_meta(meta)
@@ -4953,11 +6219,13 @@ def create_empty_project():
             "preview_url": f"/projects/{project_name}/index.html"
         })
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @app.route('/api/delete-all-projects', methods=['POST'])
 def delete_all_projects():
+    if _rate_limit(request.remote_addr, max_requests=2, window=60):
+        return jsonify({"error": "Too many attempts."}), 429
     try:
         if not os.path.exists(projects_base_dir):
             return jsonify({"status": "ok", "deleted": 0})
@@ -4969,7 +6237,7 @@ def delete_all_projects():
                 deleted += 1
         return jsonify({"status": "ok", "deleted": deleted})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 @app.route('/projects/<path:filename>')
 def serve_projects(filename):
@@ -4982,18 +6250,94 @@ def log_debug(msg):
     try:
         with open(os.path.join(BASE_DIR, 'backend', 'debug.log'), 'a') as f:
             f.write(f"[{datetime.now().isoformat()}] {msg}\n")
-    except: pass
+    except Exception: pass
+
+# --- INTERACTIVE OPTIONS GENERATOR ---
+def generate_contextual_options(missing_fields, phase, lang, memory=None):
+    """Genera 2-4 opciones clicables contextuales para el chat interactivo."""
+    memory = memory or {}
+    is_en = lang == "en"
+
+    # Si ya está listo para construir
+    if phase == "confirming":
+        return (
+            ["Yes, let's build it!", "I need to change something", "Tell me the full summary"]
+            if is_en else
+            ["Sí, construyamos", "Quiero cambiar algo", "Dame el resumen completo"]
+        )
+
+    # Opciones según el campo más urgente que falta
+    first_missing = missing_fields[0] if missing_fields else None
+
+    if first_missing == "summary":
+        return (
+            ["I want to build a web app", "A mobile app", "A marketplace / platform", "An AI tool"]
+            if is_en else
+            ["Quiero una app web", "Una app móvil", "Un marketplace o plataforma", "Una herramienta con IA"]
+        )
+
+    if first_missing == "audience":
+        return (
+            ["B2B (companies)", "B2C (end users)", "Both B2B and B2C", "Internal / enterprise tool"]
+            if is_en else
+            ["B2B (empresas)", "B2C (usuarios finales)", "Ambos B2B y B2C", "Herramienta interna"]
+        )
+
+    if first_missing == "business_model":
+        return (
+            ["Monthly subscription (SaaS)", "One-time purchase", "Freemium", "Commission per transaction"]
+            if is_en else
+            ["Suscripción mensual (SaaS)", "Pago único", "Freemium", "Comisión por transacción"]
+        )
+
+    if first_missing == "timeline":
+        return (
+            ["1-2 weeks (MVP)", "1 month", "2-3 months", "Flexible / no deadline"]
+            if is_en else
+            ["1-2 semanas (MVP)", "1 mes", "2-3 meses", "Flexible / sin fecha límite"]
+        )
+
+    if first_missing == "features":
+        return (
+            ["User login & profiles", "Payment processing", "Admin dashboard", "Notifications & messaging"]
+            if is_en else
+            ["Login y perfiles de usuario", "Pagos en línea", "Panel de administración", "Notificaciones y mensajes"]
+        )
+
+    # Fase exploratoria general
+    if phase in ("initial", "exploring"):
+        return (
+            ["Tell me more about this", "What do I need to start?", "Show me an example", "How long will it take?"]
+            if is_en else
+            ["Cuéntame más sobre esto", "¿Qué necesito para empezar?", "Muéstrame un ejemplo", "¿Cuánto tiempo toma?"]
+        )
+
+    # Fase de refinamiento
+    if phase == "refining":
+        return (
+            ["That sounds good, continue", "I want to add more features", "What's the cost?", "I'm ready to build"]
+            if is_en else
+            ["Suena bien, continúa", "Quiero agregar más funciones", "Sí, estoy listo para construir", "Necesito ajustar algo"]
+        )
+
+    return []
 
 @app.route('/api/continue-chat', methods=['POST'])
 def continue_chat():
     try:
-        data = request.json
+        data = request.json or {}
         history = trim_history_after_last_reset(data.get('history', []))
         current_input = data.get('message', '').strip()
         image_data_url = data.get('image_data_url', '')
         engine = normalize_engine(data.get('engine'))
         user_email = (data.get('user_email') or '').strip().lower()
         project_name = (data.get('project_name') or '').strip().lower()
+
+        # Auth: verify session matches requested email
+        session_email = session.get('user_email', '').strip().lower()
+        if not session_email or session_email != user_email:
+            return jsonify({"error": "You must be logged in"}), 401
+
         if not user_email:
             return jsonify({"error": "login_required"}), 401
         if not project_name:
@@ -5001,9 +6345,9 @@ def continue_chat():
         image_context = describe_image_for_chat(image_data_url) if image_data_url else ""
         enriched_input = current_input
         if image_context:
-            enriched_input = f"{current_input}\n\nContexto de imagen adjunta:\n{image_context}".strip()
+            enriched_input = f"{current_input}\n\nAttached image context:\n{image_context}".strip()
         elif image_data_url and not current_input:
-            enriched_input = "El usuario adjuntó una imagen. Analiza el contexto visual y continúa el brief."
+            enriched_input = "The user attached an image. Analyze the visual context and continue the brief."
 
         if not enriched_input:
             return jsonify({"error": "message is required"}), 400
@@ -5016,7 +6360,7 @@ def continue_chat():
                     project_name=project_name
                 )
             return jsonify({
-                "ai_reply": "Hecho, contexto reiniciado. Empecemos de cero. ¿Qué producto quieres construir ahora?",
+                "ai_reply": "Done. Context reset. Let's start fresh. What product would you like to build now?",
                 "ready_to_build": False,
                 "missing_fields": ["summary", "audience", "business_model", "timeline", "features"]
             })
@@ -5040,6 +6384,14 @@ def continue_chat():
             to_store["engine_preference"] = engine
             save_chat_memory(user_email, to_store, project_name=project_name)
 
+        lang = detect_language(current_input)
+        options = generate_contextual_options(
+            analysis["missing_fields"],
+            analysis.get("phase", "initial"),
+            lang,
+            analysis["memory"]
+        )
+
         return jsonify({
             "ai_reply": reply,
             "ready_to_build": analysis["ready_to_build"],
@@ -5054,12 +6406,13 @@ def continue_chat():
                 "timeline": analysis["memory"].get("timeline", ""),
                 "features": analysis["memory"].get("features", []),
             },
-            "engine_used": engine
+            "engine_used": engine,
+            "options": options
         })
         
     except Exception as e:
         print(f"SERVER ERROR: {e}")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 @app.route('/api/continue-marketing', methods=['POST'])
 def continue_marketing():
@@ -5072,6 +6425,7 @@ def continue_marketing():
         project_name = (data.get('project_name') or '').strip().lower()
         construction_context = str(data.get('construction_context') or '').strip()
         bootstrap = bool(data.get('bootstrap'))
+        channel = str(data.get('channel') or 'marketing').strip().lower()
         if not user_email:
             return jsonify({"error": "login_required"}), 401
         if not project_name:
@@ -5110,9 +6464,17 @@ def continue_marketing():
         context_block = f"Contexto de construcción:\n{construction_context}\n" if construction_context else ""
         bootstrap_block = "INSTRUCCION: Comienza con propuesta directa. Primera linea debe mencionar que ya se esta construyendo el proyecto y que ahora toca marketing. No hagas preguntas en la primera respuesta.\n" if bootstrap else ""
 
+        # Channel-specific system instructions
+        channel_instructions = {
+            'organic': "CANAL: Contenido Orgánico. Enfócate en estrategia de contenido NO PAGO: posts, reels, stories, blogs, SEO, community management. NO incluir pauta pagada, CPC o presupuesto de ads. Los campos clave son: goal, audience, platforms, content_pillars, posting_frequency, brand_voice, key_topics.",
+            'capital': "CANAL: Inversión y Capital. Enfócate en preparar pitch deck, modelo de negocio, métricas de tracción, estrategia de levantamiento de capital, valuación. Los campos clave son: funding_stage, amount_needed, business_model, revenue, traction, use_of_funds, timeline.",
+            'marketing': ""
+        }
+        channel_block = channel_instructions.get(channel, '') + "\n" if channel_instructions.get(channel) else ""
+
         prompt = f"""
 Proyecto: {project_name}
-{context_block}{bootstrap_block}
+{channel_block}{context_block}{bootstrap_block}
 Conversacion previa:
 {history_text}
 
@@ -5214,8 +6576,15 @@ Devuelve SOLO JSON valido con esta estructura:
         def _marketing_ai_payload():
             text = None
             parsed_local = None
+            # Marketing JSON es grande: usar max_tokens elevado y timeout mayor
+            MARKETING_MAX_TOKENS = 4096
             if ANTHROPIC_API_KEY:
-                text = call_anthropic_text(prompt, system_prompt=MARKETING_SYSTEM_INSTRUCTION_TEXT, timeout_seconds=12)
+                text = call_anthropic_text(
+                    prompt,
+                    system_prompt=MARKETING_SYSTEM_INSTRUCTION_TEXT,
+                    timeout_seconds=45,
+                    max_tokens_override=MARKETING_MAX_TOKENS,
+                )
                 if text:
                     parsed_local = clean_and_parse_json(text)
             else:
@@ -5226,7 +6595,7 @@ Devuelve SOLO JSON valido con esta estructura:
         try:
             parsed, raw_text = _marketing_ai_payload()
         except Exception as e:
-            return jsonify({"error": "ai_runtime_error", "detail": str(e)}), 502
+            return jsonify({"error": "ai_runtime_error", "detail": "Error en el motor de IA"}), 502
         if not isinstance(parsed, dict):
             # Fallback to raw text if JSON parse fails.
             reply = str(raw_text or "").strip()
@@ -5270,7 +6639,175 @@ Devuelve SOLO JSON valido con esta estructura:
             "preview_assets": preview_assets
         })
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
+
+@app.route('/api/continue-organic', methods=['POST'])
+def continue_organic():
+    """
+    Endpoint para el canal de Contenido Organico / Community Manager.
+    Usa historial multi-turno real con Anthropic y el system prompt de organico.
+    """
+    try:
+        data = request.json or {}
+        history = data.get('history', [])
+        current_input = str(data.get('message') or '').strip()
+        image_data_url = data.get('image_data_url', '')
+        user_email = str(data.get('user_email') or '').strip().lower()
+        project_name = str(data.get('project_name') or '').strip().lower()
+
+        if not user_email:
+            return jsonify({"error": "login_required"}), 401
+        if not project_name:
+            return jsonify({"error": "project_required"}), 400
+        if not current_input and not image_data_url:
+            return jsonify({"error": "message is required"}), 400
+
+        image_context = describe_image_for_chat(image_data_url) if image_data_url else ""
+        enriched_input = current_input
+        if image_context:
+            enriched_input = f"{current_input}\n\nContexto de imagen adjunta:\n{image_context}".strip()
+        elif image_data_url and not current_input:
+            enriched_input = "El usuario adjunto una imagen. Analiza su contexto para la estrategia de contenido organico."
+
+        if has_reset_intent(current_input):
+            if user_email:
+                save_chat_memory(
+                    user_email,
+                    reset_memory_payload(get_chat_memory(user_email, project_name=project_name) or {}),
+                    project_name=project_name
+                )
+            return jsonify({
+                "ai_reply": "Listo, empezamos de cero. Cuentame sobre tu marca o negocio: que vendes, a quien le hablas y en que redes estas activo ahora mismo.",
+                "ready_for_handoff": False,
+            })
+
+        # Construir historial completo para Anthropic
+        full_history = list(history) + [{"role": "user", "content": enriched_input}]
+
+        # Llamar a Anthropic con historial real y system prompt organico
+        ai_reply = None
+        if ANTHROPIC_API_KEY:
+            recent = full_history[-14:] if len(full_history) > 14 else full_history
+            ai_reply = call_anthropic_chat(
+                recent,
+                system_prompt=ORGANIC_CONTENT_SYSTEM_PROMPT,
+                timeout_seconds=35,
+            )
+
+        # Fallback a Gemini si Anthropic falla
+        if not ai_reply:
+            lang = detect_language(current_input)
+            fallback_prompt = f"""
+Eres Anmar AI, experto en contenido organico y community management.
+Historial: {full_history[-6:]}
+Mensaje actual: {enriched_input}
+Responde como consultor senior de contenido organico. Un solo mensaje al cliente, sin lista de preguntas. Maximo 1 pregunta al final.
+Idioma: {"English" if lang == "en" else "Spanish"}
+"""
+            ai_reply = call_ai_text(fallback_prompt)
+
+        if not ai_reply:
+            ai_reply = "Entiendo tu marca y veo un potencial organico enorme. Cuentame: cual es el mayor reto que tienes hoy para crear contenido de forma consistente?"
+
+        ai_reply = ai_reply.replace("```", "").strip()
+
+        # Guardar memoria
+        if user_email:
+            stored = get_chat_memory(user_email, project_name=project_name) or {}
+            stored["organic_last_message"] = enriched_input
+            stored["organic_last_reply"] = ai_reply[:500]
+            save_chat_memory(user_email, stored, project_name=project_name)
+
+        return jsonify({
+            "ai_reply": ai_reply,
+            "ready_for_handoff": False,
+            "channel": "organic"
+        })
+
+    except Exception as e:
+        log_debug(f"continue_organic error: {e}")
+        return jsonify({"error": "Internal server error"}), 500
+
+
+@app.route('/api/continue-capital', methods=['POST'])
+def continue_capital():
+    try:
+        data = request.json or {}
+        history = data.get('history', [])
+        current_input = (data.get('message') or '').strip()
+        image_data_url = data.get('image_data_url', '')
+        user_email = (data.get('user_email') or '').strip().lower()
+        project_name = (data.get('project_name') or '').strip().lower()
+
+        if not current_input:
+            return jsonify({"error": "message is required"}), 400
+
+        image_context = describe_image_for_chat(image_data_url) if image_data_url else ""
+        enriched_input = current_input
+        if image_context:
+            enriched_input = f"{current_input}\n\nContexto de imagen adjunta:\n{image_context}".strip()
+        elif image_data_url and not current_input:
+            enriched_input = "El usuario adjuntó una imagen. Analiza su contexto para la estrategia de capital e inversión."
+
+        if has_reset_intent(current_input):
+            if user_email:
+                save_chat_memory(
+                    user_email,
+                    reset_memory_payload(get_chat_memory(user_email, project_name=project_name) or {}),
+                    project_name=project_name
+                )
+            return jsonify({
+                "ai_reply": "Perfecto, empezamos de cero. Cuéntame sobre tu negocio: ¿qué etapa estás, cuánto capital necesitas y para qué lo usarías?",
+                "ready_for_handoff": False,
+            })
+
+        # Construir historial completo para Anthropic
+        full_history = list(history) + [{"role": "user", "content": enriched_input}]
+
+        # Llamar a Anthropic con historial real y system prompt de capital
+        ai_reply = None
+        if ANTHROPIC_API_KEY:
+            recent = full_history[-14:] if len(full_history) > 14 else full_history
+            ai_reply = call_anthropic_chat(
+                recent,
+                system_prompt=CAPITAL_SYSTEM_PROMPT,
+                timeout_seconds=35,
+            )
+
+        # Fallback a Gemini si Anthropic falla
+        if not ai_reply:
+            lang = detect_language(current_input)
+            fallback_prompt = f"""
+Eres Anmar AI, experto en capital, inversión y financiación para startups y negocios.
+Historial: {full_history[-6:]}
+Mensaje actual: {enriched_input}
+Responde como un CFO y asesor de inversión senior. Un solo mensaje al cliente, sin lista de preguntas. Máximo 1 pregunta al final.
+Idioma: {"English" if lang == "en" else "Spanish"}
+"""
+            ai_reply = call_ai_text(fallback_prompt)
+
+        if not ai_reply:
+            ai_reply = "Entiendo tu situación y veo varias rutas de financiación posibles. Cuéntame: ¿cuánto capital necesitas y en qué etapa está tu negocio?"
+
+        ai_reply = ai_reply.replace("```", "").strip()
+
+        # Guardar memoria
+        if user_email:
+            stored = get_chat_memory(user_email, project_name=project_name) or {}
+            stored["capital_last_message"] = enriched_input
+            stored["capital_last_reply"] = ai_reply[:500]
+            save_chat_memory(user_email, stored, project_name=project_name)
+
+        return jsonify({
+            "ai_reply": ai_reply,
+            "ready_for_handoff": False,
+            "channel": "capital"
+        })
+
+    except Exception as e:
+        log_debug(f"continue_capital error: {e}")
+        return jsonify({"error": "Internal server error"}), 500
+
 
 @app.route('/api/analyze-turn', methods=['POST'])
 def analyze_turn_endpoint():
@@ -5301,7 +6838,7 @@ def analyze_turn_endpoint():
             "memory": analysis.get("memory"),
         })
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 @app.route('/api/ai-health', methods=['GET'])
 def ai_health():
@@ -5328,12 +6865,23 @@ def ai_health():
     })
 
 
+@app.errorhandler(404)
+def page_not_found(e):
+    return f"""<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>404 | Anmar Enterprises</title><link rel="icon" type="image/svg+xml" href="/frontend/favicon.svg">
+<style>*{{margin:0;padding:0;box-sizing:border-box}}body{{background:#0a0a14;color:#fff;font-family:'Inter',sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center}}
+.c{{max-width:480px;padding:40px}}h1{{font-size:6rem;font-weight:800;color:#10b981;line-height:1}}p{{color:rgba(255,255,255,0.6);margin:16px 0 32px;font-size:1.1rem}}
+a{{display:inline-block;background:#10b981;color:#000;font-weight:700;padding:12px 28px;border-radius:10px;text-decoration:none;transition:opacity 0.2s}}a:hover{{opacity:0.85}}</style></head>
+<body><div class="c"><h1>404</h1><p>La pagina que buscas no existe o fue movida.</p><a href="/">Volver al inicio</a></div></body></html>""", 404
+
+
 if __name__ == '__main__':
-    print(f"🔥 Server starting at http://localhost:5001")
-    print(f"📁 Serving Frontend from: {frontend_path}")
+    print(f"Server starting at http://localhost:5001")
+    print(f"Serving Frontend from: {frontend_path}")
     print(f"📦 Projects Directory: {projects_base_dir}")
-    print(f"🔑 API Key Active: {GOOGLE_API_KEY[:8]}... (starts with)")
+    print(f"🔑 API Key Active: {'configured' if GOOGLE_API_KEY else 'MISSING'}")
     print(f"🤖 AI Connected: {AI_RUNTIME.get('connected')} | Model: {AI_RUNTIME.get('model_name')}")
     # Create alerts dir if not exists
     os.makedirs(os.path.join(BASE_DIR, 'backend'), exist_ok=True)
-    app.run(debug=True, port=5001)
+    app.run(debug=False, port=5001)
