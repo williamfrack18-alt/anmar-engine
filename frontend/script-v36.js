@@ -1142,13 +1142,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Crear proyecto en background — skipNavigation:true evita que
                 // setWelcomeVisible(false) y switchTab() interrumpan la animación
+                let _createError = '';
                 const createPromise = createProjectByName(name, {
                     showAlert: false,
                     skipNavigation: true,
                     phone,
                     description: desc,
                     onError: (msg) => {
-                        if (welcomeStatus) welcomeStatus.textContent = msg || 'Error creating project.';
+                        _createError = msg || 'Error creating project.';
                     }
                 });
 
@@ -1269,11 +1270,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         goBtn.addEventListener('mouseleave', () => { goBtn.style.transform = 'none'; });
                     }
                 } else {
-                    // Error — go back to form
+                    // Error — go back to form mostrando el error real del servidor
                     if (welcomeFormStep) welcomeFormStep.style.display = 'block';
                     if (welcomeConsultingStep) welcomeConsultingStep.style.display = 'none';
                     if (welcomeCloseBtn) welcomeCloseBtn.style.display = '';
-                    if (welcomeStatus) welcomeStatus.textContent = 'Something went wrong. Please try again.';
+                    if (welcomeStatus) welcomeStatus.textContent = _createError || 'Something went wrong. Please try again.';
                 }
             });
         }
