@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const buildBtn = document.getElementById('buildBtn');
     const resetContextBtn = document.getElementById('resetContextBtn');
     const livePreviewFrame = document.getElementById('livePreviewFrame');
-    const userTokensEl = document.getElementById('userTokens'); // ADDED THIS LINE
+    const userTokensEl = document.getElementById('userPlanBadge');
     const modeStrategyBtn = document.getElementById('modeStrategyBtn');
     const modeEditBtn = document.getElementById('modeEditBtn');
     const engineSelector = document.getElementById('engineSelector');
@@ -65,12 +65,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const newProjectPhoneInput = document.getElementById('newProjectPhoneInput');
 
     // Pre-init state used by early UI handlers
-    let activeChannel = 'build'; // build | marketing
+    let activeChannel = 'build'; // build | marketing | organic | capital
     let interactionMode = 'strategy'; // strategy | edit
-    // pendingImageDataUrl and pendingImageName defined earlier
-    function isMarketingChannel() {
-        return activeChannel === 'marketing';
-    }
+    let pendingImageDataUrl = '';
+    let pendingImageName = '';
+    const VALID_CHANNELS = ['build', 'marketing', 'organic', 'capital'];
+    function isMarketingChannel() { return activeChannel === 'marketing'; }
+    function isOrganicChannel() { return activeChannel === 'organic'; }
+    function isCapitalChannel() { return activeChannel === 'capital'; }
+    function isBuildChannel() { return activeChannel === 'build'; }
+    function isContentChannel() { return activeChannel === 'marketing' || activeChannel === 'organic'; }
 
     // --- Session Management ---
     let currentUser = null;
@@ -94,11 +98,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const setCurrentUserEmail = (email) => {
-        if (!email) return;
+        if (!email || typeof email !== 'string') return;
         currentUser = currentUser || {};
         currentUser.email = email.trim().toLowerCase();
         if (!currentUser.name || currentUser.name === 'Invitado') {
-            currentUser.name = email.split('@')[0] || 'Cliente';
+            currentUser.name = email.split('@')[0] || 'Client';
         }
         localStorage.setItem('currentUser', JSON.stringify(currentUser));
         localStorage.removeItem('guest_user');
@@ -127,21 +131,27 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Human Chat Polling ---
     let humanChatInterval = null;
     let lastHumanChatCount = 0;
+    let lastHumanMsgId = ''; // Track last message ID for dedup
     const notifiedBlueprintIds = new Set();
     const blueprintAudio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
     blueprintAudio.volume = 0.4;
 
     async function pollHumanChat() {
-        if (!currentProjectName) return;
+        if (!currentUser?.email || !currentProjectName) return;
         try {
-            const res = await fetch(`/api/human-chat/history?project_name=${encodeURIComponent(getActiveProjectKey())}`);
+            const res = await fetch(`/api/human-chat/history?project_name=${encodeURIComponent(getActiveProjectKey())}&client_email=${encodeURIComponent(currentUser.email)}`, {
+                credentials: 'include'
+            });
+            if (!res.ok) return;
             const data = await res.json();
             const history = data.history || [];
             updateBlueprintNotifications(history);
-            if (history && history.length > lastHumanChatCount) {
+            // Compare by last message ID instead of count — survives page reload
+            const newestId = history.length ? (history[history.length - 1].id || '') : '';
+            if (history.length !== lastHumanChatCount || newestId !== lastHumanMsgId) {
                 lastHumanChatCount = history.length;
+                lastHumanMsgId = newestId;
                 renderHumanChat(history);
-                // Human-only chat: always visible
             }
         } catch (e) { console.error('Error polling human chat:', e); }
     }
@@ -179,7 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''));
 
         if (!blueprints.length) {
-            notifList.innerHTML = '<div style="color:rgba(255,255,255,0.6); font-size:0.85rem;">Sin notificaciones.</div>';
+            notifList.innerHTML = '<div style="color:rgba(255,255,255,0.6); font-size:0.85rem;">No notifications.</div>';
             return;
         }
 
@@ -191,7 +201,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const timeLabel = time ? time.toLocaleString() : '';
             el.innerHTML = `
                 <div class="notif-item-title">${escapeHtml(item.title)}</div>
-                <div class="notif-item-meta">${item.accepted ? 'Blueprint aprobado' : 'Blueprint pendiente'} ${timeLabel ? '• ' + timeLabel : ''}</div>
+                <div class="notif-item-meta">${item.accepted ? 'Blueprint approved' : 'Blueprint pending'} ${timeLabel ? '• ' + timeLabel : ''}</div>
             `;
             el.addEventListener('click', () => {
                 if (notifPanel) notifPanel.classList.remove('open');
@@ -216,7 +226,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!container) return;
         const msgRow = document.createElement('div');
         msgRow.className = 'msg-row ai';
-        msgRow.innerHTML = `<div class="ai-msg">${text}</div>`;
+        msgRow.innerHTML = `<div class="ai-msg">${escapeHtml(text)}</div>`;
         container.appendChild(msgRow);
         const log = document.getElementById('humanLog');
         if (log) log.scrollTop = log.scrollHeight;
@@ -247,6 +257,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const container = document.getElementById('humanChatContent');
         if (!container) return;
         container.innerHTML = '';
+        // Hide welcome when there are messages
+        const welcomeEl = document.getElementById('humanChatWelcome');
+        if (welcomeEl) welcomeEl.style.display = (history && history.length > 0) ? 'none' : 'block';
         history.forEach(msg => {
             const isClient = msg.role === 'client';
             const row = document.createElement('div');
@@ -302,12 +315,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (msg.accepted) {
                     const badge = document.createElement('span');
                     badge.className = 'blueprint-tag';
-                    badge.textContent = 'Blueprint aprobado';
+                    badge.textContent = 'Blueprint approved';
                     actions.appendChild(badge);
                 } else if (!isClient) {
                     const btn = document.createElement('button');
                     btn.className = 'blueprint-btn';
-                    btn.textContent = 'Aceptar blueprint';
+                    btn.textContent = 'Accept blueprint';
                     btn.addEventListener('click', () => acceptBlueprint(msg.id));
                     actions.appendChild(btn);
                 }
@@ -327,15 +340,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 const payload = msg.payload || {};
                 const url = payload.url || msg.content || '';
                 card.innerHTML = `
-                    <h4>Preview actualizado</h4>
-                    <div class="blueprint-meta">Tu ingeniero compartió una nueva previsualización.</div>
+                    <h4>Preview updated</h4>
+                    <div class="blueprint-meta">Your engineer shared a new preview.</div>
                 `;
                 if (url) {
                     const actions = document.createElement('div');
                     actions.className = 'blueprint-actions';
                     const btn = document.createElement('button');
                     btn.className = 'blueprint-btn';
-                    btn.textContent = 'Abrir preview';
+                    btn.textContent = 'Open preview';
                     btn.addEventListener('click', () => window.open(url, '_blank'));
                     actions.appendChild(btn);
                     card.appendChild(actions);
@@ -370,6 +383,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await fetch('/api/human-chat/accept-blueprint', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({
                     project_name: getActiveProjectKey(),
                     blueprint_id: blueprintId,
@@ -434,94 +448,97 @@ document.addEventListener('DOMContentLoaded', () => {
         const hasAttachment = !!pendingImageDataUrl;
         const overLimit = len > CHAT_MAX_CHARS;
         const canSend = (hasText || hasAttachment) && !isProcessing && !overLimit;
-        sendBtn.disabled = !canSend;
-        sendBtn.classList.toggle('active', canSend);
+        if (sendBtn) sendBtn.disabled = !canSend;
+        if (sendBtn) sendBtn.classList.toggle('active', canSend);
         if (chatWrap) chatWrap.classList.toggle('typing', len > 0);
         if (chatCounter) {
             chatCounter.textContent = `${len}/${CHAT_MAX_CHARS}`;
             chatCounter.classList.toggle('over', overLimit);
         }
     };
-    function updateChatCopy(tab = 'AI') {
+    function updateChatCopy() {
         if (!chatInput) return;
-        const isHuman = String(tab || '').toLowerCase().includes('human');
-        if (isMarketingChannel()) {
-            if (isHuman) {
-                chatInput.placeholder = "Paso 1: Cuéntanos el objetivo de marketing y el producto.";
-                if (chatHelper) {
-                    chatHelper.textContent = "Paso 1: Define la campaña. Paso 2: Asignamos estratega de marketing.";
-                }
-            } else {
-                chatInput.placeholder = "Tell me about your business or project — what are you looking to promote or grow?";
-                if (chatHelper) {
-                    chatHelper.textContent = "La IA prepara la estrategia y copys para pauta en redes.";
-                }
-            }
-            return;
-        }
 
-        if (isHuman) {
-            chatInput.placeholder = "Paso 1: Cuéntanos qué necesitas. Ej: “Necesito una web para mi estudio con reservas.”";
-            if (chatHelper) {
-                chatHelper.textContent = "Paso 1: Cuéntanos qué necesitas. Paso 2: Te asignamos un ingeniero en minutos.";
+        // Channel-specific placeholders (team chat only)
+        const channelCopy = {
+            build: {
+                placeholder: "Write your message to the team...",
+                helper: "Tell us what you need. We assign an engineer in minutes."
+            },
+            marketing: {
+                placeholder: "Tell us the marketing goal and the product.",
+                helper: "Define the campaign. We assign a marketing strategist."
+            },
+            organic: {
+                placeholder: "Tell us about your brand and content goals.",
+                helper: "Define your strategy. We assign a content creator."
+            },
+            capital: {
+                placeholder: "Tell us about your business and investment needs.",
+                helper: "Define your needs. We connect you with capital advisors."
             }
-        } else {
-            chatInput.placeholder = interactionMode === 'edit'
-                ? "Describe qué quieres editar en el proyecto..."
-                : "Describe tu idea... (ej. 'Un SaaS para gestión con Stripe')";
-            if (chatHelper) {
-                chatHelper.textContent = "Describe tu idea y generamos el blueprint técnico automáticamente.";
-            }
-        }
+        };
+
+        const copy = channelCopy[activeChannel] || channelCopy.build;
+        chatInput.placeholder = copy.placeholder;
+        if (chatHelper) chatHelper.textContent = copy.helper;
     }
 
     function setPreviewMode(mode) {
-        const isMarketing = mode === 'marketing';
-        if (livePreviewFrame) livePreviewFrame.style.display = isMarketing ? 'none' : 'block';
-        if (marketingPreviewContainer) marketingPreviewContainer.style.display = isMarketing ? 'block' : 'none';
+        const isContentMode = mode === 'marketing' || mode === 'organic';
+        if (livePreviewFrame) livePreviewFrame.style.display = isContentMode ? 'none' : 'block';
+        if (marketingPreviewContainer) marketingPreviewContainer.style.display = isContentMode ? 'block' : 'none';
         if (emptyState) {
-            if (isMarketing) {
+            if (isContentMode) {
                 emptyState.style.display = 'none';
             } else if (!livePreviewFrame || !livePreviewFrame.src || livePreviewFrame.src === 'about:blank') {
                 emptyState.style.display = 'flex';
             }
         }
         const urlBar = document.querySelector('.url-bar');
-        if (urlBar) urlBar.textContent = isMarketing ? 'ads.anmar.ai/preview' : (currentProjectName ? `anmar.app/projects/${currentProjectName}` : 'preview.anmar.ai');
+        if (urlBar) urlBar.textContent = isContentMode ? 'ads.anmar.ai/preview' : (currentProjectName ? `anmar.app/projects/${currentProjectName}` : 'preview.anmar.ai');
         const mobileBtnEl = document.getElementById('mobileViewBtn');
         const desktopBtnEl = document.getElementById('desktopViewBtn');
-        if (mobileBtnEl) mobileBtnEl.style.display = isMarketing ? 'none' : 'inline-flex';
-        if (desktopBtnEl) desktopBtnEl.style.display = isMarketing ? 'none' : 'inline-flex';
+        if (mobileBtnEl) mobileBtnEl.style.display = isContentMode ? 'none' : 'inline-flex';
+        if (desktopBtnEl) desktopBtnEl.style.display = isContentMode ? 'none' : 'inline-flex';
     }
 
     function setActiveChannel(channel) {
-        activeChannel = channel === 'marketing' ? 'marketing' : 'build';
-        updateChatCopy(isHumanChatActive ? 'Human' : 'AI');
+        activeChannel = VALID_CHANNELS.includes(channel) ? channel : 'build';
+        updateChatCopy();
         setPreviewMode(activeChannel);
-        if (paywallBanner) {
-            const slot = paywallBanner.querySelector('div');
-            if (slot) {
-                slot.innerHTML = isMarketingChannel()
-                    ? '<strong>Activa tu plan</strong> para habilitar el chat con marketing.'
-                    : '<strong>Activa tu plan</strong> para habilitar el chat con ingenieros.';
-            }
+
+        // Channel badge — visual indicator of active channel
+        const channelBadge = document.getElementById('activeChannelBadge');
+        if (channelBadge) {
+            const badgeConfig = {
+                build:     { label: 'Build',     bg: 'rgba(16,185,129,0.15)', color: '#10b981', border: 'rgba(16,185,129,0.3)' },
+                marketing: { label: 'Marketing', bg: 'rgba(59,130,246,0.15)', color: '#3b82f6', border: 'rgba(59,130,246,0.3)' },
+                organic:   { label: 'Organic',   bg: 'rgba(168,85,247,0.15)', color: '#a855f7', border: 'rgba(168,85,247,0.3)' },
+                capital:   { label: 'Capital',   bg: 'rgba(245,158,11,0.15)', color: '#f59e0b', border: 'rgba(245,158,11,0.3)' }
+            };
+            const cfg = badgeConfig[activeChannel] || badgeConfig.build;
+            channelBadge.textContent = cfg.label;
+            channelBadge.style.background = cfg.bg;
+            channelBadge.style.color = cfg.color;
+            channelBadge.style.borderColor = cfg.border;
         }
-        if (togglePreviewBtn) {
-            togglePreviewBtn.textContent = isMarketingChannel() ? 'Preview Marketing' : 'Preview';
-        }
-        if (isMarketingChannel()) {
-            renderMarketingPreview(currentMarketingAssets);
-        }
-        if (resultSection && isMarketingChannel()) resultSection.style.display = 'none';
-        if (statusTimeline) setTimelineVisible(!isMarketingChannel() && (chatStage === 'construction_mode' || chatStage === 'building'));
-        latestMissingFields = getRequiredFields().slice();
-        renderBriefState({ missing_fields: latestMissingFields, memory_summary: '' });
+
+        // Preview button
+        const previewLabels = { build: 'Preview', marketing: 'Preview Marketing', organic: 'Organic Preview', capital: 'Capital Preview' };
+        if (togglePreviewBtn) togglePreviewBtn.textContent = previewLabels[activeChannel] || 'Preview';
+
+        // Marketing preview only for marketing/organic
+        if (isMarketingChannel() || isOrganicChannel()) renderMarketingPreview(currentMarketingAssets);
+
+        // Hide result section for non-build channels
+        if (resultSection && !isBuildChannel()) resultSection.style.display = 'none';
     }
 
     async function fetchConstructionContext() {
         if (!currentUser?.email || !currentProjectName) return null;
         try {
-            const res = await fetch(`/api/chat-memory?email=${encodeURIComponent(currentUser.email)}&project_name=${encodeURIComponent(currentProjectName)}`);
+            const res = await fetch(`/api/chat-memory?email=${encodeURIComponent(currentUser.email)}&project_name=${encodeURIComponent(currentProjectName)}`, { credentials: 'include' });
             if (!res.ok) return null;
             const data = await res.json();
             const memory = data.memory || {};
@@ -556,7 +573,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!ctx) return '';
         const lines = [
             ctx.summary ? `Producto: ${ctx.summary}` : '',
-            ctx.audience ? `Audiencia: ${ctx.audience}` : '',
+            ctx.audience ? `Audience: ${ctx.audience}` : '',
             ctx.businessModel ? `Modelo: ${ctx.businessModel}` : '',
             ctx.timeline ? `Timeline: ${ctx.timeline}` : '',
             ctx.features ? `Features: ${ctx.features}` : ''
@@ -573,11 +590,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const ctx = await fetchConstructionContext();
         if (ctx) {
             // CASE A: Use construction context to propose immediately.
-            showThinking("Analizando contexto de construcción...");
+            showThinking("Analyzing build context...");
             try {
                 const res = await fetch('/api/continue-marketing', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
                     body: JSON.stringify({
                         history: [],
                         message: '',
@@ -590,10 +608,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const { data } = await safeReadJson(res);
                 stopThinking();
                 if (!data) {
-                    throw new Error(`Servidor devolvió HTML (status ${res.status}).`);
+                    throw new Error(`Server returned HTML (status ${res.status}).`);
                 }
                 if (!res.ok) {
-                    throw new Error(data.error || 'Error de marketing');
+                    throw new Error(data.error || 'Marketing error');
                 }
                 if (data.ai_reply) {
                     await addSystemMessage(data.ai_reply);
@@ -625,29 +643,22 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // CASE B: Ask one clean question when no construction context exists.
-        const question = "Tell me about your business or project — what are you looking to promote or grow?";
+        const question = "Tell me about your business or project -- what are you looking to promote or grow?";
         await addSystemMessage(question);
         conversationHistory.push({ role: "ai", content: question });
         queueMemorySave();
     }
 
-    // React to Tab switch
-    document.addEventListener('chatTabSwitched', (e) => {
-        updateChatCopy(e.detail || 'AI');
-        resizeChatInput();
-        updateSendState();
-    });
-
-    if (!currentUser) {
-        ensureGuestUser();
-    }
-
     // Initialize welcome screen greeting once user is known
     typeWelcomeText();
 
-    if (typeof switchChatTab === 'function') {
-        switchChatTab('AI');
-    }
+    // Team chat is always active — ensure humanLog is visible
+    (function initTeamChat() {
+        const logIA = document.getElementById('terminalLog');
+        const logHuman = document.getElementById('humanLog');
+        if (logIA) logIA.style.display = 'none';
+        if (logHuman) logHuman.style.display = 'flex';
+    })();
 
     if (togglePreviewBtn && previewPanel && buildSection) {
         if (previewPanel.classList.contains('preview-hidden')) {
@@ -656,36 +667,33 @@ document.addEventListener('DOMContentLoaded', () => {
         togglePreviewBtn.addEventListener('click', () => {
             const hidden = previewPanel.classList.toggle('preview-hidden');
             buildSection.classList.toggle('expand-chat', hidden);
-            togglePreviewBtn.textContent = hidden ? 'Mostrar Preview' : 'Ocultar Preview';
+            togglePreviewBtn.textContent = hidden ? 'Show Preview' : 'Hide Preview';
         });
     }
 
     function formatPlanLabel(plan) {
         const key = (plan || '').toLowerCase();
-        if (key.includes('marketing + construcción') || key.includes('marketing + construccion')) {
-            return 'Marketing + Construcción';
+        if (key.includes('marketing + build') || key.includes('marketing + build')) {
+            return 'Marketing + Build';
         }
         if (key.includes('marketing')) return 'Marketing';
-        return 'Plan requerido';
+        return 'Plan required';
     }
 
     async function refreshSubscriptionStatus(showMessage = false) {
-        if (!userTokensEl) return;
         try {
-            const res = await fetch(`/api/user-stats?email=${currentUser.email}`);
+            const res = await fetch(`/api/user-stats?email=${currentUser.email}`, { credentials: 'include' });
             const data = await res.json();
             if (data.subscription_active !== undefined) {
                 subscriptionActive = !!data.subscription_active;
                 subscriptionPlan = data.subscription_plan || 'none';
-                const label = subscriptionActive ? formatPlanLabel(subscriptionPlan) : 'Plan requerido';
-                userTokensEl.innerHTML = `<i class="fas fa-crown" style="color:#fbbf24; margin-right:6px;"></i> ${label}`;
+
+                // Update plan badge in header
+                updatePlanBadge(data);
+
                 if (profileCreditsEl) {
-                    profileCreditsEl.textContent = subscriptionActive ? label : 'Sin plan activo';
+                    profileCreditsEl.textContent = subscriptionActive ? formatPlanLabel(subscriptionPlan) : 'Free';
                 }
-                if (!subscriptionActive && showMessage) {
-                    addLog("🔒 Para chatear con el equipo necesitas activar un plan.", "system");
-                }
-                updatePaywallBanner();
                 if (subscriptionActive && chatLockedForSubscription) {
                     setChatLocked(false);
                 }
@@ -696,12 +704,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function updatePaywallBanner() {
-        if (!paywallBanner) return;
+    function updatePlanBadge(data) {
+        const planDisplay = document.getElementById('planNameDisplay');
+        if (!planDisplay) return;
         if (subscriptionActive) {
-            paywallBanner.style.display = 'none';
+            planDisplay.textContent = formatPlanLabel(subscriptionPlan);
         } else {
-            paywallBanner.style.display = 'flex';
+            planDisplay.textContent = 'Free';
         }
     }
 
@@ -716,21 +725,66 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function syncChatLockWithPendingTicket() {
-        const pendingProject = localStorage.getItem('pending_ticket_project') || '';
-        const shouldLock = !!pendingProject && !subscriptionActive && currentProjectName && pendingProject === currentProjectName;
-        setChatLocked(shouldLock);
+        // Don't lock the input — we use the modal gate on send instead
+        setChatLocked(false);
     }
 
     async function checkUserCredits() {
         await refreshSubscriptionStatus();
     }
 
+    function showValidateGate() {
+        const overlay = document.getElementById('validateGateOverlay');
+        if (overlay) overlay.classList.add('active');
+    }
+
+    function hideValidateGate() {
+        const overlay = document.getElementById('validateGateOverlay');
+        if (overlay) overlay.classList.remove('active');
+    }
+
+    // Wire up gate modal buttons
+    const validateGateBtn = document.getElementById('validateGateBtn');
+    const validateGateDismiss = document.getElementById('validateGateDismiss');
+    if (validateGateBtn) {
+        validateGateBtn.addEventListener('click', async () => {
+            if (!currentUser || !currentUser.email) {
+                window.location.href = 'login.html';
+                return;
+            }
+            validateGateBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Redirecting...';
+            validateGateBtn.disabled = true;
+            try {
+                const res = await fetch('/api/stripe/create-checkout-session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ email: currentUser.email, plan: 'validate' })
+                });
+                const data = await res.json();
+                if (data.url) {
+                    window.location.href = data.url;
+                } else {
+                    throw new Error(data.error || 'Error starting payment');
+                }
+            } catch (err) {
+                validateGateBtn.innerHTML = '<i class="fas fa-bolt"></i> Start Validating';
+                validateGateBtn.disabled = false;
+                addLog('Payment error. Please try again.', 'system');
+            }
+        });
+    }
+    if (validateGateDismiss) {
+        validateGateDismiss.addEventListener('click', hideValidateGate);
+    }
+
     async function requireSubscription() {
         if (subscriptionActive) return true;
-        await refreshSubscriptionStatus(true);
+        // Refresh once to make sure we have latest status
+        await refreshSubscriptionStatus();
         if (subscriptionActive) return true;
-        const modal = document.getElementById('pricing-modal');
-        if (modal) modal.style.display = 'flex';
+        // Not subscribed — show validate gate
+        showValidateGate();
         return false;
     }
 
@@ -747,18 +801,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (paywallEmailBtn) {
         paywallEmailBtn.addEventListener('click', () => {
             const email = (paywallEmailInput?.value || '').trim().toLowerCase();
-            if (!email || !email.includes('@')) {
-                alert('Escribe un correo válido para continuar.');
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!email || !emailRegex.test(email)) {
+                addLog('Enter a valid email to continue.', 'warning');
                 return;
             }
             setCurrentUserEmail(email);
             hydrateProfile();
             refreshSubscriptionStatus(true);
             if (paywallEmailGate) paywallEmailGate.style.display = 'none';
-            if (pendingPlanId) {
-                const nextPlan = pendingPlanId;
-                pendingPlanId = null;
-                window.purchasePlan(nextPlan);
+            const pendingPlan = localStorage.getItem('pendingPlan');
+            if (pendingPlan) {
+                localStorage.removeItem('pendingPlan');
+                setTimeout(() => window.purchasePlan(pendingPlan), 500);
             }
         });
     }
@@ -774,8 +829,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let selectedEngine = 'antigravity';
     let latestMissingFields = [];
     let latestBriefScore = 0;
-    let pendingImageDataUrl = '';
-    let pendingImageName = '';
     let speechRecognition = null;
     let isVoiceRecording = false;
     let reviewOverlayTimer = null;
@@ -786,16 +839,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const BUILD_REQUIRED_FIELDS = ['summary', 'audience', 'business_model', 'timeline', 'features'];
     const MARKETING_REQUIRED_FIELDS = ['goal', 'audience', 'offer', 'channels', 'budget', 'timeline', 'brand_voice', 'key_message'];
+    const ORGANIC_REQUIRED_FIELDS = ['goal', 'audience', 'platforms', 'content_pillars', 'posting_frequency', 'brand_voice', 'key_topics'];
+    const CAPITAL_REQUIRED_FIELDS = ['funding_stage', 'amount_needed', 'business_model', 'revenue', 'traction', 'use_of_funds', 'timeline'];
     let currentMarketingBrief = null;
     let currentMarketingAssets = [];
 
+    const CHANNEL_SUFFIXES = { build: '', marketing: '__marketing', organic: '__organic', capital: '__capital' };
+
     function getActiveProjectKey() {
         if (!currentProjectName) return '';
-        return isMarketingChannel() ? `${currentProjectName}__marketing` : currentProjectName;
+        const suffix = CHANNEL_SUFFIXES[activeChannel] || '';
+        return currentProjectName + suffix;
     }
 
     function getRequiredFields() {
-        return isMarketingChannel() ? MARKETING_REQUIRED_FIELDS : BUILD_REQUIRED_FIELDS;
+        if (isMarketingChannel()) return MARKETING_REQUIRED_FIELDS;
+        if (isOrganicChannel()) return ORGANIC_REQUIRED_FIELDS;
+        if (isCapitalChannel()) return CAPITAL_REQUIRED_FIELDS;
+        return BUILD_REQUIRED_FIELDS;
     }
 
     latestMissingFields = getRequiredFields().slice();
@@ -811,29 +872,75 @@ document.addEventListener('DOMContentLoaded', () => {
     // Run on Load
     checkUserCredits().then(() => submitPendingTicketIfAny()).then(() => syncChatLockWithPendingTicket());
     hydrateProfile();
-    renderBriefState();
+    // ── Welcome modal logic ──
+    function showWelcomeModal() {
+        const overlay = document.getElementById('welcomeOverlay');
+        if (overlay) overlay.classList.add('active');
+    }
+    function hideWelcomeModal() {
+        const overlay = document.getElementById('welcomeOverlay');
+        if (overlay) overlay.classList.remove('active');
+    }
+    // welcomeStartBtn already declared at top — reuse it (no redeclaration)
+    if (welcomeStartBtn) {
+        welcomeStartBtn.addEventListener('click', () => {
+            hideWelcomeModal();
+            // Inject team welcome message in chat
+            injectTeamWelcomeMessage();
+            // Make sure we're on the build tab with chat visible
+            if (typeof switchTab === 'function') switchTab('build');
+        });
+    }
+
+    function injectTeamWelcomeMessage() {
+        const container = document.getElementById('humanChatContent');
+        if (!container) return;
+        const msgRow = document.createElement('div');
+        msgRow.className = 'msg-row assistant';
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'ai-msg';
+        msgDiv.innerHTML = '<strong>Anmar Team</strong><br><br>' +
+            'Welcome! Your Validate plan is now active. We\'re excited to work with you.<br><br>' +
+            'To get started, tell us about your idea — what are you building and who is it for? ' +
+            'The more detail you share, the better roadmap we can create for you.<br><br>' +
+            '<span style="color:rgba(255,255,255,0.45); font-size:0.82rem;">A team member will review your message and respond shortly.</span>';
+        msgRow.appendChild(msgDiv);
+        container.appendChild(msgRow);
+        const log = document.getElementById('humanLog');
+        if (log) log.scrollTop = log.scrollHeight;
+    }
+
     (function handleCheckoutReturn() {
         const params = new URLSearchParams(window.location.search);
         const status = params.get('checkout');
         const sessionId = params.get('session_id');
         if (!status) return;
+        // Clean URL params so they don't persist on refresh
+        window.history.replaceState({}, '', window.location.pathname);
         if (status === 'success') {
-            if (sessionId) {
-                fetch(`/api/stripe/verify-session?session_id=${encodeURIComponent(sessionId)}`)
-                    .then(() => refreshSubscriptionStatus(true))
+            localStorage.removeItem('pendingPlan');
+            const activateAndWelcome = () => {
+                refreshSubscriptionStatus(true)
                     .then(() => submitPendingTicketIfAny())
-                    .catch(() => refreshSubscriptionStatus(true));
+                    .then(() => {
+                        // Show welcome modal after subscription is confirmed
+                        showWelcomeModal();
+                    });
+            };
+            if (sessionId) {
+                fetch(`/api/stripe/verify-session?session_id=${encodeURIComponent(sessionId)}`, { credentials: 'include' })
+                    .then(() => activateAndWelcome())
+                    .catch(() => activateAndWelcome());
             } else {
-                setTimeout(() => {
-                    refreshSubscriptionStatus(true).then(() => submitPendingTicketIfAny());
-                }, 1200);
+                setTimeout(activateAndWelcome, 1200);
             }
-            addLog("✅ Pago confirmado. Tu plan ya está activo.", "success");
         }
         if (status === 'cancel') {
-            addLog("Pago cancelado. Puedes intentar de nuevo cuando quieras.", "system");
+            addLog("Payment cancelled. You can try again whenever you're ready.", "system");
         }
     })();
+
+    // pendingPlan is consumed later, after window.purchasePlan is defined (see bottom of file)
 
     async function submitPendingTicketIfAny() {
         const pendingProject = localStorage.getItem('pending_ticket_project') || '';
@@ -842,13 +949,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch('/api/tickets/submit-pending', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({ user_email: currentUser.email, project_name: pendingProject })
             });
             const data = await res.json();
             if (data && data.status === 'ok' && Array.isArray(data.tickets) && data.tickets.length) {
                 localStorage.removeItem('pending_ticket_project');
                 setChatLocked(false);
-                addLog("✅ Ticket enviado automáticamente al equipo.", "success");
+                addLog("✅ Ticket sent automatically to the team.", "success");
             }
         } catch (e) {
             console.warn('Pending ticket submit failed', e);
@@ -898,99 +1006,329 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (_) {
             forceWelcome = true;
         }
-        if (welcomeCloseBtn) {
-            welcomeCloseBtn.addEventListener('click', () => {
-                forceWelcome = false;
-                markWelcomeDone();
-                setWelcomeVisible(false);
-                switchTab('projects');
-            });
+
+        const welcomeFormStep = document.getElementById('welcomeFormStep');
+        const welcomeConsultingStep = document.getElementById('welcomeConsultingStep');
+        const welcomeSubmitBtn = document.getElementById('welcomeSubmitBtn');
+        const welcomeDescInput = document.getElementById('welcomeDescInput');
+        const welcomeStatus = document.getElementById('welcomeStatus');
+
+        // No close button — onboarding is mandatory for new users
+
+        // Validate all 3 fields to enable submit
+        function checkFormValid() {
+            const name = (welcomeInput?.value || '').trim();
+            const phone = (welcomePhoneInput?.value || '').trim();
+            const desc = (welcomeDescInput?.value || '').trim();
+            if (welcomeSubmitBtn) welcomeSubmitBtn.disabled = !(name && phone && desc);
+            if (welcomeStatus) welcomeStatus.textContent = '';
         }
-        if (welcomePhoneBtn) {
-            welcomePhoneBtn.addEventListener('click', async () => {
+
+        if (welcomeInput) welcomeInput.addEventListener('input', checkFormValid);
+        if (welcomePhoneInput) welcomePhoneInput.addEventListener('input', checkFormValid);
+        if (welcomeDescInput) welcomeDescInput.addEventListener('input', checkFormValid);
+
+        // Submit → consulting animation → create project → chat
+        if (welcomeSubmitBtn) {
+            welcomeSubmitBtn.addEventListener('click', async () => {
                 const name = (welcomeInput?.value || '').trim();
                 const phone = (welcomePhoneInput?.value || '').trim();
-                if (!name) {
-                    if (welcomeStatus) welcomeStatus.textContent = 'Escribe el nombre del proyecto.';
-                    return;
-                }
-                if (!phone) {
-                    if (welcomeStatus) welcomeStatus.textContent = 'Escribe tu número de teléfono.';
-                    return;
-                }
-                welcomePhoneBtn.disabled = true;
-                const originalLabel = welcomePhoneBtn.textContent;
-                welcomePhoneBtn.textContent = 'Creando...';
-                const created = await createProjectByName(name, {
+                const desc = (welcomeDescInput?.value || '').trim();
+
+                if (!name) { if (welcomeStatus) welcomeStatus.textContent = 'Enter a project name.'; return; }
+                if (!phone) { if (welcomeStatus) welcomeStatus.textContent = 'Enter your phone number.'; return; }
+                if (!desc) { if (welcomeStatus) welcomeStatus.textContent = 'Describe your project briefly.'; return; }
+
+                // === FUTURISTIC SOUND ENGINE (Web Audio API) ===
+                const SFX = (() => {
+                    let ctx;
+                    try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch(_) { ctx = null; }
+                    function whoosh(freq = 400, dur = 0.6) {
+                        if (!ctx) return;
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        const filter = ctx.createBiquadFilter();
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(freq * 0.5, ctx.currentTime);
+                        osc.frequency.exponentialRampToValueAtTime(freq, ctx.currentTime + dur * 0.3);
+                        osc.frequency.exponentialRampToValueAtTime(freq * 0.3, ctx.currentTime + dur);
+                        filter.type = 'lowpass';
+                        filter.frequency.setValueAtTime(2000, ctx.currentTime);
+                        filter.frequency.exponentialRampToValueAtTime(400, ctx.currentTime + dur);
+                        gain.gain.setValueAtTime(0, ctx.currentTime);
+                        gain.gain.linearRampToValueAtTime(0.12, ctx.currentTime + dur * 0.15);
+                        gain.gain.linearRampToValueAtTime(0.08, ctx.currentTime + dur * 0.5);
+                        gain.gain.linearRampToValueAtTime(0, ctx.currentTime + dur);
+                        osc.connect(filter);
+                        filter.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(ctx.currentTime);
+                        osc.stop(ctx.currentTime + dur);
+                    }
+                    function stepComplete() {
+                        if (!ctx) return;
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(880, ctx.currentTime);
+                        osc.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.1);
+                        gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                        gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.25);
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(ctx.currentTime);
+                        osc.stop(ctx.currentTime + 0.25);
+                    }
+                    function ambient() {
+                        if (!ctx) return;
+                        // Soft low hum
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(85, ctx.currentTime);
+                        gain.gain.setValueAtTime(0, ctx.currentTime);
+                        gain.gain.linearRampToValueAtTime(0.04, ctx.currentTime + 1);
+                        gain.gain.setValueAtTime(0.04, ctx.currentTime + 10);
+                        gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 12);
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(ctx.currentTime);
+                        osc.stop(ctx.currentTime + 12);
+                        return { stop: () => { try { gain.gain.cancelScheduledValues(ctx.currentTime); gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.5); osc.stop(ctx.currentTime + 0.5); } catch(_){} } };
+                    }
+                    function finalSuccess() {
+                        if (!ctx) return;
+                        [0, 0.12, 0.24].forEach((delay, i) => {
+                            const osc = ctx.createOscillator();
+                            const gain = ctx.createGain();
+                            osc.type = 'sine';
+                            osc.frequency.setValueAtTime([660, 880, 1100][i], ctx.currentTime + delay);
+                            gain.gain.setValueAtTime(0, ctx.currentTime + delay);
+                            gain.gain.linearRampToValueAtTime(0.1, ctx.currentTime + delay + 0.05);
+                            gain.gain.linearRampToValueAtTime(0, ctx.currentTime + delay + 0.4);
+                            osc.connect(gain);
+                            gain.connect(ctx.destination);
+                            osc.start(ctx.currentTime + delay);
+                            osc.stop(ctx.currentTime + delay + 0.4);
+                        });
+                    }
+                    return { whoosh, stepComplete, ambient, finalSuccess };
+                })();
+
+                // Switch to consulting animation
+                if (welcomeFormStep) welcomeFormStep.style.display = 'none';
+                if (welcomeConsultingStep) welcomeConsultingStep.style.display = 'block';
+                if (welcomeCloseBtn) welcomeCloseBtn.style.display = 'none';
+
+                // Start ambient hum
+                const ambientHum = SFX.ambient();
+                SFX.whoosh(300, 0.8);
+
+                // Animate steps progressively
+                const steps = [
+                    document.getElementById('consultStep1'),
+                    document.getElementById('consultStep2'),
+                    document.getElementById('consultStep3'),
+                    document.getElementById('consultStep4')
+                ];
+                const titles = [
+                    'Setting up your workspace...',
+                    'Analyzing project requirements...',
+                    'Matching you with the right engineer...',
+                    'Almost ready — preparing your consultation...'
+                ];
+                const titleEl = document.getElementById('consultingTitle');
+                const progressBar = document.getElementById('consultingProgressBar');
+
+                // Crear proyecto en background — skipNavigation:true evita que
+                // setWelcomeVisible(false) y switchTab() interrumpan la animación
+                const createPromise = createProjectByName(name, {
                     showAlert: false,
+                    skipNavigation: true,
                     phone,
+                    description: desc,
                     onError: (msg) => {
-                        if (welcomeStatus) welcomeStatus.textContent = msg || 'No se pudo crear el proyecto.';
+                        if (welcomeStatus) welcomeStatus.textContent = msg || 'Error creating project.';
                     }
                 });
+
+                // Set initial progress
+                if (progressBar) progressBar.style.width = '15%';
+
+                // Animate through steps — SLOWER for premium feel
+                const stepDelays = [2800, 3200, 2600]; // Time before each new step
+                for (let i = 1; i < steps.length; i++) {
+                    await new Promise(r => setTimeout(r, stepDelays[i-1]));
+                    // Sound: whoosh for transition + chime for completion
+                    SFX.whoosh(350 + i * 80, 0.5);
+                    SFX.stepComplete();
+                    // Mark previous step as done
+                    if (steps[i-1]) {
+                        steps[i-1].classList.remove('active');
+                        steps[i-1].classList.add('done');
+                        steps[i-1].querySelector('i').className = 'fas fa-check-circle';
+                    }
+                    // Activate current step
+                    if (steps[i]) {
+                        steps[i].classList.add('active');
+                        steps[i].querySelector('i').className = 'fas fa-circle-notch fa-spin';
+                    }
+                    if (titleEl) titleEl.textContent = titles[i];
+                    // Update progress bar
+                    if (progressBar) progressBar.style.width = `${25 + i * 22}%`;
+                }
+
+                // Wait for project creation to finish
+                const created = await createPromise;
+
+                // Mark last step done
+                await new Promise(r => setTimeout(r, 1200));
+                SFX.stepComplete();
+                if (steps[3]) {
+                    steps[3].classList.remove('active');
+                    steps[3].classList.add('done');
+                    steps[3].querySelector('i').className = 'fas fa-check-circle';
+                }
+                if (progressBar) progressBar.style.width = '100%';
+
+                // Stop ambient, play success
+                if (ambientHum) ambientHum.stop();
+                await new Promise(r => setTimeout(r, 400));
+                SFX.finalSuccess();
+                if (titleEl) titleEl.textContent = 'Your team is ready!';
+
+                await new Promise(r => setTimeout(r, 600));
+
                 if (created) {
                     forceWelcome = false;
                     markWelcomeDone();
-                    if (welcomeScreen) welcomeScreen.classList.add('fade-out');
-                    setTimeout(() => {
-                        setWelcomeVisible(false);
-                    }, 250);
+
+                    // Show success step — llevar primero a Projects para que el cliente
+                    // vea su proyecto, y desde ahí puede entrar al chat
+                    if (welcomeConsultingStep) welcomeConsultingStep.style.display = 'none';
+                    const successStep = document.createElement('div');
+                    successStep.id = 'welcomeSuccessStep';
+                    successStep.style.cssText = 'text-align:center; animation: fadeIn 0.4s ease;';
+                    successStep.innerHTML = `
+                        <div style="margin-bottom:18px;">
+                            <div style="width:64px; height:64px; margin:0 auto 14px; border-radius:50%; background:linear-gradient(135deg,#22c55e,#10b981); display:flex; align-items:center; justify-content:center;">
+                                <i class="fas fa-check" style="font-size:28px; color:#fff;"></i>
+                            </div>
+                            <div style="font-size:1.25rem; font-weight:700; color:#fff; margin-bottom:6px;">¡Tu proyecto está listo!</div>
+                            <div style="color:#94a3b8; font-size:0.9rem; line-height:1.5;">
+                                <strong style="color:#60a5fa;">${escapeHtml(name)}</strong> fue creado exitosamente.<br>
+                                Nuestro equipo de ingeniería fue notificado.
+                            </div>
+                        </div>
+                        <div style="background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.25); border-radius:12px; padding:16px; margin-bottom:20px; text-align:left;">
+                            <div style="font-size:0.85rem; color:#10b981; font-weight:600; margin-bottom:8px;">
+                                <i class="fas fa-folder-open" style="margin-right:6px;"></i> Siguiente paso
+                            </div>
+                            <div style="color:#cbd5e1; font-size:0.88rem; line-height:1.5;">
+                                Tu proyecto ya aparece en <strong style="color:#fff;">Mis Proyectos</strong>. Desde ahí puedes entrar al chat con nuestro equipo.
+                            </div>
+                        </div>
+                        <button id="onboardingGoToProjects" style="width:100%; padding:14px 24px; border:none; border-radius:12px; background:linear-gradient(135deg,#10b981,#059669); color:#fff; font-size:1rem; font-weight:600; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:10px;">
+                            <i class="fas fa-folder-open"></i> Ver mi proyecto
+                        </button>
+                        <button id="onboardingGoToBuild" style="width:100%; padding:11px 24px; border:1px solid rgba(99,102,241,0.4); border-radius:12px; background:rgba(99,102,241,0.12); color:#a5b4fc; font-size:0.9rem; font-weight:600; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:8px;">
+                            <i class="fas fa-comments"></i> Ir directo al chat
+                        </button>
+                    `;
+                    const welcomeCard = welcomeScreen?.querySelector('.welcome-card');
+                    if (welcomeCard) welcomeCard.appendChild(successStep);
+
+                    // Botón principal: ir a Projects
+                    const goProjectsBtn = document.getElementById('onboardingGoToProjects');
+                    if (goProjectsBtn) {
+                        goProjectsBtn.addEventListener('click', () => {
+                            if (welcomeScreen) welcomeScreen.classList.add('fade-out');
+                            setTimeout(() => {
+                                setWelcomeVisible(false);
+                                if (successStep.parentNode) successStep.parentNode.removeChild(successStep);
+                                switchTab('projects');
+                            }, 300);
+                        });
+                        goProjectsBtn.addEventListener('mouseenter', () => { goProjectsBtn.style.transform = 'translateY(-1px)'; goProjectsBtn.style.boxShadow = '0 4px 20px rgba(16,185,129,0.4)'; });
+                        goProjectsBtn.addEventListener('mouseleave', () => { goProjectsBtn.style.transform = 'none'; goProjectsBtn.style.boxShadow = 'none'; });
+                    }
+
+                    // Botón secundario: ir directo al chat (Build)
+                    const goBtn = document.getElementById('onboardingGoToBuild');
+                    if (goBtn) {
+                        goBtn.addEventListener('click', () => {
+                            if (welcomeScreen) welcomeScreen.classList.add('fade-out');
+                            setTimeout(() => {
+                                setWelcomeVisible(false);
+                                if (successStep.parentNode) successStep.parentNode.removeChild(successStep);
+                                injectOnboardingChatMessage(name);
+                                switchTab('build');
+                            }, 300);
+                        });
+                        goBtn.addEventListener('mouseenter', () => { goBtn.style.transform = 'translateY(-1px)'; });
+                        goBtn.addEventListener('mouseleave', () => { goBtn.style.transform = 'none'; });
+                    }
                 } else {
-                    welcomePhoneBtn.disabled = false;
-                    welcomePhoneBtn.textContent = originalLabel;
+                    // Error — go back to form
+                    if (welcomeFormStep) welcomeFormStep.style.display = 'block';
+                    if (welcomeConsultingStep) welcomeConsultingStep.style.display = 'none';
+                    if (welcomeCloseBtn) welcomeCloseBtn.style.display = '';
+                    if (welcomeStatus) welcomeStatus.textContent = 'Something went wrong. Please try again.';
                 }
             });
         }
-        if (welcomeInput) {
-            welcomeInput.addEventListener('input', () => {
-                const value = (welcomeInput.value || '').trim();
-                if (welcomeStartBtn) welcomeStartBtn.disabled = value.length < 1;
-                if (welcomeStatus) welcomeStatus.textContent = '';
-            });
-            welcomeInput.addEventListener('keydown', (event) => {
-                if (event.key === 'Enter') {
-                    event.preventDefault();
-                    if (welcomeStartBtn && !welcomeStartBtn.disabled) welcomeStartBtn.click();
-                }
-            });
+
+        // Only hide welcome if user already completed onboarding
+        // If forceWelcome is true (new user), keep it visible — session restore will handle showing it
+        if (!forceWelcome) {
+            setWelcomeVisible(false);
         }
-        if (welcomeStartBtn) {
-            welcomeStartBtn.addEventListener('click', async () => {
-                const value = (welcomeInput?.value || '').trim();
-                if (value.length < 1) {
-                    if (welcomeStatus) welcomeStatus.textContent = 'Escribe un nombre para el proyecto.';
-                    return;
-                }
-                if (welcomePhoneStep) {
-                    welcomePhoneStep.style.display = 'flex';
-                }
-                if (welcomePhoneInput) {
-                    welcomePhoneInput.focus();
-                }
-            });
+    }
+
+    // Inject chat message after onboarding is complete
+    function injectOnboardingChatMessage(projectName) {
+        const container = document.getElementById('humanChatContent');
+        const welcomeDiv = document.getElementById('humanChatWelcome');
+        if (welcomeDiv) welcomeDiv.style.display = 'none';
+        if (container) {
+            const msgRow = document.createElement('div');
+            msgRow.className = 'msg-row ai';
+            msgRow.innerHTML = `
+                <div class="ai-msg" style="padding:16px 20px;">
+                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+                        <div style="width:36px; height:36px; border-radius:10px; background:linear-gradient(135deg,#3b82f6,#8b5cf6); display:flex; align-items:center; justify-content:center;">
+                            <i class="fas fa-user-tie" style="color:#fff; font-size:0.85rem;"></i>
+                        </div>
+                        <div>
+                            <div style="font-weight:700; font-size:0.85rem; color:#e2e8f0;">Anmar Engineering Team</div>
+                            <div style="font-size:0.72rem; color:#64748b;">Just now</div>
+                        </div>
+                    </div>
+                    <div style="color:#cbd5e1; font-size:0.9rem; line-height:1.6;">
+                        Hi! We've reviewed your project <strong style="color:#60a5fa;">${escapeHtml(projectName)}</strong> and an engineer is being assigned to you. Tell us more about your idea — what problem does it solve and who is it for?
+                    </div>
+                </div>
+            `;
+            container.appendChild(msgRow);
         }
-        setWelcomeVisible(false);
     }
 
     window.openWelcomeNewProject = function () {
         forceWelcome = true;
-        if (welcomePhoneStep) {
-            welcomePhoneStep.style.display = 'none';
-        }
-        if (welcomeInput) {
-            welcomeInput.value = '';
-        }
-        if (welcomePhoneInput) {
-            welcomePhoneInput.value = '';
-        }
-        if (welcomeStatus) {
-            welcomeStatus.textContent = '';
-        }
-        if (welcomeStartBtn) {
-            welcomeStartBtn.disabled = true;
-        }
+        const welcomeFormStep = document.getElementById('welcomeFormStep');
+        const welcomeConsultingStep = document.getElementById('welcomeConsultingStep');
+        if (welcomeFormStep) welcomeFormStep.style.display = 'block';
+        if (welcomeConsultingStep) welcomeConsultingStep.style.display = 'none';
+        if (welcomeInput) welcomeInput.value = '';
+        if (welcomePhoneInput) welcomePhoneInput.value = '';
+        const descInput = document.getElementById('welcomeDescInput');
+        if (descInput) descInput.value = '';
+        const submitBtn = document.getElementById('welcomeSubmitBtn');
+        if (submitBtn) submitBtn.disabled = true;
+        const welcomeStatus = document.getElementById('welcomeStatus');
+        if (welcomeStatus) welcomeStatus.textContent = '';
         setWelcomeVisible(true);
-        switchTab('projects');
+        // Do NOT call switchTab here — it triggers loadProjects which hides the welcome
     }
 
     initWelcomeScreen();
@@ -998,7 +1336,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('error', (event) => {
         try {
             if (welcomeStatus) {
-                welcomeStatus.textContent = `Error interno: ${event.message || 'Revisa la consola.'}`;
+                welcomeStatus.textContent = `Internal error: ${event.message || 'Check the console.'}`;
             }
         } catch (e) {}
     });
@@ -1007,8 +1345,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!welcomeType || welcomeTyped) return;
         welcomeTyped = true;
         const rawName = (currentUser?.name || '').trim();
-        const displayName = rawName ? rawName.split(' ')[0] : 'arquitecto';
-        const text = `Bienvenido de nuevo, ${displayName} — ¿qué vamos a construir hoy?`;
+        const displayName = rawName ? rawName.split(' ')[0] : 'architect';
+        const text = `Welcome back, ${displayName} -- what can we help you with today?`;
         let idx = 0;
         welcomeType.textContent = '';
         const tick = () => {
@@ -1027,19 +1365,25 @@ document.addEventListener('DOMContentLoaded', () => {
     function setWelcomeVisible(show) {
         if (!welcomeScreen) return;
             if (show) {
+                welcomeScreen.style.display = '';
                 welcomeScreen.classList.add('visible');
                 welcomeScreen.classList.remove('fade-out');
                 document.body.classList.add('welcome-mode');
                 if (welcomeInput) {
                     welcomeInput.value = '';
-                    if (welcomeStartBtn) welcomeStartBtn.disabled = true;
                 }
                 if (welcomePhoneInput) {
                     welcomePhoneInput.value = '';
                 }
-                if (welcomePhoneStep) {
-                    welcomePhoneStep.style.display = 'none';
-                }
+                const descInput = document.getElementById('welcomeDescInput');
+                if (descInput) descInput.value = '';
+                const submitBtn = document.getElementById('welcomeSubmitBtn');
+                if (submitBtn) submitBtn.disabled = true;
+                const formStep = document.getElementById('welcomeFormStep');
+                const consultStep = document.getElementById('welcomeConsultingStep');
+                if (formStep) formStep.style.display = 'block';
+                if (consultStep) consultStep.style.display = 'none';
+                if (welcomeCloseBtn) welcomeCloseBtn.style.display = '';
                 typeWelcomeText();
             } else {
                 welcomeScreen.classList.remove('visible');
@@ -1053,7 +1397,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (engineSelector) engineSelector.value = normalized;
         if (logChange) {
             const label = normalized === 'openai_codex' ? 'Codex' : 'Antigravity';
-            addLog(`Motor activo: ${label}`, 'system');
+            addLog(`Active engine: ${label}`, 'system');
         }
     }
 
@@ -1077,7 +1421,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function clearChatMessages() {
         const messages = terminalContent.querySelectorAll('.msg-row');
         messages.forEach((node) => {
-            if (!resultSection.contains(node)) node.remove();
+            if (!resultSection || !resultSection.contains(node)) node.remove();
         });
     }
 
@@ -1119,14 +1463,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (modeStrategyBtn) {
         modeStrategyBtn.addEventListener('click', () => {
             setInteractionMode('strategy');
-            addLog("Modo Estrategia activo: briefing, refinamiento y handoff.", "system");
+            addLog("Strategy mode active: briefing, refinement, and handoff.", "system");
         });
     }
 
     if (modeEditBtn) {
         modeEditBtn.addEventListener('click', () => {
             setInteractionMode('edit');
-            addLog("Modo Edición activo: cambios directos sobre el proyecto.", "system");
+            addLog("Edit mode active: direct changes to the project.", "system");
         });
     }
 
@@ -1141,25 +1485,25 @@ document.addEventListener('DOMContentLoaded', () => {
     if (blueprintNowBtn) {
         blueprintNowBtn.addEventListener('click', async () => {
             if (interactionMode !== 'strategy') {
-                addLog("Cambia a modo Estrategia para generar el blueprint.", "warning");
+                addLog("Switch to Strategy mode to generate the blueprint.", "warning");
                 return;
             }
             if (!currentProjectName) {
-                addLog("Primero crea o selecciona un proyecto.", "warning");
+                addLog("First create or select a project.", "warning");
                 switchTab('projects');
                 return;
             }
             const seed = (briefSummaryText?.textContent || originalIdea || '').trim();
             if (!seed) {
-                addLog("Aún falta contexto para construir. Describe mejor la idea en el chat.", "warning");
+                addLog("Still missing context to build. Better describe the idea in the chat.", "warning");
                 return;
             }
             setLoading(true);
             try {
-                addLog("Generando blueprint y construyendo versión inicial...", "system");
+                addLog("Generating blueprint and building initial version...", "system");
                 await handleGeneratePlan(seed);
             } catch (e) {
-                addLog(`No se pudo construir: ${e.message}`, "error");
+                addLog(`Build failed: ${e.message}`, "error");
             } finally {
                 setLoading(false);
             }
@@ -1167,21 +1511,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Terminal & Log Logic ---
-    function escapeHtml(str) {
-        return String(str || '')
-            .replaceAll('&', '&amp;')
-            .replaceAll('<', '&lt;')
-            .replaceAll('>', '&gt;')
-            .replaceAll('"', '&quot;')
-            .replaceAll("'", '&#39;');
-    }
 
     async function hydrateProfile() {
         if (!currentUser) return;
-        if (profileNameEl) profileNameEl.textContent = currentUser.name || 'Usuario Anmar';
+        if (profileNameEl) profileNameEl.textContent = currentUser.name || 'Anmar User';
         if (profileEmailEl) profileEmailEl.textContent = currentUser.email || '';
         if (profileMemberSinceEl) {
-            profileMemberSinceEl.textContent = `Activo en Anmar`;
+            profileMemberSinceEl.textContent = `Active in Anmar`;
         }
         await checkUserCredits();
     }
@@ -1196,34 +1532,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderBriefState(meta = {}) {
+        // No-op: brief state panel removed from UI
         if (Array.isArray(meta.missing_fields)) {
             latestMissingFields = meta.missing_fields.slice();
-        }
-        if (typeof meta.brief_score === 'number') {
-            latestBriefScore = Math.max(0, Math.min(100, meta.brief_score));
-        } else {
-            const total = getRequiredFields().length || 1;
-            latestBriefScore = Math.max(0, Math.min(100, Math.round(((total - latestMissingFields.length) / total) * 100)));
-        }
-
-        const summary = (meta.memory_summary || '').trim();
-        if (briefScoreText) briefScoreText.textContent = `${latestBriefScore}%`;
-        if (briefScoreBar) briefScoreBar.style.width = `${latestBriefScore}%`;
-        if (briefMissingList) {
-            briefMissingList.textContent = latestMissingFields.length ? latestMissingFields.join(', ') : 'Ninguno';
-        }
-        if (briefSummaryText) {
-            briefSummaryText.textContent = summary || 'Esperando conversación...';
-        }
-        if (blueprintNowBtn) {
-            const canShow = !isMarketingChannel() && latestBriefScore >= 80 && interactionMode === 'strategy' && chatStage !== 'construction_mode';
-            blueprintNowBtn.style.display = canShow ? 'block' : 'none';
         }
     }
 
     function setTimelineVisible(visible) {
-        if (!statusTimeline) return;
-        statusTimeline.style.display = visible ? 'flex' : 'none';
+        // No-op: timeline removed from UI
     }
 
     function addLog(text, type = 'info') {
@@ -1374,7 +1690,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         attachmentStatus.style.display = 'block';
-        attachmentStatus.textContent = `Imagen adjunta: ${pendingImageName || 'archivo'} (se enviará con el mensaje)`;
+        attachmentStatus.textContent = `Attached image: ${pendingImageName || 'archivo'} (will be sent with the message)`;
     }
 
     function clearPendingAttachment() {
@@ -1405,7 +1721,7 @@ document.addEventListener('DOMContentLoaded', () => {
             isVoiceRecording = true;
             voiceInputBtn.style.background = 'rgba(239,68,68,0.2)';
             voiceInputBtn.style.color = '#fecaca';
-            addLog('Micrófono activo. Habla ahora...', 'system');
+            addLog('Microphone active. Speak now...', 'system');
         };
 
         speechRecognition.onresult = (event) => {
@@ -1430,7 +1746,7 @@ document.addEventListener('DOMContentLoaded', () => {
             isVoiceRecording = false;
             voiceInputBtn.style.background = 'rgba(16,185,129,0.15)';
             voiceInputBtn.style.color = '#a7f3d0';
-            addLog('No se pudo usar el micrófono en este intento.', 'warning');
+            addLog('Could not use microphone this time.', 'warning');
         };
     }
 
@@ -1440,7 +1756,7 @@ document.addEventListener('DOMContentLoaded', () => {
         addLog("Analizando requerimientos del cliente...", "system");
         await new Promise(r => setTimeout(r, 800));
 
-        addLog("Arquitectura validada. Desplegando equipo experto.", "system");
+        addLog("Architecture validated. Deploying expert team.", "system");
         await new Promise(r => setTimeout(r, 1000));
 
         // 2. Dispatch to Experts
@@ -1454,38 +1770,38 @@ document.addEventListener('DOMContentLoaded', () => {
         addLog("George: Definiendo paleta de colores (Deep Dark Mode)...", "design");
         await new Promise(r => setTimeout(r, 2500));
 
-        addLog("Ticket #4093 asignado a: Julián (Senior FullStack)", "info");
+        addLog("Ticket #4093 asignado a: Julian (Senior FullStack)", "info");
         await new Promise(r => setTimeout(r, 2000));
 
-        addLog("Julián: Inicializando entorno de desarrollo (Python/React)...", "eng");
+        addLog("Julian: Initializing development environment (Python/React)...", "eng");
         await new Promise(r => setTimeout(r, 2500));
 
         // 3. Work Simulation
         addLog("George: Aplicando principios de Glassmorphism v2.0...", "design");
         await new Promise(r => setTimeout(r, 3000));
 
-        addLog("Julián: Estructurando HTML semántico con Tailwind CDN...", "eng");
+        addLog("Julian: Structuring semantic HTML with Tailwind CDN...", "eng");
         await new Promise(r => setTimeout(r, 2500));
 
-        addLog("Julián: Inyectando scripts de interactividad...", "eng");
+        addLog("Julian: Injecting interactivity scripts...", "eng");
         await new Promise(r => setTimeout(r, 2000));
 
-        addLog("Sincronizando módulos Frontend y Backend...", "system");
+        addLog("Synchronizing Frontend and Backend modules...", "system");
         await new Promise(r => setTimeout(r, 1000));
 
         // FINAL SUCCESS MESSAGE WITH "HUMAN CRAFTSMANSHIP" UPSELL
         const successMsg = `
             <div style="border-left: 3px solid #10b981; padding-left: 10px; margin-top: 10px;">
-                <div style="color:#10b981; font-weight:bold;">✨ Previsualización Generada por Supra AI</div>
+                <div style="color:#10b981; font-weight:bold;">✨ Preview Generated by Anmar Engine</div>
                 <div style="color:#ccc; font-size:0.85rem; margin-top:5px;">
-                    Este es un prototipo funcional generado automáticamente a velocidad 10x.
+                    This is a functional prototype automatically generated at 10x speed.
                 </div>
                 <div style="background:rgba(255,255,255,0.05); padding:8px; margin-top:8px; border-radius:4px; font-size:0.8rem; color:#aaa;">
                     <i class="fas fa-hammer" style="color:#fbbf24; margin-right:5px;"></i>
-                    <strong>Siguiente Nivel:</strong> Nuestro equipo de ingenieros de élite (George & Julián) está listo para pulir, asegurar y escalar este código con artesanía humana.
+                    <strong>Next Level:</strong> Our elite engineering team (George & Julian) is ready to polish, secure, and scale this code with human craftsmanship.
                 </div>
                 <button onclick="triggerHumanRefinement()" style="background: linear-gradient(90deg, #10b981 0%, #059669 100%); border:none; color:white; padding:8px 16px; border-radius:4px; margin-top:10px; cursor:pointer; font-weight:bold; font-size:0.8rem; box-shadow:0 4px 12px rgba(16,185,129,0.3);">
-                    💎 Solicitar Refinamiento Humano
+                    💎 Request Human Refinement
                 </button>
             </div>
         `;
@@ -1499,7 +1815,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const chatBox = document.getElementById('chatInput');
             if (chatBox) chatBox.focus();
         } else {
-            const instruction = prompt("Describe qué aspectos deseas que nuestro equipo pula o mejore (ej: 'Mejorar animaciones', 'Integrar pasarela de pagos', 'Optimizar SEO'):");
+            const instruction = prompt("Describe what aspects you want our team to polish or improve (e.g: 'Improve animations', 'Integrate payment gateway', 'Optimize SEO'):");
             if (instruction) {
                 handleEditProject(instruction); // Reuses the hybrid ticket logic
             }
@@ -1508,7 +1824,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function handleMarketingChat(userInput, imageDataUrl = '') {
         if (!currentProjectName) {
-            addLog("Primero crea o selecciona un proyecto en el módulo Proyectos.", "system");
+            addLog("First create or select a project in the Projects module.", "system");
             switchTab('projects');
             return;
         }
@@ -1517,6 +1833,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 await fetch('/api/chat-memory/reset', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
                     body: JSON.stringify({
                         user_email: currentUser.email,
                         email: currentUser.email,
@@ -1531,26 +1848,28 @@ document.addEventListener('DOMContentLoaded', () => {
         conversationHistory.push({ role: "user", content: userInput });
         queueMemorySave();
 
-        showThinking("Analizando mercado y activos...");
+        showThinking("Analyzing market and assets...");
         try {
             const res = await fetch('/api/continue-marketing', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({
                     history: conversationHistory.slice(-28),
                     message: userInput,
                     image_data_url: imageDataUrl,
                     user_email: currentUser.email,
-                    project_name: getActiveProjectKey()
+                    project_name: getActiveProjectKey(),
+                    channel: activeChannel
                 })
             });
             const { data } = await safeReadJson(res);
             stopThinking();
             if (!data) {
-                throw new Error(`Servidor devolvió HTML (status ${res.status}).`);
+                throw new Error(`Server returned HTML (status ${res.status}).`);
             }
             if (!res.ok) {
-                throw new Error(data.error || 'Error de marketing');
+                throw new Error(data.error || 'Marketing error');
             }
             if (data.ai_reply) {
                 await addSystemMessage(data.ai_reply);
@@ -1576,10 +1895,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.ready_for_handoff) {
                 addSystemMessage(`
                     <div style="background:rgba(56,189,248,0.1); border:1px solid rgba(56,189,248,0.35); padding:16px; border-radius:12px; margin-top:12px;">
-                        <h3 style="color:#38bdf8; margin:0 0 8px 0;">Brief listo para el equipo de marketing</h3>
-                        <p style="color:#cbd5f5; font-size:0.85rem; margin:0 0 10px 0;">¿Quieres enviar esto al equipo humano para producción y lanzamiento?</p>
+                        <h3 style="color:#38bdf8; margin:0 0 8px 0;">Brief ready for marketing team</h3>
+                        <p style="color:#cbd5f5; font-size:0.85rem; margin:0 0 10px 0;">Do you want to send this to the human team for production and launch?</p>
                         <button onclick="window.sendMarketingBrief()" style="background:#38bdf8; color:#0f172a; border:none; padding:10px 16px; border-radius:8px; font-weight:700; cursor:pointer; width:100%;">
-                            Enviar a Marketing
+                            Send to Marketing
                         </button>
                     </div>
                 `);
@@ -1596,7 +1915,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.sendMarketingBrief = async function () {
         if (!currentProjectName || !currentUser?.email) {
-            addLog("Selecciona un proyecto antes de enviar el brief.", "warning");
+            addLog("Select a project before sending the brief.", "warning");
             return;
         }
         const okSubscription = await requireSubscription();
@@ -1604,12 +1923,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const brief = currentMarketingBrief || {};
         const assets = Array.isArray(currentMarketingAssets) ? currentMarketingAssets : [];
         const summary = [
-            `Brief Marketing: ${brief.key_message || brief.goal || 'Campaña'}`,
-            brief.audience ? `Audiencia: ${brief.audience}` : '',
-            brief.offer ? `Oferta: ${brief.offer}` : '',
-            brief.channels ? `Canales: ${Array.isArray(brief.channels) ? brief.channels.join(', ') : brief.channels}` : '',
+            `Marketing Brief: ${brief.key_message || brief.goal || 'Campaign'}`,
+            brief.audience ? `Audience: ${brief.audience}` : '',
+            brief.offer ? `Offer: ${brief.offer}` : '',
+            brief.channels ? `Channels: ${Array.isArray(brief.channels) ? brief.channels.join(', ') : brief.channels}` : '',
             brief.timeline ? `Timeline: ${brief.timeline}` : '',
-            brief.budget ? `Presupuesto: ${brief.budget}` : ''
+            brief.budget ? `Budget: ${brief.budget}` : ''
         ].filter(Boolean).join('\n');
 
         const assetLines = assets.map(item => {
@@ -1619,226 +1938,152 @@ document.addEventListener('DOMContentLoaded', () => {
             return `- ${platform}: ${hook} ${caption}`.trim();
         }).join('\n');
 
-        const payloadText = `${summary}\n\nActivos sugeridos:\n${assetLines || 'Pendientes de definición.'}`;
+        const payloadText = `${summary}\n\nSuggested assets:\n${assetLines || 'Pending definition.'}`;
         try {
             await fetch('/api/human-chat/send', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({
                     project_name: getActiveProjectKey(),
                     role: 'client',
                     content: payloadText,
-                    actor: currentUser.name || 'Cliente',
+                    actor: currentUser.name || 'Client',
                     client_email: currentUser.email || ''
                 })
             });
-            addLog("Brief enviado al equipo de marketing.", "success");
+            addLog("Brief sent to marketing team.", "success");
             if (typeof switchChatTab === 'function') switchChatTab('Human');
             pollHumanChat();
         } catch (e) {
-            addLog(`No se pudo enviar el brief: ${e.message}`, "warning");
+            addLog(`Could not send brief: ${e.message}`, "warning");
         }
     }
 
-    // --- 1. Main Chat Handler ---
-    sendBtn.addEventListener('click', async () => {
+    // --- 1. Main Chat Handler (Team Chat Only) ---
+    if (sendBtn) sendBtn.addEventListener('click', async () => {
+        if (window.__sendDebounce) return;
+        window.__sendDebounce = true;
+        setTimeout(() => { window.__sendDebounce = false; }, 1500);
+
         const text = chatInput.value.trim();
         if (!text && !pendingImageDataUrl) return;
         if (isProcessing) return;
+
+        // If no project yet, force onboarding
         if (!currentProjectName) {
-            addLog("Primero crea o selecciona un proyecto en el módulo Proyectos.", "system");
-            switchTab('projects');
-            return;
-        }
-        if (chatLockedForSubscription && !subscriptionActive) {
-            const modal = document.getElementById('pricing-modal');
-            if (modal) modal.style.display = 'flex';
-            addLog("🔒 Tu proyecto está listo. Activa un plan para continuar.", "system");
+            window.openWelcomeNewProject();
+            window.__sendDebounce = false;
             return;
         }
 
-        // --- NEW: HUMAN CHAT FLOW ---
-        if (typeof isHumanChatActive !== 'undefined' && isHumanChatActive) {
-            const okSubscription = await requireSubscription();
-            if (!okSubscription) return;
-            const messageToSend = text;
-            chatInput.value = '';
-            const msgRow = document.createElement('div');
-            msgRow.className = 'msg-row user';
-            msgRow.innerHTML = `<div class="user-msg">${messageToSend}</div>`;
-            const container = document.getElementById('humanChatContent');
-            if (container) container.appendChild(msgRow);
-            const log = document.getElementById('humanLog');
-            if (log) log.scrollTop = log.scrollHeight;
-            lastHumanChatCount++; // optimistic update
-            updateSendState();
+        // --- VALIDATE GATE: check subscription before allowing chat ---
+        const hasAccess = await requireSubscription();
+        if (!hasAccess) {
+            window.__sendDebounce = false;
+            return;
+        }
 
-            if (!window.__humanAssignedOnce) {
-                window.__humanAssignedOnce = true;
-                const startAt = Date.now();
-                const searchRow = addHumanSystemMessage(isMarketingChannel()
-                    ? 'Buscando estratega de marketing... 0s'
-                    : 'Buscando ingeniero disponible... 0s');
-                const searchEl = searchRow ? searchRow.querySelector('.ai-msg') : null;
+        // --- TEAM CHAT FLOW (always active) ---
+        const messageToSend = text;
+        chatInput.value = '';
+        resizeChatInput();
+        const msgRow = document.createElement('div');
+        msgRow.className = 'msg-row user';
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'user-msg';
+        msgDiv.textContent = messageToSend;
+        msgRow.appendChild(msgDiv);
+        const container = document.getElementById('humanChatContent');
+        if (container) container.appendChild(msgRow);
+        const log = document.getElementById('humanLog');
+        if (log) log.scrollTop = log.scrollHeight;
+        lastHumanChatCount++; // optimistic update
+        updateSendState();
+
+        if (!window.__humanAssignedOnce) {
+            window.__humanAssignedOnce = true;
+            const startAt = Date.now();
+            const channelLabels = {
+                build: { searching: 'Looking for available engineer', assigning: 'Assigning engineer and reviewing your request', done: 'Engineer found', connected: 'William is connected and ready to help you.' },
+                marketing: { searching: 'Looking for marketing strategist', assigning: 'Assigning strategist and reviewing your brief', done: 'Strategist found', connected: 'Marketing team connected and ready to help you.' },
+                organic: { searching: 'Looking for content creator', assigning: 'Assigning creator and reviewing your goals', done: 'Creator found', connected: 'Content team connected and ready to help you.' },
+                capital: { searching: 'Looking for capital advisor', assigning: 'Assigning advisor and reviewing your needs', done: 'Advisor found', connected: 'Capital team connected and ready to help you.' }
+            };
+            const labels = channelLabels[activeChannel] || channelLabels.build;
+            const searchRow = addHumanSystemMessage(`${labels.searching}... 0s`);
+            const searchEl = searchRow ? searchRow.querySelector('.ai-msg') : null;
+            if (window.__humanSearchTimer) clearInterval(window.__humanSearchTimer);
+            window.__humanSearchTimer = setInterval(() => {
+                const elapsed = Math.max(0, Math.floor((Date.now() - startAt) / 1000));
+                if (searchEl) searchEl.textContent = `${labels.searching}... ${elapsed}s`;
+            }, 1000);
+            setTimeout(() => {
+                addHumanSystemMessage(`${labels.assigning}...`);
+            }, 2600);
+            setTimeout(() => {
                 if (window.__humanSearchTimer) clearInterval(window.__humanSearchTimer);
-                window.__humanSearchTimer = setInterval(() => {
-                    const elapsed = Math.max(0, Math.floor((Date.now() - startAt) / 1000));
-                    if (searchEl) searchEl.textContent = isMarketingChannel()
-                        ? `Buscando estratega de marketing... ${elapsed}s`
-                        : `Buscando ingeniero disponible... ${elapsed}s`;
-                }, 1000);
-                setTimeout(() => {
-                    addHumanSystemMessage(isMarketingChannel()
-                        ? 'Asignando estratega y revisando tu brief...'
-                        : 'Asignando ingeniero y revisando tu solicitud...');
-                }, 2600);
-                setTimeout(() => {
-                    if (window.__humanSearchTimer) clearInterval(window.__humanSearchTimer);
-                    const total = Math.max(0, Math.floor((Date.now() - startAt) / 1000));
-                    if (searchEl) searchEl.textContent = isMarketingChannel()
-                        ? `Estratega encontrado en ${total}s.`
-                        : `Ingeniero encontrado en ${total}s.`;
-                    addHumanSystemMessage(isMarketingChannel()
-                        ? '✅ Equipo de marketing conectado y listo para ayudarte.'
-                        : '✅ William está conectado y listo para ayudarte.');
-                }, 5200);
-            }
+                const total = Math.max(0, Math.floor((Date.now() - startAt) / 1000));
+                if (searchEl) searchEl.textContent = `${labels.done} in ${total}s.`;
+                addHumanSystemMessage(`${labels.connected}`);
+            }, 5200);
+        }
 
-            try {
-                const response = await fetch('/api/human-chat/send', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
+        try {
+            const response = await fetch('/api/human-chat/send', {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
                     project_name: getActiveProjectKey(),
                     role: 'client',
                     content: messageToSend,
-                    actor: currentUser.name || 'Cliente',
-                        client_email: currentUser.email || ''
-                    })
-                });
-                if (response.status === 402) {
-                    const modal = document.getElementById('pricing-modal');
-                    if (modal) modal.style.display = 'flex';
-                    addHumanSystemMessage('🔒 Activa un plan para continuar con el chat.');
-                    return;
-                }
-                pollHumanChat();
-            } catch (e) { console.error(e); }
-            return;
-        }
-        // --- END HUMAN CHAT FLOW ---
-
-        if (isMarketingChannel()) {
-            const imageToSend = pendingImageDataUrl;
-            const imageNameToSend = pendingImageName;
-            const messageToSend = text || 'Necesito ayuda con marketing de este producto.';
-            const userBubbleText = imageToSend
-                ? `${messageToSend}\n\n[Imagen adjunta: ${imageNameToSend || 'archivo'}]`
-                : messageToSend;
-            clearPendingAttachment();
-            setLoading(true);
-            addUserMessage(userBubbleText);
-            chatInput.value = '';
-            resizeChatInput();
-            updateSendState();
-            await handleMarketingChat(messageToSend, imageToSend);
-            setLoading(false);
-            return;
-        }
-
-        const imageToSend = pendingImageDataUrl;
-        const imageNameToSend = pendingImageName;
-        const messageToSend = text || 'Analiza la imagen adjunta y ayúdame a construir esto.';
-        const userBubbleText = imageToSend
-            ? `${messageToSend}\n\n[Imagen adjunta: ${imageNameToSend || 'archivo'}]`
-            : messageToSend;
-        clearPendingAttachment();
-
-        setLoading(true);
-        addUserMessage(userBubbleText);
-        chatInput.value = '';
-        resizeChatInput();
-        updateSendState();
-
-        try {
-            if (interactionMode === 'edit') {
-                await handleEditProject(messageToSend, imageToSend);
+                    actor: currentUser.name || 'Client',
+                    client_email: currentUser.email || ''
+                })
+            });
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                addHumanSystemMessage('Error sending message. Try again.');
+                console.error('Human chat send error:', errData);
                 return;
             }
-
-            // Case 1: Initial Idea & Analysis Loop
-            // UPDATED: Include 'conversing' and 'awaiting_approval' so messages route to handleIdeaAnalysis
-            if (chatStage === 'initial' || chatStage === 'analyzing' || chatStage === 'conversing' || chatStage === 'awaiting_approval') {
-                await handleIdeaAnalysis(messageToSend, imageToSend);
-                return;
-            }
-
-            // Case 2: Blueprint Generation (Legacy/Fallback)
-            if (chatStage === 'refinement') {
-                const combinedContext = `Core Idea: ${originalIdea}. \nRefinements: ${messageToSend}`;
-                originalIdea = combinedContext;
-                await handleBlueprintGeneration(combinedContext);
-                return;
-            }
-
-            // Case 3: BUILD EXECUTION (Here is where we insert the simulation)
-            if (chatStage === 'blueprint') {
-                if (messageToSend.toLowerCase().includes('si') || messageToSend.toLowerCase().includes('yes') || messageToSend.toLowerCase().includes('build')) {
-                    chatStage = 'building';
-
-                    // TRIGGER THE TEAM SIMULATION
-                    await simulateTeamExecution();
-
-                    // REAL BACKEND CALL
-                    await handleGeneratePlan(originalIdea);
-
-                } else {
-                    addLog("Escribe 'Si' o usa el botón para confirmar la construcción.", 'warning');
-            }
-            return;
-        }
-
-            // Case 4: Editing
-            if (interactionMode === 'edit' && chatStage === 'construction_mode' && currentProjectName) {
-                await handleEditProject(messageToSend, imageToSend);
-                return;
-            }
-
-            // Default to strategic conversation if no explicit construction/edit phase is active.
-            await handleIdeaAnalysis(messageToSend, imageToSend);
-            return;
-
+            pollHumanChat();
         } catch (e) {
-            addLog(`Error: ${e.message}`, 'error');
-            chatStage = 'initial';
-        } finally {
-            setLoading(false);
+            addHumanSystemMessage('Connection error. Check your internet.');
+            console.error('Human chat send failed:', e);
         }
+        return;
     });
 
     // Chat stays open until the ticket submission step. No paywall on focus.
 
     // --- Logic: Generate Blueprint ---
     async function handleBlueprintGeneration(fullContext) {
-        showThinking("Arquitectando solución...");
+        showThinking("Architecting solution...");
         await new Promise(r => setTimeout(r, 2000));
 
         try {
             const response = await fetch('/create-blueprint', {
-                method: 'POST', body: JSON.stringify({ idea: fullContext }),
-                headers: { 'Content-Type': 'application/json' }
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ idea: fullContext })
             });
             const data = await response.json();
 
             stopThinking();
             chatStage = 'blueprint';
 
+            // Store plan for handleBuildClick fallback
+            window.lastGeneratedPlan = data.blueprint || fullContext;
+
             // Show Blueprint + Action Button (Clean Layout)
             const bpHtml = `
                 <div style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); padding:1rem; font-family:'JetBrains Mono', monospace; font-size:0.8rem; color:#ccc; max-height:300px; overflow-y:auto; border-radius:6px; margin-bottom:10px;">
                     ${data.blueprint.replace(/\n/g, '<br>')}
                 </div>
-                <div>¿Aprobamos esta arquitectura?</div>
+                <div>Approve this architecture?</div>
             `;
             addSystemMessage(bpHtml);
 
@@ -1849,13 +2094,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (buildBtn) {
                 buildBtn.onclick = async () => {
                     buildBtn.disabled = true;
-                    buildBtn.innerHTML = '<i class="fas fa-cog fa-spin"></i> Construyendo...';
+                    buildBtn.innerHTML = '<i class="fas fa-cog fa-spin"></i> Building...';
                     chatStage = 'building';
 
                     try {
                         await handleGeneratePlan(originalIdea);
 
-                        buildBtn.innerHTML = '<i class="fas fa-check-circle"></i> Construcción Completa';
+                        buildBtn.innerHTML = '<i class="fas fa-check-circle"></i> Build Complete';
                         buildBtn.style.background = '#10b981';
                         buildBtn.style.color = '#000';
 
@@ -1875,7 +2120,7 @@ document.addEventListener('DOMContentLoaded', () => {
             previewDoc.body.innerHTML = `
                 <div style="display:flex; height:100vh; align-items:center; justify-content:center; color:#555; background:#000; font-family:sans-serif; flex-direction:column; gap:10px;">
                     <div style="font-size:3rem; opacity:0.5;">🏗️</div>
-                    <div style="color:#fff;">Esperando Ejecución de Blueprint...</div>
+                    <div style="color:#fff;">Waiting for Blueprint Execution...</div>
                 </div>
             `;
 
@@ -1911,15 +2156,17 @@ document.addEventListener('DOMContentLoaded', () => {
     window.stopThinking = stopThinking; // Expose globally
 
     let conversationHistory = [];
+    // Per-channel history cache to avoid re-fetching when switching tabs
+    const channelHistoryCache = { build: null, marketing: null, organic: null, capital: null };
 
     function buildMemorySnapshot() {
         // Extract a lightweight summary from user messages for continuity.
         const userMsgs = conversationHistory.filter(m => m.role === 'user').map(m => m.content || '');
         const joined = userMsgs.join('\n').toLowerCase();
         const summary = userMsgs.find(msg => msg && msg.length > 20) || userMsgs[userMsgs.length - 1] || '';
-        const audience = userMsgs.find(msg => /usuarios?|clientes?|audiencia|target|persona/i.test(msg)) || '';
-        const business_model = userMsgs.find(msg => /suscrip|comisi|freemium|pago|fee|fit|por video|por evento|monet/i.test(msg)) || '';
-        const timeline = userMsgs.find(msg => /semana|mes|deadline|fecha|hoy|24h|48h/i.test(msg)) || '';
+        const audience = userMsgs.find(msg => /users?|customers?|audience|target|persona|usuarios?|clientes?|audiencia/i.test(msg)) || '';
+        const business_model = userMsgs.find(msg => /subscri|commission|freemium|payment|fee|fit|per video|per event|monetiz|suscrip|comisi|pago|por video|por evento|monet/i.test(msg)) || '';
+        const timeline = userMsgs.find(msg => /week|month|deadline|date|today|24h|48h|semana|mes|fecha|hoy/i.test(msg)) || '';
 
         const snapshot = {
             version: 1,
@@ -1948,6 +2195,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await fetch('/api/chat-memory', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({
                     email: currentUser.email,
                     project_name: getActiveProjectKey(),
@@ -1976,7 +2224,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         try {
-            const res = await fetch(`/api/chat-memory?email=${encodeURIComponent(currentUser.email)}&project_name=${encodeURIComponent(getActiveProjectKey())}`);
+            const res = await fetch(`/api/chat-memory?email=${encodeURIComponent(currentUser.email)}&project_name=${encodeURIComponent(getActiveProjectKey())}`, { credentials: 'include' });
             if (!res.ok) return;
             const data = await res.json();
             const memory = data.memory || {};
@@ -1993,10 +2241,18 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!rendered) {
                 const intro = document.createElement('div');
                 intro.className = 'msg-row ai';
+                const defaultMessages = {
+                    build: 'No previous build conversation. Describe your idea and let\'s start.',
+                    marketing: 'No previous marketing conversation. Describe your goal and let\'s start.',
+                    organic: 'No previous organic content conversation. Tell me about your brand and let\'s start.',
+                    capital: 'No previous investment conversation. Describe your business and capital needs.'
+                };
+                const defaultMsg = defaultMessages[activeChannel] || 'Describe tu idea y empezamos.';
+                const summaryMsg = memory.summary ? `Retomando contexto: ${escapeHtml(memory.summary)}` : defaultMsg;
                 intro.innerHTML = `
                     <div class="ai-msg">
-                        > Proyecto cargado: ${escapeHtml(currentProjectName)}<br><br>
-                        ${memory.summary ? `Retomando contexto: ${escapeHtml(memory.summary)}` : (isMarketingChannel() ? 'No hay conversación previa de marketing. Describe tu objetivo y empezamos.' : 'No hay conversación previa en este proyecto. Describe tu idea y empezamos.')}
+                        > Project loaded: ${escapeHtml(currentProjectName)}<br><br>
+                        ${summaryMsg}
                     </div>
                 `;
                 terminalContent.insertBefore(intro, resultSection);
@@ -2021,6 +2277,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!memory.business_model) inferredMissing.push('business_model');
                 if (!memory.timeline) inferredMissing.push('timeline');
                 if (!Array.isArray(memory.features) || memory.features.length < 2) inferredMissing.push('features');
+                latestMissingFields = inferredMissing;
                 renderBriefState({
                     missing_fields: inferredMissing,
                     memory_summary: memory.summary || ''
@@ -2048,9 +2305,10 @@ document.addEventListener('DOMContentLoaded', () => {
     function isResetIntent(text) {
         const t = (text || '').toLowerCase().trim();
         const phrases = [
-            'empecemos de cero', 'empezar de cero', 'empezamos de cero', 'desde cero',
-            'reset', 'reinicia', 'reiniciar', 'borrar contexto', 'borra contexto',
-            'olvida todo', 'nuevo proyecto', 'start over', 'from scratch'
+            'empecemos de cero', 'empezar de cero', 'desde cero',
+            'reset', 'reinicia', 'reiniciar', 'borrar contexto',
+            'olvida todo', 'nuevo proyecto', 'start over', 'from scratch', 'clear context',
+            'forget everything', 'new project', 'restart', 'clean slate'
         ];
         return phrases.some(p => t.includes(p));
     }
@@ -2064,10 +2322,10 @@ document.addEventListener('DOMContentLoaded', () => {
         intro.className = 'msg-row ai';
         intro.innerHTML = `
             <div class="ai-msg">
-                > Contexto reiniciado correctamente.<br><br>
+                > Context reset successfully.<br><br>
                 ${isMarketingChannel()
-                    ? 'Empecemos de cero. Define el objetivo de marketing y lo estructuramos juntos.'
-                    : 'Empecemos de cero. Describe tu nueva idea y la estructuramos juntos.'}
+                    ? 'Starting fresh. Define your marketing goal and we\'ll structure it together.'
+                    : 'Starting fresh. Describe your new idea and we\'ll structure it together.'}
             </div>
         `;
         terminalContent.insertBefore(intro, resultSection);
@@ -2107,6 +2365,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 await fetch('/api/chat-memory/reset', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
                     body: JSON.stringify({
                         user_email: currentUser.email,
                         email: currentUser.email,
@@ -2115,7 +2374,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 await resetContext();
             } catch (e) {
-                addLog("No se pudo reiniciar el contexto.", "error");
+                addLog("Could not reset the context.", "error");
             } finally {
                 setLoading(false);
             }
@@ -2129,10 +2388,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 await fetch('/api/chat-memory/reset', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
                     body: JSON.stringify({
                         user_email: currentUser.email,
                         email: currentUser.email,
-                        project_name: currentProjectName
+                        project_name: getActiveProjectKey()
                     })
                 });
             } catch (_) { }
@@ -2144,21 +2404,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (chatStage === 'initial') {
             originalIdea = userInput;
-            showThinking("Consultando Núcleo Supra...");
+            showThinking("Consulting Supra Core...");
 
             try {
                 const res = await fetch('/analyze-idea', {
-                    method: 'POST', body: JSON.stringify({ idea: userInput, image_data_url: imageDataUrl, engine: selectedEngine, user_email: currentUser.email, project_name: currentProjectName }),
-                    headers: { 'Content-Type': 'application/json' }
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ idea: userInput, image_data_url: imageDataUrl, engine: selectedEngine, user_email: currentUser.email, project_name: currentProjectName })
                 });
                 const data = await res.json();
                 if (!res.ok) {
                     if (res.status === 402 && (data.code === 'subscription_required_after_preview' || data.requires_subscription)) {
-                        openSubscriptionModal(data.error || 'Debes suscribirte para continuar después de la previsualización.');
+                        openSubscriptionModal(data.error || 'You must subscribe to continue after the preview.');
                         return;
                     }
                     if (res.status === 402) {
-                        addLog(`⛔ ${data.error || 'Créditos insuficientes.'}`, 'error');
+                        addLog(`⛔ ${data.error || 'Insufficient credits.'}`, 'error');
                         checkUserCredits();
                         return;
                     }
@@ -2175,9 +2437,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 conversationHistory.push({ role: "ai", content: data.message });
                 queueMemorySave();
+                // Update token display from response
+                if (typeof data.remaining_tokens === 'number') {
+                    updateTokenDisplay(data.remaining_tokens);
+                }
                 // NEW: Go to conversation mode first
                 chatStage = 'conversing';
-                updatePhase("PASO 1.5: DEFINICIÓN ESTRATÉGICA");
+                updatePhase("STEP 1.5: STRATEGIC DEFINITION");
                 queueMemorySave();
 
             } catch (e) {
@@ -2187,7 +2453,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         else if (chatStage === 'conversing') {
             // Normal Conversation (Robust)
-            showThinking("Escribiendo...");
+            showThinking("Writing...");
 
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 35000);
@@ -2195,6 +2461,8 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const res = await fetch('/api/continue-chat', {
                     method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
                     body: JSON.stringify({
                         history: conversationHistory,
                         message: userInput,
@@ -2203,26 +2471,29 @@ document.addEventListener('DOMContentLoaded', () => {
                         user_email: currentUser.email,
                         project_name: currentProjectName
                     }),
-                    headers: { 'Content-Type': 'application/json' },
                     signal: controller.signal
                 });
                 clearTimeout(timeoutId);
                 const data = await res.json();
                 if (!res.ok) {
                     if (res.status === 402 && (data.code === 'subscription_required_after_preview' || data.requires_subscription)) {
-                        openSubscriptionModal(data.error || 'Debes suscribirte para continuar después de la previsualización.');
+                        openSubscriptionModal(data.error || 'You must subscribe to continue after the preview.');
                         return;
                     }
                     if (res.status === 402) {
-                        addLog(`⛔ ${data.error || 'Créditos insuficientes.'}`, 'error');
+                        addLog(`${data.error || 'Insufficient credits.'}`, 'error');
+                        if (typeof data.remaining_tokens === 'number') updateTokenDisplay(data.remaining_tokens);
                         checkUserCredits();
+                        // Show pricing modal automatically
+                        const modal = document.getElementById('pricing-modal');
+                        if (modal) modal.style.display = 'block';
                         return;
                     }
                     throw new Error(data.error || `Status ${res.status}`);
                 }
                 stopThinking();
 
-                const reply = data.ai_reply || "Hubo un error al procesar tu respuesta.";
+                const reply = data.ai_reply || "There was an error processing your response.";
                 addSystemMessage(reply);
                 renderBriefState({
                     brief_score: data.brief_score,
@@ -2231,6 +2502,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 conversationHistory.push({ role: "ai", content: reply });
                 queueMemorySave();
+
+                // Update token display from response
+                if (typeof data.remaining_tokens === 'number') {
+                    updateTokenDisplay(data.remaining_tokens);
+                }
 
                 // AI SIGNALS READINESS
                 if (data.ready_to_build) {
@@ -2244,9 +2520,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 stopThinking();
                 clearTimeout(timeoutId);
                 console.error("Chat Error", e);
-                const msg = e.name === 'AbortError' ? "El servidor tardó demasiado." : "Error de conexión (" + e.message + ").";
+                const msg = e.name === 'AbortError' ? "The server took too long." : "Connection error (" + e.message + ").";
                 addLog(msg, "error");
-                addSystemMessage(`<span style="color:#ef4444; font-size:0.9rem;">⚠️ ${msg} Intenta enviar tu mensaje de nuevo.</span>`);
+                addSystemMessage(`<span style="color:#ef4444; font-size:0.9rem;">⚠️ ${msg} Please try sending your message again.</span>`);
             }
         }
         else if (chatStage === 'analyzing') {
@@ -2260,10 +2536,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // AI detected readiness. Show Confirmation Button.
         addSystemMessage(`
             <div style="background:rgba(59, 130, 246, 0.1); border:1px solid #3b82f6; padding:20px; border-radius:12px; margin-top:15px; text-align:center;">
-                <h3 style="color:#fff; margin-top:0;">🚀 Propuesta Lista para Ingeniería</h3>
-                <p style="color:#ccc; font-size:0.9rem;">He estructurado el plan técnico. ¿Enviamos esto al equipo de desarrollo?</p>
+                <h3 style="color:#fff; margin-top:0;">🚀 Proposal Ready for Engineering</h3>
+                <p style="color:#ccc; font-size:0.9rem;">I've structured the technical plan. Should we send this to the development team?</p>
                 <button id="sendTicketBtn" style="background:#3b82f6; color:#fff; border:none; padding:12px 24px; border-radius:6px; font-weight:bold; cursor:pointer; margin-top:10px; width:100%; transition:0.3s;">
-                    <i class="fas fa-paper-plane"></i> Confirmar y Enviar a Ingeniería
+                    <i class="fas fa-paper-plane"></i> Confirm and Send to Engineering
                 </button>
             </div>
         `);
@@ -2283,12 +2559,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             if (!ensureCheckoutIdentity()) {
-                if (btn) { btn.disabled = false; btn.innerHTML = 'Confirmar y Enviar a Ingeniería'; }
+                if (btn) { btn.disabled = false; btn.innerHTML = 'Confirm and Send to Engineering'; }
                 return;
             }
             const res = await fetch('/api/create-ticket', {
-                method: 'POST', body: JSON.stringify({ history: conversationHistory, user_email: currentUser.email, project_name: currentProjectName }),
-                headers: { 'Content-Type': 'application/json' }
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ history: conversationHistory, user_email: currentUser.email, project_name: currentProjectName })
             });
             const data = await res.json();
 
@@ -2298,8 +2576,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const modal = document.getElementById('pricing-modal');
                 if (modal) modal.style.display = 'flex';
                 localStorage.setItem('pending_ticket_project', currentProjectName || '');
-                setChatLocked(true, "🔒 Tu proyecto está listo. Elige un plan para enviarlo a nuestro equipo.");
-                if (btn) { btn.disabled = false; btn.innerHTML = 'Confirmar y Enviar a Ingeniería'; }
+                setChatLocked(true, "🔒 Your project is ready. Choose a plan to send it to our team.");
+                if (btn) { btn.disabled = false; btn.innerHTML = 'Confirm and Send to Engineering'; }
                 stopThinking();
                 return;
             }
@@ -2309,7 +2587,7 @@ document.addEventListener('DOMContentLoaded', () => {
             chatStage = 'construction_mode';
             setInteractionMode('edit');
             setTimelineVisible(true);
-            updatePhase("PASO 3: CONSTRUCCIÓN (EN PROGRESO)");
+            updatePhase("STEP 3: BUILD (IN PROGRESS)");
             currentTicketProjectId = data.project_id || '';
             lastStatus = '';
             lastDeployedUrl = '';
@@ -2318,8 +2596,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             addSystemMessage(`
                 <div style="background:rgba(16, 185, 129, 0.1); border:1px solid #10b981; padding:15px; border-radius:8px;">
-                    <h3 style="color:#10b981; margin:0;">✅ Ticket #${data.project_id} Creado</h3>
-                    <p style="color:#ddd; font-size:0.9rem;">El equipo ha recibido la solicitud.</p>
+                    <h3 style="color:#10b981; margin:0;">✅ Ticket #${data.project_id} Created</h3>
+                    <p style="color:#ddd; font-size:0.9rem;">The team has received your request.</p>
                     <div class="progress-container" style="background:#333; height:6px; border-radius:3px; margin-top:10px;">
                         <div id="projectProgressBar" style="width:10%; height:100%; background:#10b981; border-radius:3px; transition:width 0.5s;"></div>
                     </div>
@@ -2327,7 +2605,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             `);
 
-            showReviewOverlay('Solicitud recibida', 'Nuestro equipo está revisando tu proyecto para iniciar ejecución.', 18);
+            showReviewOverlay('Request received', 'Our team is reviewing your project to start execution.', 18);
 
             // Start Polling
             startPolling();
@@ -2350,7 +2628,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const statusUrl = currentTicketProjectId
                     ? `/api/project-status?project_id=${encodeURIComponent(currentTicketProjectId)}`
                     : '/api/project-status';
-                const res = await fetch(statusUrl);
+                const res = await fetch(statusUrl, { credentials: 'include' });
                 const status = await res.json();
                 const deployedUrl = status.deployed_url || '';
 
@@ -2367,7 +2645,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (status.status !== lastStatus) {
                     // Only notify if it's a new status
                     if (status.status !== 'received') {
-                        addLog(`📢 Actualización: ${status.message}`, 'info');
+                        addLog(`📢 Update: ${status.message}`, 'info');
                     }
 
                     // SPECIAL HANDLING: COMPLETED
@@ -2388,11 +2666,11 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div style="background:rgba(16, 185, 129, 0.15); border:1px solid #10b981; padding:20px; border-radius:12px; margin-top:20px; text-align:center;">
                                 <h2 style="color:#10b981; margin:0 0 10px 0;">🎉 ¡Felicidades!</h2>
                                 <p style="color:#eee; font-size:1rem; line-height:1.5;">
-                                    Tu visión ha sido materializada por el equipo de Anmar.<br>
-                                    <strong>Revisa la previsualización ahora en el panel derecho.</strong>
+                                    Your vision has been materialized by the Anmar team.<br>
+                                    <strong>Check the preview now in the right panel.</strong>
                                 </p>
                                 <button onclick="window.open('${deployedUrl}', '_blank')" style="background:#10b981; color:#000; border:none; padding:10px 20px; border-radius:6px; font-weight:bold; cursor:pointer; margin-top:15px; transition:0.2s;">
-                                    <i class="fas fa-external-link-alt"></i> Abrir en Nueva Pestaña
+                                    <i class="fas fa-external-link-alt"></i> Open in New Tab
                                 </button>
                             </div>
                          `);
@@ -2406,16 +2684,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (status.status === 'accepted') {
                     if (!deployedUrl) ensureBlankPreview();
-                    showReviewOverlay('Orden aceptada', 'Un especialista tomó tu proyecto y preparó el entorno de trabajo.', 25);
+                    showReviewOverlay('Order accepted', 'A specialist took your project and prepared the work environment.', 25);
                 } else if (status.status === 'pending') {
                     if (!deployedUrl) ensureBlankPreview();
-                    showReviewOverlay('En cola interna', 'Tu solicitud está en revisión inicial por nuestro equipo.', status.progress || 15);
+                    showReviewOverlay('In internal queue', 'Your request is under initial review by our team.', status.progress || 15);
                 } else if (status.status === 'developing') {
                     if (!deployedUrl) ensureBlankPreview();
-                    showReviewOverlay('Construcción en curso', 'Nuestro equipo está implementando cambios en tiempo real.', status.progress || 60);
+                    showReviewOverlay('Build in progress', 'Our team is implementing changes in real time.', status.progress || 60);
                 } else if (status.status === 'blocked') {
                     if (!deployedUrl) ensureBlankPreview();
-                    showReviewOverlay('Bloqueado temporalmente', 'Hay una dependencia pendiente. Tu equipo ya está trabajando para resolverla.', status.progress || 45);
+                    showReviewOverlay('Temporarily blocked', 'There is a pending dependency. Your team is already working to resolve it.', status.progress || 45);
                 }
 
                 // If internal team sets preview during developing, show it immediately.
@@ -2438,10 +2716,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     // ConfirmBuild removed (legacy)
     // Support Enter key (Shift+Enter = newline)
-    chatInput.addEventListener('keydown', (e) => {
+    if (chatInput) chatInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
             e.preventDefault();
-            sendBtn.click();
+            if (sendBtn) sendBtn.click();
         }
     });
 
@@ -2460,11 +2738,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Logic: Generate Plan & Build ---
     async function handleGeneratePlan(idea) {
-        addLog(`Iniciando secuencia de construcción...`, 'info');
+        addLog(`Initializing build sequence...`, 'info');
 
         const response = await fetch('/generate-plan', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify({ idea: idea })
         });
 
@@ -2490,17 +2769,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function performBuild() {
-        showReviewOverlay('Construcción inicial', 'Nuestro equipo está creando tu primera previsualización.', 35);
-        showThinking("Escribiendo código backend (Flask)...");
+        showReviewOverlay('Initial build', 'Our team is creating your first preview.', 35);
+        showThinking("Writing backend code (Flask)...");
         const theme = 'Modern Startup';
 
         // Simulate steps
         await new Promise(r => setTimeout(r, 1000));
-        showThinking("Diseñando interfaz (Tailwind)...");
+        showThinking("Designing interface (Tailwind)...");
 
         const response = await fetch('/create-project', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify({
                 project_name: currentProjectName,
                 plan: currentPlanContent,
@@ -2522,7 +2802,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 userTokensEl.style.transform = 'scale(1.2)';
                 setTimeout(() => userTokensEl.style.transform = 'scale(1)', 300);
             }
-            throw new Error("Pago requerido para continuar.");
+            throw new Error("Payment required to continue.");
         }
 
         if (data.error) throw new Error(data.error);
@@ -2535,20 +2815,21 @@ document.addEventListener('DOMContentLoaded', () => {
         currentTicketProjectId = currentTicketProjectId || currentProjectName;
         lastDeployedUrl = '';
         ensureBlankPreview();
-        showReviewOverlay('En revisión interna', 'Tu solicitud fue enviada. Verás la preview aquí cuando el equipo interno la publique.', 18);
+        showReviewOverlay('Under internal review', 'Your request was sent. You\'ll see the preview here when the internal team publishes it.', 18);
         startPolling();
     }
 
     // --- Logic: Edit Project ---
     // --- Logic: Edit Project & Hybrid Ticket ---
     async function handleEditProject(instruction, imageDataUrl = '') {
-        showReviewOverlay('Solicitud en revisión', 'Nuestro equipo está evaluando los cambios solicitados.', 42);
+        showReviewOverlay('Request under review', 'Our team is evaluating the requested changes.', 42);
         showThinking(`IA intentando aplicar: "${instruction}"...`);
 
         try {
             const response = await fetch('/edit-project', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({
                     project_name: currentProjectName,
                     instruction: instruction,
@@ -2562,11 +2843,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!response.ok) {
                 if (response.status === 402 && (data.code === 'subscription_required_after_preview' || data.requires_subscription)) {
-                    openSubscriptionModal(data.error || 'Debes suscribirte para continuar después de la previsualización.');
+                    openSubscriptionModal(data.error || 'You must subscribe to continue after the preview.');
                     return;
                 }
                 if (response.status === 402) {
-                    addLog(`⛔ ${data.error || 'Créditos insuficientes para editar.'}`, 'error');
+                    addLog(`⛔ ${data.error || 'Insufficient credits to edit.'}`, 'error');
                     checkUserCredits();
                     return;
                 }
@@ -2579,7 +2860,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (data.engine_used) {
                 const label = data.engine_used === 'openai_codex' ? 'Codex' : 'Antigravity';
-                addLog(`Motor usado en edición: ${label}`, 'info');
+                addLog(`Engine used in edit: ${label}`, 'info');
             }
             loadProjectPreview(currentProjectName);
             addLog(`Cambio aplicado por IA en: ${(data.changed_files || []).join(', ') || 'archivo principal'}.`, 'success');
@@ -2588,20 +2869,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 checkUserCredits();
             }
             conversationHistory.push({ role: "user", content: instruction });
-            conversationHistory.push({ role: "ai", content: data.summary || "Cambio aplicado en el proyecto." });
+            conversationHistory.push({ role: "ai", content: data.summary || "Change applied to the project." });
             queueMemorySave();
 
         } catch (e) {
             addLog(`La IA tuvo problemas: ${e.message}`, 'warning');
-            await addSystemMessage("No pude aplicar ese cambio de forma segura. Reformúlalo con más detalle (archivo, sección y resultado esperado).");
+            await addSystemMessage("I couldn't safely apply that change. Reformulate it with more detail (file, section, and expected result).");
         }
 
         stopThinking();
 
-        const wantsHumanSupport = /(soporte humano|equipo humano|maria|ticket|escalar|revisión humana|human support)/i.test(instruction || "");
+        const wantsHumanSupport = /(human support|human team|maria|ticket|escalate|human review|human support)/i.test(instruction || "");
         if (wantsHumanSupport) {
-            showReviewOverlay('Escalado a equipo interno', 'Tu solicitud fue enviada a revisión humana especializada.', 55);
-            addLog("Solicitando soporte humano premium...", "system");
+            showReviewOverlay('Escalated to internal team', 'Your request has been sent to specialized human review.', 55);
+            addLog("Requesting premium human support...", "system");
             submitTicketInBackground(instruction);
         }
     }
@@ -2611,6 +2892,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch('/api/submit-ticket', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({
                     user_email: currentUser.email,
                     project_name: currentProjectName,
@@ -2620,18 +2902,18 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
             if (!res.ok) {
                 if (res.status === 402) {
-                    addLog(`⛔ ${data.error || 'Créditos insuficientes para soporte humano.'}`, 'warning');
+                    addLog(`⛔ ${data.error || 'Insufficient credits for human support.'}`, 'warning');
                     checkUserCredits();
                     return;
                 }
                 throw new Error(data.error || `Status ${res.status}`);
             }
             if (data.ticket_id) {
-                addLog(`Ticket #${data.ticket_id} escalado al equipo experto (${data.assigned_to}) para revisión de calidad.`, 'system');
+                addLog(`Ticket #${data.ticket_id} escalated to expert team (${data.assigned_to}) for quality review.`, 'system');
             }
         } catch (e) {
             console.error("Ticket fallback error", e);
-            addLog(`No se pudo escalar a soporte humano: ${e.message}`, 'warning');
+            addLog(`Could not escalate to human support: ${e.message}`, 'warning');
         }
     }
 
@@ -2654,7 +2936,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function showReviewOverlay(stateLabel = 'En revisión', detail = 'Nuestro equipo está trabajando en tu proyecto.', progress = 35) {
+    function showReviewOverlay(stateLabel = 'Under review', detail = 'Our team is working on your project.', progress = 35) {
         if (!emptyState) return;
         previewLockedByReview = true;
         clearReviewOverlayTimer();
@@ -2701,21 +2983,21 @@ document.addEventListener('DOMContentLoaded', () => {
             if (emptyState) emptyState.style.display = 'none';
         });
         livePreviewFrame.addEventListener('error', () => {
-            setPreviewOverlay('No se pudo cargar la previsualización. Verifica que el proyecto exista y vuelve a intentar.', 'fa-triangle-exclamation');
+            setPreviewOverlay('Could not load preview. Verify that the project exists and try again.', 'fa-triangle-exclamation');
         });
     }
 
     function loadProjectPreview(name) {
         if (!name) {
-            setPreviewOverlay('Selecciona un proyecto para ver su previsualización.', 'fa-folder-open');
+            setPreviewOverlay('Select a project to view its preview.', 'fa-folder-open');
             return;
         }
         if (currentTicketProjectId && !lastDeployedUrl && (chatStage === 'construction_mode' || chatStage === 'building')) {
             ensureBlankPreview();
-            showReviewOverlay('En revisión interna', 'Nuestro equipo está trabajando en tu proyecto y pronto enviará la previsualización.', 20);
+            showReviewOverlay('Under internal review', 'Our team is working on your project and will soon send the preview.', 20);
             return;
         }
-        setPreviewOverlay(`Cargando previsualización de ${name}...`, 'fa-spinner');
+        setPreviewOverlay(`Loading preview for ${name}...`, 'fa-spinner');
         const url = `/projects/${name}/index.html?v=${Date.now()}`; // cache-bust
         previewLockedByReview = false;
         livePreviewFrame.src = url;
@@ -2727,7 +3009,7 @@ document.addEventListener('DOMContentLoaded', () => {
         livePreviewFrame.style.display = 'block';
         if (previewLoadTimer) clearTimeout(previewLoadTimer);
         previewLoadTimer = setTimeout(() => {
-            setPreviewOverlay(`No llegó respuesta de preview para "${name}". Revisa que el backend esté activo en :5001.`, 'fa-plug-circle-xmark');
+            setPreviewOverlay(`No preview response for "${name}". Check that the backend is active on :5001.`, 'fa-plug-circle-xmark');
         }, 7000);
     }
 
@@ -2764,7 +3046,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const file = e.target.files && e.target.files[0];
             if (!file) return;
             if (!file.type || !file.type.startsWith('image/')) {
-                addLog('Solo se permiten imágenes.', 'warning');
+                addLog('Only images are allowed.', 'warning');
                 clearPendingAttachment();
                 return;
             }
@@ -2780,7 +3062,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateAttachmentStatus();
                 updateSendState();
             } catch (err) {
-                addLog(`No se pudo cargar la imagen: ${err.message}`, 'error');
+                addLog(`Could not load the image: ${err.message}`, 'error');
                 clearPendingAttachment();
                 updateSendState();
             }
@@ -2826,16 +3108,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function setLoading(bool) {
         isProcessing = bool;
-        sendBtn.disabled = bool;
-        chatInput.disabled = bool;
+        if (sendBtn) sendBtn.disabled = bool;
+        if (chatInput) chatInput.disabled = bool;
         if (chatTypingIndicator) {
             chatTypingIndicator.classList.toggle('active', bool);
         }
         if (bool) {
-            sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            if (sendBtn) sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         } else {
-            sendBtn.innerHTML = '<i class="fas fa-arrow-up"></i>';
-            chatInput.focus();
+            if (sendBtn) sendBtn.innerHTML = '<i class="fas fa-arrow-up"></i>';
+            if (chatInput) chatInput.focus();
         }
         updateSendState();
     }
@@ -2848,7 +3130,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     window.createNewProject = async function () {
-        const projectName = prompt("Nombre del nuevo proyecto:");
+        const projectName = prompt("New project name:");
         if (!projectName || !projectName.trim()) return;
         await createProjectByName(projectName.trim());
     }
@@ -2857,16 +3139,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const showAlert = options.showAlert !== false;
         const onError = typeof options.onError === 'function' ? options.onError : null;
         const phone = (options.phone || '').trim();
+        const description = (options.description || '').trim();
+        // skipNavigation: true → no cierra la pantalla de onboarding ni cambia de tab
+        // (lo maneja el caller para no interrumpir animaciones en curso)
+        const skipNavigation = !!options.skipNavigation;
         try {
+            const payload = { project_name: name, user_email: currentUser?.email || '', phone };
+            if (description) payload.description = description;
             const res = await fetch('/api/create-empty-project', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ project_name: name, user_email: currentUser?.email || '', phone })
+                credentials: 'include',
+                body: JSON.stringify(payload)
             });
             const data = await res.json();
             if (!res.ok) {
-                const msg = data.error || 'No se pudo crear el proyecto.';
-                if (showAlert) alert(msg);
+                const msg = data.error || 'Could not create the project.';
+                if (showAlert) addLog(msg, 'error');
                 if (onError) onError(msg);
                 return false;
             }
@@ -2874,9 +3163,9 @@ document.addEventListener('DOMContentLoaded', () => {
             currentTicketProjectId = data.project_id || '';
             chatStage = 'initial';
             markWelcomeDone();
-            setWelcomeVisible(false);
+            if (!skipNavigation) setWelcomeVisible(false);
 
-            // Reset and trigger human chat polling 
+            // Reset and trigger human chat polling
             lastHumanChatCount = 0;
             if (humanChatInterval) clearInterval(humanChatInterval);
             humanChatInterval = setInterval(pollHumanChat, 3000);
@@ -2893,15 +3182,14 @@ document.addEventListener('DOMContentLoaded', () => {
             renderBriefState({ missing_fields: latestMissingFields, memory_summary: '' });
             await loadChatMemory();
             loadProjectPreview(currentProjectName);
-            addLog(`Proyecto creado: ${currentProjectName}. Inicia la conversación estratégica en el chat.`, 'system');
+            addLog(`Project created: ${currentProjectName}. Start strategic conversation in chat.`, 'system');
             await loadProjects();
-            switchTab('build');
-            updatePaywallBanner();
+            if (!skipNavigation) switchTab('build');
             return true;
         } catch (e) {
             console.error(e);
-            const msg = 'Error de conexión creando proyecto.';
-            if (showAlert) alert(msg);
+            const msg = 'Connection error creating project.';
+            if (showAlert) addLog(msg, 'error');
             if (onError) onError(msg);
             return false;
         }
@@ -2918,17 +3206,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     window.deleteAllProjects = async function () {
-        const ok = confirm("¿Eliminar TODOS los proyectos? Esta acción no se puede deshacer.");
+        const ok = confirm("Delete ALL projects? This action cannot be undone.");
         if (!ok) return;
 
         try {
             const res = await fetch('/api/delete-all-projects', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({})
             });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Error al borrar proyectos');
+            if (!res.ok) throw new Error(data.error || 'Error deleting projects');
 
             currentProjectName = '';
             persistCurrentProject();
@@ -2942,11 +3231,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const emptyState = document.getElementById('emptyState');
             if (iframe) iframe.src = 'about:blank';
             if (emptyState) emptyState.style.display = 'flex';
-            addLog(`Se eliminaron ${data.deleted || 0} proyectos.`, 'warning');
+            addLog(`${data.deleted || 0} projects deleted.`, 'warning');
             await loadProjects();
         } catch (e) {
             console.error(e);
-            alert('No se pudieron eliminar todos los proyectos.');
+            addLog('Could not delete all projects.', 'error');
         }
     }
 
@@ -2955,11 +3244,11 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadProjects() {
         try {
             const emailQuery = currentUser?.email ? `?email=${encodeURIComponent(currentUser.email)}` : '';
-            const response = await fetch(`/list-projects${emailQuery}`); // FIXED PORT
+            const response = await fetch(`/list-projects${emailQuery}`, { credentials: 'include' }); // FIXED PORT
             const projects = await response.json();
             let projectMeta = {};
             try {
-                const metaRes = await fetch(`/api/projects-meta${emailQuery}`);
+                const metaRes = await fetch(`/api/projects-meta${emailQuery}`, { credentials: 'include' });
                 projectMeta = await metaRes.json();
             } catch (e) {
                 projectMeta = {};
@@ -2971,24 +3260,23 @@ document.addEventListener('DOMContentLoaded', () => {
             projectLimitReached = false;
 
             if (projects.length === 0) {
-                if (forceWelcome) {
-                    setWelcomeVisible(true);
-                } else {
-                    setWelcomeVisible(false);
-                }
+                // No projects — force onboarding
+                forceWelcome = true;
+                // Clear welcome_done so it shows on reload too
+                try { localStorage.removeItem(getWelcomeDismissKey()); } catch(_){}
+                setWelcomeVisible(true);
                 projectList.innerHTML = '<li style="padding:0.5rem">No projects found.</li>';
                 if (projectsFolderGrid) {
                     projectsFolderGrid.innerHTML = `
                         <div style="padding:20px; border:1px dashed rgba(255,255,255,0.2); border-radius:10px; color:rgba(255,255,255,0.7);">
-                            Aun no hay proyectos generados. Presiona "Nuevo Proyecto" para empezar.
+                            No projects created yet. Complete the form above to get started.
                         </div>
                     `;
                 }
                 if (limitHint) limitHint.style.display = 'none';
                 return;
             }
-            if (projects.length > 0) {
-                forceWelcome = false;
+            if (projects.length > 0 && !forceWelcome) {
                 markWelcomeDone();
                 setWelcomeVisible(false);
             }
@@ -3003,7 +3291,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Project Name Clickable Area
                 const nameSpan = document.createElement('span');
-                nameSpan.innerHTML = `<i class="fas fa-folder" style="margin-right:8px; color:#3b82f6;"></i> ${project} ${phoneLabel ? `<span style="margin-left:8px; font-size:0.75rem; opacity:0.7;">${phoneLabel}</span>` : ''}`;
+                nameSpan.innerHTML = `<i class="fas fa-folder" style="margin-right:8px; color:#3b82f6;"></i> ${escapeHtml(project)} ${phoneLabel ? `<span style="margin-left:8px; font-size:0.75rem; opacity:0.7;">${escapeHtml(phoneLabel)}</span>` : ''}`;
                 nameSpan.style.flexGrow = '1';
                 nameSpan.onclick = async () => {
                     currentProjectName = project;
@@ -3021,8 +3309,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     const iframe = document.getElementById('livePreviewFrame');
                     if (iframe) iframe.src = previewUrl;
 
-                    document.getElementById('projectsModal').style.display = 'none';
-                    addLog(`Proyecto cargado: ${project}`, 'info');
+                    const projectsModal = document.getElementById('projectsModal');
+                    if (projectsModal) projectsModal.style.display = 'none';
+                    addLog(`Project loaded: ${project}`, 'info');
                     if (typeof resultSection !== 'undefined') resultSection.style.display = 'none';
                 };
 
@@ -3035,27 +3324,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 deleteBtn.onclick = async (e) => {
                     e.stopPropagation(); // Prevent opening the project
-                    if (confirm(`¿Estás seguro de ELIMINAR "${project}"? Esta acción es irreversible.`)) {
+                    if (confirm(`Are you sure you want to DELETE "${project}"? This action is irreversible.`)) {
                         try {
                             const res = await fetch('/delete-project', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
+                                credentials: 'include',
                                 body: JSON.stringify({ project_name: project, user_email: currentUser?.email || '' })
                             });
                             if (res.ok) {
                                 li.remove();
-                                addLog(`Proyecto eliminado: ${project}`, 'warning');
+                                addLog(`Project deleted: ${project}`, 'warning');
                                 if (currentProjectName === project) {
                                     document.getElementById('livePreviewFrame').src = 'about:blank';
                                     currentProjectName = '';
                                     persistCurrentProject();
                                 }
                             } else {
-                                alert('Error al eliminar');
+                                addLog('Error deleting project.', 'error');
                             }
                         } catch (err) {
                             console.error(err);
-                            alert('Error de conexión');
+                            addLog('Connection error when deleting.', 'error');
                         }
                     }
                 };
@@ -3074,7 +3364,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 ${escapeHtml(project)}
                             </strong>
                         </div>
-                        <div style="opacity:0.65; font-size:0.8rem; overflow-wrap:anywhere;">${phoneLabel || 'Sin teléfono registrado'} · Abrir previsualización y continuar ajustes.</div>
+                        <div style="opacity:0.65; font-size:0.8rem; overflow-wrap:anywhere;">${phoneLabel || 'No phone registered'} · Open preview and continue adjustments.</div>
                     `;
                     card.onmouseenter = () => {
                         card.style.transform = 'translateY(-1px)';
@@ -3091,7 +3381,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         await loadChatMemory();
                         loadProjectPreview(project);
                         switchTab('build');
-                        addLog(`Proyecto cargado: ${project}. Puedes continuar briefing o enviar ajustes de construcción.`, 'info');
+                        addLog(`Project loaded: ${project}. You can continue briefing or send build adjustments.`, 'info');
                     };
 
                     const deleteCardBtn = document.createElement('button');
@@ -3101,12 +3391,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     deleteCardBtn.style.cssText = 'position:absolute; top:8px; right:8px; width:28px; height:28px; border-radius:8px; border:1px solid rgba(239,68,68,0.45); background:rgba(239,68,68,0.18); color:#fecaca; cursor:pointer; z-index:2;';
                     deleteCardBtn.onclick = async (e) => {
                         e.stopPropagation();
-                        const okDelete = confirm(`¿Eliminar el proyecto "${project}"? Esta acción no se puede deshacer.`);
+                        const okDelete = confirm(`Delete the project "${project}"? This action cannot be undone.`);
                         if (!okDelete) return;
                         try {
                             const res = await fetch('/delete-project', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
+                                credentials: 'include',
                                 body: JSON.stringify({ project_name: project, user_email: currentUser?.email || '' })
                             });
                             const payload = await res.json().catch(() => ({}));
@@ -3121,10 +3412,10 @@ document.addEventListener('DOMContentLoaded', () => {
                                 if (iframe) iframe.src = 'about:blank';
                                 if (emptyState) emptyState.style.display = 'flex';
                             }
-                            addLog(`Proyecto eliminado: ${project}`, 'warning');
+                            addLog(`Project deleted: ${project}`, 'warning');
                             await loadProjects();
                         } catch (err) {
-                            addLog(`No se pudo eliminar ${project}: ${err.message}`, 'error');
+                            addLog(`Could not delete ${project}: ${err.message}`, 'error');
                         }
                     };
                     card.appendChild(deleteCardBtn);
@@ -3153,37 +3444,69 @@ document.addEventListener('DOMContentLoaded', () => {
     window.switchTab = function (tab) {
         // 1. Top Tabs
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-        const btn = document.getElementById(`tab-${tab}`);
-        if (btn) btn.classList.add('active');
+        const tabBtn = document.getElementById(`tab-${tab}`);
+        if (tabBtn) tabBtn.classList.add('active');
 
         // 2. Sidebar Icons
         document.querySelectorAll('.nav-icon').forEach(icon => icon.classList.remove('active'));
+        // 3. Mobile Bottom Nav
+        document.querySelectorAll('.mobile-bottom-nav .nav-item').forEach(n => n.classList.remove('active'));
         const navIcon = document.getElementById(`nav-${tab}`);
         if (navIcon) navIcon.classList.add('active');
 
-        // 3. Sections
-        document.querySelectorAll('.section-view').forEach(sec => sec.classList.remove('active'));
-        const sectionId = tab === 'market' ? 'section-build' : `section-${tab}`;
-        const sec = document.getElementById(sectionId);
-        if (sec) sec.classList.add('active');
+        // 4. Sections — simple display toggle via .active class (CSS handles display:none/flex)
+        const sectionId = (tab === 'market' || tab === 'growth' || tab === 'capital') ? 'section-build' : `section-${tab}`;
+        const targetSec = document.getElementById(sectionId);
+        if (targetSec) {
+            document.querySelectorAll('.section-view').forEach(s => {
+                s.classList.remove('active');
+            });
+            targetSec.classList.add('active');
+        }
 
-        // Feedback
-        if (tab === 'build') {
-            setActiveChannel('build');
-            addLog("Módulo de Ingeniería Activo.", "system");
-            if (currentProjectName) loadChatMemory();
+        // 5. Channel switching (only for chat-related tabs)
+        const tabChannelMap = { build: 'build', market: 'marketing', growth: 'organic', capital: 'capital' };
+        const newChannel = tabChannelMap[tab];
+
+        if (newChannel && newChannel !== activeChannel) {
+            // Save current channel's history to cache before switching
+            if (activeChannel && conversationHistory.length) {
+                channelHistoryCache[activeChannel] = {
+                    history: [...conversationHistory],
+                    stage: chatStage,
+                    missingFields: [...latestMissingFields],
+                    briefScore: latestBriefScore
+                };
+            }
+
+            setActiveChannel(newChannel);
+
+            if (currentProjectName) {
+                // Restore from cache if available, otherwise fetch from backend
+                const cached = channelHistoryCache[newChannel];
+                if (cached && cached.history.length) {
+                    conversationHistory = [...cached.history];
+                    chatStage = cached.stage || 'initial';
+                    latestMissingFields = cached.missingFields || getRequiredFields().slice();
+                    latestBriefScore = cached.briefScore || 0;
+                    clearChatMessages();
+                    renderConversationHistory(conversationHistory);
+                    renderBriefState({ missing_fields: latestMissingFields });
+                } else {
+                    loadChatMemory();
+                }
+            } else {
+                // No project loaded — clear chat and show channel welcome
+                clearChatMessages();
+                conversationHistory = [];
+            }
+        } else if (newChannel && newChannel === activeChannel) {
+            // Same channel — just make sure the section is visible, don't touch chat
         }
-        if (tab === 'market') {
-            setActiveChannel('marketing');
-            addLog("Módulo de Marketing Activo.", "system");
-            if (currentProjectName) loadChatMemory();
-        }
-        if (tab === 'growth') addLog("Módulo de Financiación Activo.", "system");
+
         if (tab === 'projects') {
-            addLog("Módulo de Proyectos Activo.", "system");
             loadProjects();
         }
-        if (tab === 'profile') addLog("Módulo de Perfil Activo.", "system");
     }
 
     // Session restore: reopen last project and chat memory when possible.
@@ -3192,14 +3515,14 @@ document.addEventListener('DOMContentLoaded', () => {
     (async () => {
         if (forceWelcome) {
             setWelcomeVisible(true);
-            switchTab('projects');
+            // Don't switchTab here — it calls loadProjects() which can hide the welcome
             return;
         }
         const lastProject = localStorage.getItem(getLastProjectStorageKey()) || '';
         if (!lastProject) {
             try {
                 const emailQuery = currentUser?.email ? `?email=${encodeURIComponent(currentUser.email)}` : '';
-                const response = await fetch(`/list-projects${emailQuery}`);
+                const response = await fetch(`/list-projects${emailQuery}`, { credentials: 'include' });
                 const projects = await response.json();
                 if (Array.isArray(projects) && projects.length === 1) {
                     currentProjectName = projects[0];
@@ -3211,7 +3534,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     pollHumanChat();
                     setWelcomeVisible(false);
                     switchTab('build');
-                    addLog(`Proyecto restaurado: ${currentProjectName}`, 'system');
+                    addLog(`Project restored: ${currentProjectName}`, 'system');
                     return;
                 }
             } catch (e) { }
@@ -3220,7 +3543,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         try {
             const emailQuery = currentUser?.email ? `?email=${encodeURIComponent(currentUser.email)}` : '';
-            const response = await fetch(`/list-projects${emailQuery}`);
+            const response = await fetch(`/list-projects${emailQuery}`, { credentials: 'include' });
             const projects = await response.json();
             if (Array.isArray(projects) && projects.includes(lastProject)) {
                 currentProjectName = lastProject;
@@ -3232,7 +3555,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 pollHumanChat();
                 setWelcomeVisible(false);
                 switchTab('build');
-                addLog(`Proyecto restaurado: ${lastProject}`, 'system');
+                addLog(`Project restored: ${lastProject}`, 'system');
                 return;
             }
         } catch (e) {
@@ -3249,7 +3572,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const goal = prompt("🎯 Define el Obejtivo de la Campaña (Ej: 'Ventas flash', 'Viralidad en Gen Z', 'Posicionamiento B2B'):");
+        const goal = prompt("🎯 Define el Obejtivo de la Campaign (Ej: 'Ventas flash', 'Viralidad en Gen Z', 'Posicionamiento B2B'):");
         if (!goal) return;
 
         showThinking("Analizando Mercado con Supra Marketing Core...");
@@ -3258,13 +3581,14 @@ document.addEventListener('DOMContentLoaded', () => {
         await new Promise(r => setTimeout(r, 1500));
         addLog("Analizando audiencia objetivo y competidores...", "system");
         await new Promise(r => setTimeout(r, 2000));
-        addLog("Diseñando hooks psicológicos de alta conversión...", "design");
+        addLog("Designing high-conversion psychological hooks...", "design");
         await new Promise(r => setTimeout(r, 2000));
 
         try {
             const res = await fetch('/api/generate-marketing', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({ project_name: currentProjectName, focus: goal })
             });
             const campaign = await res.json();
@@ -3296,10 +3620,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:10px;">
                     <div style="font-size:0.8rem; color:#aaa; margin-bottom:10px;">
                         <i class="fas fa-magic"></i> <strong>Activos Base Listos.</strong>
-                        Nuestros directores creativos están listos para rodar, editar y lanzar esta campaña.
+                        Our creative directors are ready to shoot, edit, and launch this campaign.
                     </div>
-                    <button onclick="submitTicketInBackground('Producción Campaña: ${goal}')" style="background:#f59e0b; color:#000; border:none; padding:8px 16px; border-radius:4px; font-weight:bold; cursor:pointer; width:100%;">
-                        🎬 Solicitar Producción Humana
+                    <button onclick="submitTicketInBackground('Production Campaign: ${goal}')" style="background:#f59e0b; color:#000; border:none; padding:8px 16px; border-radius:4px; font-weight:bold; cursor:pointer; width:100%;">
+                        🎬 Request Human Production
                     </button>
                 </div>
             </div>
@@ -3308,42 +3632,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (e) {
             stopThinking();
-            addLog("Error generando campaña: " + e.message, "error");
+            addLog("Error generating campaign: " + e.message, "error");
         }
     }
     /* --- BUILD FLOW & PREMIUM LOGIC --- */
 
     window.handleBuildClick = async function () {
-        // alert("Activando maquinaria..."); // Debug - Commented out to avoid click fatigue
         try {
             const plan = window.lastGeneratedPlan;
             if (!plan) {
-                alert("Error: No hay plano para construir. Intenta generar de nuevo.");
+                addLog("No plan to build. Try generating again.", "error");
                 return;
             }
 
-            // AGENCY Mode Check: If tokens > 1000, bypass check
-            const tokensEl = document.getElementById('userTokens');
-            const tokenText = tokensEl ? tokensEl.innerText : "";
-            const isAgency = tokenText.includes("∞") || localStorage.getItem('anmar_premium') === 'true';
-
-            if (isAgency || true) { // Force true for now as user has credits
+            // Proceed with build (tokens checked server-side)
+            {
                 if (typeof window.startBuildProcess !== 'function') {
-                    alert("CRITICAL ERROR: startBuildProcess is not loaded. Please refresh.");
+                    addLog("Critical error: build module not loaded. Reload the page.", "error");
                     return;
                 }
 
                 try {
                     await window.startBuildProcess(plan);
                 } catch (buildErr) {
-                    alert("Error ejecutando build: " + buildErr.message);
+                    addLog("Error executing build: " + buildErr.message, "error");
                     console.error(buildErr);
                 }
-            } else {
-                // ... legacy modal logic
             }
         } catch (e) {
-            alert("Handler Error: " + e.message);
+            addLog("Error en el handler: " + e.message, "error");
             console.error("Build Handler Error", e);
         }
     }
@@ -3358,13 +3675,13 @@ document.addEventListener('DOMContentLoaded', () => {
     window.startBuildProcess = async function (plan) {
         // alert("Building..."); // Debug
         // 1. Update Phase Indicator
-        updatePhase("PASO 3: CONSTRUCCIÓN Y DESPLIEGUE");
+        updatePhase("STEP 3: BUILD AND DEPLOYMENT");
         setTimelineVisible(true);
 
         // 2. Start Timeline Animation sequence
         // Step 0: Network
         updateTimeline(0);
-        addLog("[ANMAR // CORE] Iniciando secuencia de construcción...", "system");
+        addLog("[ANMAR // CORE] Initializing build sequence...", "system");
 
         // Step 1: Engineer (Simulated Delay)
         setTimeout(() => {
@@ -3384,11 +3701,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch('/create-project', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({
                     project_name: (plan.project_name || "project_" + Date.now()).toLowerCase().replace(/\s+/g, '_'),
                     plan: JSON.stringify(plan),
                     theme: plan.style,
-                    user_email: localStorage.getItem('user_email') || 'guest@anmar.ai'
+                    user_email: currentUser?.email || localStorage.getItem('user_email') || 'guest@anmar.ai'
                 })
             });
             const data = await res.json();
@@ -3400,15 +3718,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // 4. Success & Step 3: Ready
             setTimeout(() => {
-                updateTimeline(3); // Listo
-                addLog("[ANMAR // DEPLOY] Despliegue Exitoso en preview.anmar.ai", "success");
+                updateTimeline(3); // Done
+                addLog("[ANMAR // DEPLOY] Successful deployment on preview.anmar.ai", "success");
 
                 // Show "Success Card" in chat
                 const successHtml = `
                 <div style="background:rgba(16, 185, 129, 0.1); border:1px solid #10b981; padding:15px; border-radius:8px; margin-top:10px;">
-                    <h3 style="color:#10b981; margin:0 0 10px 0;">🚀 Proyecto Desplegado</h3>
+                    <h3 style="color:#10b981; margin:0 0 10px 0;">🚀 Project Deployed</h3>
                     <p style="color:#ddd; font-size:0.9rem; margin-bottom:10px;">
-                        Tu proyecto <strong>${plan.human_readable_name}</strong> está vivo.
+                        Your project <strong>${plan.human_readable_name}</strong> is live.
                     </p>
                     <div style="font-size:0.8rem; color:#aaa;">Ruta: ${data.path}</div>
                 </div>
@@ -3436,47 +3754,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    window.updateTimeline = function (stepIndex) {
-        const bubbles = document.querySelectorAll('.step-bubble');
-
-        bubbles.forEach((b, idx) => {
-            if (idx <= stepIndex) {
-                b.style.background = '#10b981'; // Green
-                b.style.borderColor = '#fff';
-                if (idx === stepIndex) {
-                    b.style.boxShadow = '0 0 10px #10b981'; // Glow active
-                    b.style.transform = 'scale(1.2)';
-                } else {
-                    b.style.boxShadow = 'none';
-                    b.style.transform = 'scale(1)';
-                }
-            } else {
-                b.style.background = '#333'; // Inactive
-                b.style.borderColor = '#000';
-                b.style.boxShadow = 'none';
-                b.style.transform = 'scale(1)';
-            }
-        });
-    }
-
-    /* --- TOKEN RECHARGE LOGIC --- */
-    document.addEventListener('DOMContentLoaded', () => {
-        // Retry finding badge if not immediately available
-        setTimeout(() => {
-            const tokensBadge = document.getElementById('userTokens');
-            if (tokensBadge) {
-                tokensBadge.style.cursor = 'pointer';
-                tokensBadge.setAttribute('title', 'Clic para ver planes');
-                tokensBadge.onclick = () => {
-                    const modal = document.getElementById('pricing-modal');
-                    if (modal) modal.style.display = 'flex';
-                };
-            }
-        }, 1000);
-    });
-
     window.purchasePlan = async function (planId) {
-        const btn = event?.target?.closest('button');
+        const btn = (typeof event !== 'undefined' && event?.target) ? event.target.closest('button') : null;
         const originalText = btn ? btn.innerHTML : '';
         if (btn) {
             btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Redirigiendo...';
@@ -3493,6 +3772,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch('/api/stripe/create-checkout-session', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({ email: currentUser.email, plan: planId })
             });
 
@@ -3502,7 +3782,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.location.href = data.url;
                 return;
             }
-            throw new Error(data.error || "No se pudo iniciar el pago.");
+            throw new Error(data.error || "Could not initiate payment.");
         } catch (e) {
             console.error(e);
             if (btn) {
@@ -3512,6 +3792,43 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     }
+    /* --- TOKEN PACK PURCHASE --- */
+    window.purchaseTokenPack = async function (packId) {
+        const btn = event?.target?.closest('button');
+        const originalHTML = btn ? btn.innerHTML : '';
+        if (btn) {
+            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin" style="font-size:1.2rem;"></i>';
+            btn.style.opacity = '0.7';
+        }
+        try {
+            const cu = JSON.parse(localStorage.getItem('currentUser'));
+            if (!cu || isGuestEmail(cu.email)) { window.location.href = 'login.html'; return; }
+            const res = await fetch('/api/stripe/create-token-pack-session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ email: cu.email, pack: packId })
+            });
+            const data = await res.json();
+            if (data.url) { window.location.href = data.url; return; }
+            throw new Error(data.error || 'Could not initiate payment.');
+        } catch (e) {
+            console.error(e);
+            if (btn) {
+                btn.innerHTML = '<i class="fas fa-times" style="color:#ef4444;"></i>';
+                setTimeout(() => { btn.innerHTML = originalHTML; btn.style.opacity = '1'; }, 2000);
+            }
+        }
+    }
+
+    /* --- TOKEN/PLAN DISPLAY (simplified — tokens removed) --- */
+    function updateTokenDisplay(remaining) {
+        // No-op: token display removed, plan badge is updated via updatePlanBadge()
+    }
+
+    function showTokenLowBanner(remaining) { /* removed */ }
+    function hideTokenLowBanner() { /* removed */ }
+
     /* --- HELPER: TIMELINE --- */
     window.updateTimeline = function (stepIndex) {
         const steps = document.querySelectorAll('.step-dot');
@@ -3537,10 +3854,54 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (logoutBtn) {
         logoutBtn.addEventListener('click', () => {
+            const email = currentUser?.email?.toLowerCase() || '';
             localStorage.removeItem('currentUser');
+            localStorage.removeItem('pendingPlan');
+            localStorage.removeItem('pending_ticket_project');
+            if (email) {
+                localStorage.removeItem(`anmar:last_project:${email}`);
+            }
+            // Clear all anmar-prefixed keys
+            try {
+                Object.keys(localStorage).forEach(key => {
+                    if (key.startsWith('anmar:')) localStorage.removeItem(key);
+                });
+            } catch (e) {}
             window.location.href = 'login.html';
         });
     }
+
+    // === Consume pendingPlan AFTER purchasePlan is defined ===
+    (function consumePendingPlan() {
+        const pendingPlan = localStorage.getItem('pendingPlan');
+        if (!pendingPlan || !currentUser?.email || isGuestEmail(currentUser.email)) return;
+        localStorage.removeItem('pendingPlan');
+        // Don't auto-trigger if already subscribed to same or better plan
+        if (typeof subscriptionActive !== 'undefined' && subscriptionActive) {
+            return;
+        }
+        if (typeof window.purchasePlan === 'function') {
+            setTimeout(() => {
+                try {
+                    window.purchasePlan(pendingPlan);
+                } catch (e) {
+                    console.error('Failed to trigger pending plan checkout:', e);
+                    if (typeof addLog === 'function') addLog('Could not start automatic payment. Go to the plans section.', 'warning');
+                }
+            }, 1200);
+        }
+    })();
+
+    // Team chat is always active — ensure polling is always running
+    if (!humanChatInterval && currentProjectName) {
+        humanChatInterval = setInterval(pollHumanChat, 4000);
+        pollHumanChat();
+    }
+
+    window.addEventListener('beforeunload', () => {
+        if (humanChatInterval) clearInterval(humanChatInterval);
+        if (typeof pollInterval !== 'undefined' && pollInterval) clearInterval(pollInterval);
+    });
 
     window.__mainScriptOk = true;
     } catch (e) {
