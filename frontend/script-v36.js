@@ -3167,24 +3167,27 @@ document.addEventListener('DOMContentLoaded', () => {
             markWelcomeDone();
             if (!skipNavigation) setWelcomeVisible(false);
 
-            // Reset and trigger human chat polling
+            // Reset state
             lastHumanChatCount = 0;
             if (humanChatInterval) clearInterval(humanChatInterval);
             humanChatInterval = setInterval(pollHumanChat, 3000);
             persistCurrentProject();
-            setInteractionMode('strategy');
             conversationHistory = [];
             originalIdea = '';
             currentMarketingBrief = null;
             currentMarketingAssets = [];
             latestMissingFields = getRequiredFields().slice();
             latestBriefScore = 0;
-            setTimelineVisible(false);
-            clearChatMessages();
-            renderBriefState({ missing_fields: latestMissingFields, memory_summary: '' });
-            await loadChatMemory();
-            loadProjectPreview(currentProjectName);
-            addLog(`Project created: ${currentProjectName}. Start strategic conversation in chat.`, 'system');
+
+            // UI updates — pueden fallar durante onboarding (elementos no visibles aún)
+            try { setInteractionMode('strategy'); } catch(_) {}
+            try { setTimelineVisible(false); } catch(_) {}
+            try { clearChatMessages(); } catch(_) {}
+            try { renderBriefState({ missing_fields: latestMissingFields, memory_summary: '' }); } catch(_) {}
+            try { await loadChatMemory(); } catch(_) {}
+            try { loadProjectPreview(currentProjectName); } catch(_) {}
+            try { addLog(`Project created: ${currentProjectName}.`, 'system'); } catch(_) {}
+
             await loadProjects();
             if (!skipNavigation) switchTab('build');
             return true;
