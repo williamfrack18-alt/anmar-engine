@@ -1420,6 +1420,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function clearChatMessages() {
+        if (!terminalContent) return;
         const messages = terminalContent.querySelectorAll('.msg-row');
         messages.forEach((node) => {
             if (!resultSection || !resultSection.contains(node)) node.remove();
