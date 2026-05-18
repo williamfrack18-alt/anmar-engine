@@ -288,8 +288,222 @@
             position: relative;
             z-index: 1;
             margin-top: 0.9rem;
-            color: rgba(255, 255, 255, 0.55);
+            color: rgba(255, 255, 255, 0.7);
             font-size: 0.85rem;
+        }
+
+        .welcome-submit-btn {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            margin-top: 16px;
+            padding: 14px 24px;
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 14px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+            backdrop-filter: blur(8px);
+        }
+        .welcome-submit-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            background: rgba(255, 255, 255, 0.13);
+            border-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+        }
+        .welcome-submit-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Consulting Animation — Premium Tech Experience */
+        .consulting-animation {
+            text-align: center;
+            padding: 24px 0;
+            position: relative;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        /* Floating particles container */
+        .consulting-particles {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+        .consulting-particle {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            border-radius: 50%;
+            background: #60a5fa;
+            animation: cParticleFloat 3.5s ease-in-out infinite;
+            opacity: 0;
+        }
+        .consulting-particle:nth-child(1) { left: 8%; top: 18%; animation-delay: 0s; background: #818cf8; }
+        .consulting-particle:nth-child(2) { left: 88%; top: 12%; animation-delay: 0.5s; background: #3b82f6; width: 4px; height: 4px; }
+        .consulting-particle:nth-child(3) { left: 15%; top: 82%; animation-delay: 1s; background: #06b6d4; }
+        .consulting-particle:nth-child(4) { left: 78%; top: 78%; animation-delay: 1.5s; background: #a78bfa; width: 4px; height: 4px; }
+        .consulting-particle:nth-child(5) { left: 50%; top: 8%; animation-delay: 0.3s; background: #60a5fa; }
+        .consulting-particle:nth-child(6) { left: 3%; top: 50%; animation-delay: 2s; background: #8b5cf6; width: 2px; height: 2px; }
+        .consulting-particle:nth-child(7) { left: 92%; top: 48%; animation-delay: 0.7s; background: #22d3ee; }
+        .consulting-particle:nth-child(8) { left: 42%; top: 92%; animation-delay: 1.2s; background: #6366f1; width: 4px; height: 4px; }
+        @keyframes cParticleFloat {
+            0% { transform: translateY(0) scale(0); opacity: 0; }
+            15% { opacity: 0.9; transform: translateY(-6px) scale(1.2); }
+            70% { opacity: 0.4; transform: translateY(-45px) scale(0.7); }
+            100% { opacity: 0; transform: translateY(-70px) scale(0); }
+        }
+
+        /* Scanner line */
+        .consulting-scanner {
+            position: absolute;
+            left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #3b82f6 25%, #8b5cf6 50%, #06b6d4 75%, transparent);
+            animation: cScanLine 2.8s ease-in-out infinite;
+            opacity: 0;
+            box-shadow: 0 0 15px rgba(59,130,246,0.5), 0 0 40px rgba(99,102,241,0.2);
+            pointer-events: none;
+        }
+        @keyframes cScanLine {
+            0% { top: 0%; opacity: 0; }
+            8% { opacity: 0.7; }
+            88% { opacity: 0.5; }
+            100% { top: 100%; opacity: 0; }
+        }
+
+        .consulting-icon-ring {
+            position: relative;
+            width: 110px;
+            height: 110px;
+            margin: 0 auto 28px;
+        }
+        .consulting-icon-inner {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.2rem;
+            color: #a78bfa;
+            z-index: 3;
+            filter: drop-shadow(0 0 14px rgba(167,139,250,0.6));
+        }
+        .consulting-spinner {
+            width: 100%;
+            height: 100%;
+            animation: consultSpin 1.8s linear infinite;
+        }
+        @keyframes consultSpin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Outer glow rings */
+        .consulting-icon-ring::before {
+            content: '';
+            position: absolute;
+            inset: -10px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            border-top-color: #3b82f6;
+            border-right-color: #8b5cf6;
+            animation: consultSpin 3s linear infinite reverse;
+            opacity: 0.5;
+        }
+        .consulting-icon-ring::after {
+            content: '';
+            position: absolute;
+            inset: -20px;
+            border-radius: 50%;
+            border: 1px solid transparent;
+            border-bottom-color: #06b6d4;
+            border-left-color: #3b82f6;
+            animation: consultSpin 5s linear infinite;
+            opacity: 0.3;
+        }
+
+        /* Pulse rings */
+        .consulting-pulse-ring {
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            border: 1px solid rgba(99,102,241,0.4);
+            animation: consultPulse 2.2s ease-out infinite;
+        }
+        .consulting-pulse-ring:nth-child(2) { animation-delay: 0.7s; }
+        .consulting-pulse-ring:nth-child(3) { animation-delay: 1.4s; }
+        @keyframes consultPulse {
+            0% { transform: scale(1); opacity: 0.6; }
+            100% { transform: scale(2.4); opacity: 0; }
+        }
+
+        .consulting-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #e2e8f0;
+            margin-bottom: 24px;
+            text-shadow: 0 0 24px rgba(99,102,241,0.35);
+            transition: all 0.6s ease;
+        }
+        .consulting-steps {
+            text-align: left;
+            max-width: 330px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .consult-step {
+            font-size: 0.88rem;
+            color: rgba(255,255,255,0.3);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            background: transparent;
+            border: 1px solid transparent;
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .consult-step.active {
+            color: #e2e8f0;
+            background: rgba(59,130,246,0.08);
+            border-color: rgba(59,130,246,0.2);
+            box-shadow: 0 0 20px rgba(59,130,246,0.1), inset 0 0 20px rgba(59,130,246,0.03);
+            transform: translateX(4px);
+        }
+        .consult-step.done {
+            color: #34d399;
+            background: rgba(16,185,129,0.06);
+            border-color: rgba(16,185,129,0.12);
+        }
+        .consult-step.done i { color: #10b981; filter: drop-shadow(0 0 5px rgba(16,185,129,0.5)); }
+        .consult-step.active i { color: #60a5fa; filter: drop-shadow(0 0 8px rgba(96,165,250,0.6)); }
+
+        /* Progress bar */
+        .consulting-progress {
+            margin: 22px auto 0;
+            max-width: 330px;
+            height: 3px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .consulting-progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6, #06b6d4);
+            border-radius: 4px;
+            transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 0 10px rgba(59,130,246,0.5);
         }
 
         /* --- DASHBOARD LAYOUT --- */
@@ -449,51 +663,52 @@
         }
 
         .ai-msg {
-            max-width: 90%;
+            max-width: 88%;
             color: rgba(255, 255, 255, 0.92);
-            /* Almost white like Gemini */
-            line-height: 1.6;
+            line-height: 1.65;
             font-weight: 400;
             letter-spacing: 0.01em;
-        }
-
-        /* Make user messages look like chat bubbles */
-        .msg-row.user>div {
-            background: rgba(16, 185, 129, 0.12);
-            border: 1px solid rgba(16, 185, 129, 0.25);
-            padding: 10px 18px;
-            border-radius: 18px 18px 2px 18px;
-            color: #fff;
-            max-width: 80%;
-            font-size: 0.95rem;
+            font-size: 0.92rem;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            padding: 12px 16px;
+            border-radius: 16px 16px 16px 4px;
+            animation: fadeSlideIn 0.3s ease;
         }
 
         .ai-msg strong {
-            font-weight: 700;
+            font-weight: 600;
             color: #fff;
-            /* Keep strong text white */
         }
 
         .ai-cursor {
             display: inline-block;
-            width: 8px;
-            height: 16px;
+            width: 7px;
+            height: 15px;
             background: #10b981;
             animation: blink 1s infinite;
             vertical-align: middle;
-            margin-left: 5px;
+            margin-left: 4px;
+            border-radius: 1px;
         }
 
-        .user-msg {
-            background: #fff;
-            color: #000;
-            padding: 12px 20px;
-            border-radius: 12px 12px 0 12px;
-            font-weight: 500;
+        .user-msg,
+        .msg-row.user > div {
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            color: #fff;
+            padding: 10px 16px;
+            border-radius: 16px 16px 4px 16px;
+            font-weight: 450;
             font-family: 'Inter', sans-serif;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-            max-width: 80%;
-            animation: slideIn 0.3s ease;
+            font-size: 0.92rem;
+            max-width: 82%;
+            animation: fadeSlideIn 0.3s ease;
+        }
+
+        @keyframes fadeSlideIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .blueprint-card {
@@ -717,6 +932,22 @@
             transform: translateY(-1px);
         }
 
+        /* Focus states for accessibility */
+        .tab-btn:focus-visible,
+        .chat-icon-btn:focus-visible,
+        .send-btn:focus-visible,
+        .activate-btn:focus-visible,
+        .blueprint-btn:focus-visible {
+            outline: 2px solid #10b981;
+            outline-offset: 2px;
+        }
+
+        textarea:focus-visible,
+        input:focus-visible {
+            outline: 2px solid rgba(16, 185, 129, 0.5);
+            outline-offset: -1px;
+        }
+
         .chat-meta {
             display: flex;
             align-items: center;
@@ -791,14 +1022,6 @@
 
         .claude-chat .chat-helper {
             text-align: left;
-        }
-
-        .claude-chat #chatTabHuman {
-            background: rgba(255, 255, 255, 0.08) !important;
-            color: #e5e7eb !important;
-            border: 1px solid rgba(255, 255, 255, 0.18) !important;
-            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25);
-            font-weight: 600 !important;
         }
 
         .claude-chat .status-badge {
@@ -972,6 +1195,173 @@
             margin-top: auto;
         }
 
+        /* ── Validate Gate Modal ── */
+        .validate-gate-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(10px);
+            align-items: center;
+            justify-content: center;
+        }
+        .validate-gate-overlay.active { display: flex; }
+
+        .validate-gate-card {
+            width: 90vw;
+            max-width: 360px;
+            padding: 1.8rem;
+            border-radius: 18px;
+            border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(12, 14, 18, 0.95);
+            backdrop-filter: blur(14px);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        .validate-gate-card .gate-badge {
+            display: inline-block;
+            font-size: 0.6rem; font-weight: 700;
+            letter-spacing: 1.2px; text-transform: uppercase;
+            padding: 3px 9px; border-radius: 5px;
+            background: rgba(255,255,255,0.08);
+            color: rgba(255,255,255,0.6);
+            border: 1px solid rgba(255,255,255,0.12);
+            width: fit-content;
+        }
+
+        .validate-gate-card .gate-icon {
+            width: 40px; height: 40px; border-radius: 12px;
+            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+            display: inline-flex; align-items: center; justify-content: center;
+            font-size: 1rem; color: rgba(255,255,255,0.85);
+        }
+
+        .validate-gate-card .gate-header h4 {
+            margin: 0.2rem 0 0.15rem; font-size: 1.15rem; font-weight: 700; color: #fff;
+        }
+        .validate-gate-card .gate-header p {
+            margin: 0; color: rgba(255,255,255,0.55); font-size: 0.82rem; line-height: 1.45;
+        }
+
+        .validate-gate-card .gate-price {
+            font-size: 2rem; font-weight: 700; color: #fff; margin: 0.2rem 0 0.1rem; line-height: 1;
+        }
+        .validate-gate-card .gate-commitment {
+            font-size: 0.72rem; color: rgba(255,255,255,0.4); margin-top: -2px;
+        }
+
+        .validate-gate-card .gate-features {
+            list-style: none; padding: 0; margin: 0.3rem 0 0;
+            color: rgba(255,255,255,0.7); font-size: 0.8rem; line-height: 1.6;
+        }
+        .validate-gate-card .gate-features li {
+            display: flex; align-items: flex-start; gap: 6px; margin-bottom: 1px;
+        }
+        .validate-gate-card .gate-features li::before {
+            content: "\2713"; color: rgba(255,255,255,0.5); font-weight: 600; flex-shrink: 0;
+        }
+
+        .validate-gate-card .gate-cta { margin-top: 0.5rem; }
+        .validate-gate-card .gate-btn {
+            display: block; width: 100%; padding: 0.75rem 1.2rem; border: none; border-radius: 10px;
+            background: #fff; color: #000; font-size: 0.88rem; font-weight: 700;
+            cursor: pointer; transition: all 0.2s; text-align: center;
+        }
+        .validate-gate-card .gate-btn:hover {
+            background: rgba(255,255,255,0.9); box-shadow: 0 10px 28px rgba(255,255,255,0.12);
+        }
+
+        .validate-gate-card .gate-note {
+            font-size: 0.7rem; color: rgba(255,255,255,0.35);
+            text-align: center; line-height: 1.35; margin-top: 1px;
+        }
+
+        .validate-gate-card .gate-dismiss {
+            background: none; border: none; color: rgba(255,255,255,0.3); font-size: 0.75rem;
+            cursor: pointer; padding: 3px 10px; text-align: center; width: 100%;
+            transition: color 0.2s;
+        }
+        .validate-gate-card .gate-dismiss:hover { color: rgba(255,255,255,0.55); }
+
+        /* ── Welcome Modal (post-payment) ── */
+        .welcome-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(10px);
+            align-items: center;
+            justify-content: center;
+        }
+        .welcome-overlay.active { display: flex; }
+
+        .welcome-card {
+            width: 90vw;
+            max-width: 380px;
+            padding: 2.2rem 1.8rem;
+            border-radius: 18px;
+            border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(12, 14, 18, 0.95);
+            backdrop-filter: blur(14px);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .welcome-check {
+            width: 56px; height: 56px; border-radius: 50%;
+            background: rgba(255,255,255,0.08); border: 2px solid rgba(255,255,255,0.2);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem; color: #fff;
+            animation: welcomePop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+        }
+        @keyframes welcomePop {
+            0% { transform: scale(0); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .welcome-card h3 {
+            font-size: 1.2rem; font-weight: 700; color: #fff; margin-top: 0.3rem;
+        }
+        .welcome-card .welcome-sub {
+            font-size: 0.85rem; color: rgba(255,255,255,0.55); line-height: 1.5; max-width: 320px;
+        }
+
+        .welcome-card .welcome-includes {
+            width: 100%; text-align: left; margin: 0.5rem 0;
+            padding: 0.8rem 1rem; border-radius: 10px;
+            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+        }
+        .welcome-card .welcome-includes-title {
+            font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 1px; color: rgba(255,255,255,0.4); margin-bottom: 0.4rem;
+        }
+        .welcome-card .welcome-includes ul {
+            list-style: none; padding: 0; margin: 0;
+            font-size: 0.78rem; color: rgba(255,255,255,0.65); line-height: 1.7;
+        }
+        .welcome-card .welcome-includes li::before {
+            content: "\2713  "; color: rgba(255,255,255,0.45); font-weight: 600;
+        }
+
+        .welcome-card .welcome-btn {
+            width: 100%; padding: 0.75rem; border: none; border-radius: 10px;
+            background: #fff; color: #000; font-size: 0.88rem; font-weight: 700;
+            cursor: pointer; transition: all 0.2s; margin-top: 0.3rem;
+        }
+        .welcome-card .welcome-btn:hover {
+            background: rgba(255,255,255,0.9); box-shadow: 0 10px 28px rgba(255,255,255,0.12);
+        }
+
         .paywall-email-gate {
             display: none;
             margin: 0 auto 18px;
@@ -1010,61 +1400,6 @@
             color: #fff;
             font-weight: 700;
             cursor: pointer;
-        }
-
-        #pricing-modal .pricing-shell {
-            max-width: 860px !important;
-            width: 92%;
-            padding: 28px !important;
-            border-radius: 20px !important;
-            margin: 24px auto 40px;
-        }
-
-        #pricing-modal .pricing-title {
-            font-size: 1.6rem !important;
-            margin-bottom: 8px !important;
-        }
-
-        #pricing-modal .pricing-subtitle {
-            font-size: 0.92rem !important;
-        }
-
-        #pricing-modal .plan-icon {
-            width: 38px !important;
-            height: 38px !important;
-            border-radius: 10px !important;
-        }
-
-        #pricing-modal .plan-title {
-            font-size: 0.72rem !important;
-            margin: 10px 0 6px !important;
-            letter-spacing: 0.8px !important;
-        }
-
-        #pricing-modal .plan-price {
-            font-size: 1.8rem !important;
-            margin-bottom: 8px !important;
-        }
-
-        #pricing-modal .plan-price span {
-            font-size: 0.9rem !important;
-        }
-
-        #pricing-modal .plan-list {
-            font-size: 0.82rem !important;
-            line-height: 1.65 !important;
-            margin-bottom: 12px !important;
-        }
-
-        #pricing-modal .plan-cta {
-            padding: 10px !important;
-            font-size: 0.92rem !important;
-        }
-
-        #pricing-modal .plan-badge {
-            font-size: 0.62rem !important;
-            padding: 2px 8px !important;
-            top: -10px !important;
         }
 
         @media (max-width: 820px) {
@@ -1200,7 +1535,7 @@
             font-weight: 600;
             letter-spacing: 1px;
             text-transform: uppercase;
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
             display: flex;
             align-items: center;
             gap: 6px;
@@ -1212,12 +1547,13 @@
         }
 
         .tab-btn.active {
-            background: #fff;
-            color: #000;
-            box-shadow: 0 2px 12px rgba(255, 255, 255, 0.18);
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: #fff;
+            box-shadow: 0 2px 16px rgba(16, 185, 129, 0.3);
+            transform: scale(1.02);
         }
 
-        /* SECTIONS VISIBILITY */
+        /* SECTIONS VISIBILITY — simple toggle (no transitions) */
         .section-view {
             display: none;
             width: 100%;
@@ -1226,6 +1562,145 @@
 
         .section-view.active {
             display: flex;
+        }
+
+        /* MARKETING PREVIEW CARDS */
+        .marketing-preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 24px;
+        }
+
+        .marketing-preview-title {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: #fff;
+            letter-spacing: -0.3px;
+        }
+
+        .marketing-preview-subtitle {
+            font-size: 0.82rem;
+            color: rgba(255, 255, 255, 0.65);
+            margin-top: 4px;
+        }
+
+        .marketing-preview-chip {
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+            color: #10b981;
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .marketing-preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .social-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            transition: border-color 0.25s ease, transform 0.25s ease;
+        }
+
+        .social-card:hover {
+            border-color: rgba(16, 185, 129, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .social-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .social-platform {
+            font-weight: 700;
+            font-size: 0.88rem;
+            color: #fff;
+            letter-spacing: -0.2px;
+        }
+
+        .social-format {
+            background: rgba(59, 130, 246, 0.12);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.68rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .social-hook {
+            font-size: 0.88rem;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.85);
+            line-height: 1.5;
+        }
+
+        .social-caption {
+            font-size: 0.82rem;
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.55;
+        }
+
+        .social-tags {
+            font-size: 0.75rem;
+            color: #10b981;
+            font-weight: 500;
+            opacity: 0.8;
+        }
+
+        .social-cta {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.7);
+            background: rgba(255, 255, 255, 0.04);
+            padding: 6px 10px;
+            border-radius: 8px;
+            border-left: 3px solid #10b981;
+        }
+
+        .social-metrics {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 4px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .social-metrics > div {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .metric-label {
+            font-size: 0.65rem;
+            color: rgba(255, 255, 255, 0.4);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-value {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #fff;
         }
 
         /* Action Buttons */
@@ -1351,7 +1826,7 @@
             box-shadow: 0 20px 50px rgba(0,0,0,0.6);
             display: none;
             flex-direction: column;
-            z-index: 9999;
+            z-index: 9998;
             overflow: hidden;
         }
 
@@ -1499,48 +1974,6 @@
             grid-template-columns: 1fr !important;
         }
 
-        #briefStatePanel {
-            margin-bottom: 6px !important;
-            padding: 6px 10px !important;
-            border-radius: 10px !important;
-            background: rgba(0, 0, 0, 0.28) !important;
-            min-height: 0 !important;
-        }
-
-        #briefStatePanel>div:first-child {
-            margin-bottom: 4px !important;
-        }
-
-        #briefStatePanel>div:first-child span:first-child {
-            font-size: 0.62rem !important;
-            opacity: 0.62 !important;
-        }
-
-        #briefScoreText {
-            font-size: 0.7rem !important;
-        }
-
-        #briefStatePanel>div:nth-of-type(2) {
-            height: 3px !important;
-            margin-bottom: 0 !important;
-        }
-
-        #briefMissingList,
-        #briefSummaryText,
-        #briefStatePanel>div:nth-of-type(3),
-        #briefStatePanel>div:nth-of-type(5) {
-            display: none !important;
-        }
-
-        #blueprintNowBtn {
-            width: auto !important;
-            margin-top: 6px !important;
-            margin-left: auto !important;
-            padding: 6px 10px !important;
-            border-radius: 6px !important;
-            font-size: 0.68rem !important;
-        }
-
         .ai-console {
             min-height: 0;
         }
@@ -1663,10 +2096,6 @@
                 justify-content: center;
             }
 
-            #paywallBanner {
-                flex-direction: column;
-                align-items: flex-start;
-            }
         }
 
         @media (max-width: 520px) {
@@ -1702,35 +2131,142 @@
         .console-header .brand-text {
             display: none !important;
         }
-    </style>
-    <style>
-        /* FORCE VISIBILITY V2 */
-        #userTokens {
-            position: fixed !important;
-            top: 20px !important;
-            right: 20px !important;
-            z-index: 9999 !important;
-            background: rgba(0, 0, 0, 0.85) !important;
-            border: 1px solid #10b981 !important;
-            color: #10b981 !important;
-            padding: 8px 16px !important;
-            border-radius: 99px !important;
-            font-family: 'JetBrains Mono', monospace !important;
-            font-weight: bold !important;
-            box-shadow: 0 0 20px rgba(16, 185, 129, 0.3) !important;
-            display: flex !important;
-            gap: 8px;
+
+        /* ===== MOBILE BOTTOM NAV BAR (Nike-style premium) ===== */
+        .mobile-bottom-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            /* Floating pill container */
+            padding: 0 10px max(10px, env(safe-area-inset-bottom)) 10px;
+            pointer-events: none;
+        }
+
+        .mobile-bottom-nav .nav-pill {
             pointer-events: auto;
+            background: #0d1a0f;
+            border-radius: 28px;
+            padding: 10px 6px 10px 6px;
+            box-shadow:
+                0 -2px 40px rgba(0, 0, 0, 0.6),
+                0 0 0 1px rgba(16, 185, 129, 0.08),
+                inset 0 1px 0 rgba(255, 255, 255, 0.04);
+            max-width: 420px;
+            margin: 0 auto;
+        }
+
+        .mobile-bottom-nav .nav-items {
+            display: flex;
+            justify-content: space-evenly;
+            align-items: center;
+        }
+
+        .mobile-bottom-nav .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            padding: 8px 10px 6px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            color: rgba(255, 255, 255, 0.32);
+            transition: color 0.25s ease, transform 0.18s ease;
+            min-width: 52px;
+            position: relative;
+            -webkit-tap-highlight-color: transparent;
+            outline: none;
+        }
+
+        .mobile-bottom-nav .nav-item i {
+            font-size: 1.15rem;
+            transition: transform 0.25s ease;
+            line-height: 1;
+        }
+
+        .mobile-bottom-nav .nav-item span {
+            font-size: 0.58rem;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            line-height: 1;
+            opacity: 0.9;
+        }
+
+        /* Active state */
+        .mobile-bottom-nav .nav-item.active {
+            color: #fff;
+        }
+
+        .mobile-bottom-nav .nav-item.active::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 4px;
+            background: #10b981;
+            border-radius: 50%;
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+        }
+
+        /* Tap feedback */
+        .mobile-bottom-nav .nav-item:active {
+            transform: scale(0.88);
+        }
+
+        /* Notification dot */
+        .mobile-bottom-nav .nav-item .nav-dot {
+            position: absolute;
+            top: 4px;
+            right: 8px;
+            width: 6px;
+            height: 6px;
+            background: #ef4444;
+            border-radius: 50%;
+            border: 1.5px solid #0d1a0f;
+            display: none;
         }
 
         @media (max-width: 768px) {
-            #userTokens {
-                top: auto !important;
-                bottom: 16px !important;
-                right: 16px !important;
-                font-size: 0.7rem !important;
-                padding: 6px 12px !important;
+            .mobile-bottom-nav {
+                display: block;
             }
+
+            /* Hide header tabs on mobile — bottom nav replaces them */
+            header.global-header .main-tabs {
+                display: none !important;
+            }
+
+            /* Simplify header on mobile */
+            header.global-header {
+                justify-content: space-between !important;
+            }
+
+            /* Make room for bottom nav pill */
+            .workspace {
+                padding-bottom: 110px !important;
+            }
+
+            /* Adjust chat input so it doesn't hide behind nav */
+            .chat-input-area {
+                margin-bottom: 20px !important;
+            }
+
+            /* Token badge stays in header on mobile — no repositioning needed */
+        }
+    </style>
+    <style>
+        /* Plan badge in header */
+        #userPlanBadge {
+            display: inline-flex !important;
+            align-items: center;
+            white-space: nowrap;
         }
     </style>
 </head>
@@ -1747,30 +2283,36 @@
         <!-- CENTER: TABS -->
         <nav class="main-tabs">
             <button onclick="switchTab('projects')" class="tab-btn active" id="tab-projects">
-                <i class="fas fa-folder-tree"></i> PROYECTOS
+                <i class="fas fa-folder-tree"></i> PROJECTS
             </button>
             <button onclick="switchTab('build')" class="tab-btn" id="tab-build">
-                <i class="fas fa-hammer"></i> CONSTRUCCIÓN
+                <i class="fas fa-hammer"></i> BUILD
             </button>
             <button onclick="switchTab('market')" class="tab-btn" id="tab-market">
                 <i class="fas fa-bullhorn"></i> MARKETING
             </button>
             <button onclick="switchTab('growth')" class="tab-btn" id="tab-growth">
-                <i class="fas fa-chart-line"></i> CRECIMIENTO
+                <i class="fas fa-seedling"></i> ORGANIC CONTENT
+            </button>
+            <button onclick="switchTab('capital')" class="tab-btn" id="tab-capital">
+                <i class="fas fa-coins"></i> CAPITAL
+            </button>
+            <button onclick="switchTab('profile')" class="tab-btn" id="tab-profile">
+                <i class="fas fa-user"></i> PERFIL
             </button>
         </nav>
 
         <!-- RIGHT: STATUS -->
         <div style="width:250px; display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
             <div style="display:flex; justify-content:flex-end; align-items:center; gap:10px;">
-                <button class="notif-btn" id="notifBtn" title="Notificaciones">
+                <div id="userPlanBadge" style="background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.3); color:#10b981; padding:5px 12px; border-radius:8px; font-size:0.72rem; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; cursor:default;">
+                    <i class="fas fa-shield-check" style="margin-right:4px;"></i>
+                    <span id="planNameDisplay">Free</span>
+                </div>
+                <button class="notif-btn" id="notifBtn" title="Notifications">
                     <i class="fas fa-bell"></i>
                     <span class="notif-badge" id="notifBadge">0</span>
                 </button>
-                <div
-                    style="text-align:right; font-size:0.75rem; opacity:0.5; font-weight:600; letter-spacing:1px; font-family:'Inter';">
-                    SUPRA ENGINE ACTIVE
-                </div>
             </div>
         </div>
     </header>
@@ -1792,134 +2334,83 @@
                 <span></span>
                 <span></span>
             </div>
-            <button id="welcomeCloseBtn" class="welcome-close" title="Entrar sin proyecto">✕</button>
+            <!-- Close button removed: onboarding is mandatory -->
             <div id="welcomeType" class="welcome-title"></div>
-            <div class="welcome-sub">Paso 1: Nombre del proyecto.</div>
-            <div class="welcome-input-wrap">
-                <input id="welcomeProjectInput" type="text" placeholder="Nombre del proyecto..." oninput="__welcomeNameInput && __welcomeNameInput()" />
-                <button id="welcomeStartBtn" type="button" disabled onclick="__welcomeContinue && __welcomeContinue()">Continuar</button>
+
+            <!-- Step 1: Project Info Form -->
+            <div id="welcomeFormStep">
+                <div class="welcome-sub">Tell us about your project so we can assign the right team.</div>
+                <div class="welcome-input-wrap" style="margin-bottom:12px;">
+                    <input id="welcomeProjectInput" type="text" placeholder="Project name (e.g. FitTrack App)" />
+                </div>
+                <div class="welcome-input-wrap" style="margin-bottom:12px;">
+                    <input id="welcomePhoneInput" type="tel" placeholder="Your phone number" />
+                </div>
+                <div class="welcome-input-wrap" style="flex-direction:column; align-items:stretch;">
+                    <textarea id="welcomeDescInput" placeholder="Briefly describe your project idea..." rows="3" style="flex:1; background:transparent; border:none; color:#fff; font-size:0.95rem; outline:none; resize:none; font-family:inherit; line-height:1.5;"></textarea>
+                </div>
+                <button id="welcomeSubmitBtn" type="button" class="welcome-submit-btn" disabled>
+                    <i class="fas fa-arrow-right"></i>&ensp;Continue
+                </button>
+                <div class="welcome-hint">All fields are required. This helps our team prepare before your first conversation.</div>
+                <div id="welcomeStatus" class="welcome-hint" style="color:#fca5a5; min-height:18px;"></div>
             </div>
-            <div id="welcomePhoneStep" class="welcome-input-wrap" style="display:none; margin-top:12px;">
-                <input id="welcomePhoneInput" type="tel" placeholder="Número de teléfono..." />
-                <button id="welcomePhoneBtn" type="button" onclick="__welcomeCreate && __welcomeCreate()">Crear proyecto</button>
+
+            <!-- Step 2: Consulting Animation -->
+            <div id="welcomeConsultingStep" style="display:none;">
+                <div class="consulting-animation">
+                    <!-- Floating particles -->
+                    <div class="consulting-particles">
+                        <div class="consulting-particle"></div>
+                        <div class="consulting-particle"></div>
+                        <div class="consulting-particle"></div>
+                        <div class="consulting-particle"></div>
+                        <div class="consulting-particle"></div>
+                        <div class="consulting-particle"></div>
+                        <div class="consulting-particle"></div>
+                        <div class="consulting-particle"></div>
+                    </div>
+                    <!-- Scanner line -->
+                    <div class="consulting-scanner"></div>
+                    <!-- Icon ring with pulse -->
+                    <div class="consulting-icon-ring">
+                        <div class="consulting-pulse-ring"></div>
+                        <div class="consulting-pulse-ring"></div>
+                        <div class="consulting-pulse-ring"></div>
+                        <div class="consulting-icon-inner">
+                            <i class="fas fa-users-cog"></i>
+                        </div>
+                        <svg class="consulting-spinner" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="45" stroke="url(#consultGrad)" stroke-width="3" fill="none" stroke-linecap="round" stroke-dasharray="180 100"/>
+                            <defs><linearGradient id="consultGrad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#3b82f6"/><stop offset="100%" stop-color="#8b5cf6"/></linearGradient></defs>
+                        </svg>
+                    </div>
+                    <div class="consulting-title" id="consultingTitle">Setting up your workspace...</div>
+                    <div class="consulting-steps">
+                        <div class="consult-step active" id="consultStep1"><i class="fas fa-circle-notch fa-spin"></i> Creating project environment</div>
+                        <div class="consult-step" id="consultStep2"><i class="far fa-circle"></i> Analyzing project requirements</div>
+                        <div class="consult-step" id="consultStep3"><i class="far fa-circle"></i> Assigning specialized engineer</div>
+                        <div class="consult-step" id="consultStep4"><i class="far fa-circle"></i> Preparing your consultation</div>
+                    </div>
+                    <div class="consulting-progress">
+                        <div class="consulting-progress-bar" id="consultingProgressBar"></div>
+                    </div>
+                </div>
             </div>
-            <div class="welcome-hint">Usaremos tu teléfono para coordinar el inicio del proyecto.</div>
-            <div id="welcomeStatus" class="welcome-hint" style="color:#fca5a5; min-height:18px;"></div>
         </div>
     </div>
 
     <div class="app-layout" style="display:flex; flex-direction:row; padding-top:var(--header-height); height:100vh; overflow:hidden;">
 
-        <!-- SIDEBAR (Synced) -->
-        <aside
-            style="width:70px; min-width:70px; background:rgba(0,0,0,0.6); border-right:1px solid rgba(255,255,255,0.1); display:flex; flex-direction:column; align-items:center; padding-top:30px; z-index:900;">
-            <div class="nav-icon active" onclick="switchTab('projects')" id="nav-projects" title="Proyectos"
-                style="margin-bottom:30px; cursor:pointer; color:#fff; font-size:1.2rem; transition:0.3s;"><i
-                    class="fas fa-folder-tree"></i></div>
-            <div class="nav-icon" onclick="switchTab('build')" id="nav-build" title="Construcción"
-                style="margin-bottom:30px; cursor:pointer; color:rgba(255,255,255,0.4); font-size:1.2rem; transition:0.3s;">
-                <i class="fas fa-hammer"></i>
-            </div>
-            <div class="nav-icon" onclick="switchTab('market')" id="nav-market" title="Marketing"
-                style="margin-bottom:30px; cursor:pointer; color:rgba(255,255,255,0.4); font-size:1.2rem; transition:0.3s;">
-                <i class="fas fa-bullhorn"></i>
-            </div>
-            <div class="nav-icon" onclick="switchTab('growth')" id="nav-growth" title="Crecimiento"
-                style="cursor:pointer; color:rgba(255,255,255,0.4); font-size:1.2rem; transition:0.3s;"><i
-                    class="fas fa-chart-line"></i></div>
-            <div class="nav-icon" onclick="switchTab('profile')" id="nav-profile" title="Perfil"
-                style="margin-top:30px; cursor:pointer; color:rgba(255,255,255,0.4); font-size:1.2rem; transition:0.3s;">
-                <i class="fas fa-user"></i>
-            </div>
-        </aside>
+        <!-- MAIN CONTENT WRAPPER (no sidebar) -->
+        <div style="flex-grow:1; position:relative; width:100%;">
 
-        <!-- MAIN CONTENT WRAPPER -->
-        <div style="flex-grow:1; position:relative; width:calc(100% - 70px);">
-
-            <!-- SECTION 1: CONSTRUCCIÓN (Build) -->
-            <div id="section-build" class="section-view" style="padding:20px; height:100%; box-sizing:border-box;">
+            <!-- SECTION 1: BUILD (Build) -->
+            <div id="section-build" class="section-view expand-chat" style="padding:20px; height:100%; box-sizing:border-box;">
 
                 <!-- LEFT: AI CHAT -->
                 <div class="left-pane"
                     style="width: 44%; min-width: 520px; max-width: 620px; display: flex; flex-direction: column; gap: 12px; margin-bottom: 0;">
-                    <!-- NEW: ACTIVE TIMELINE -->
-                    <div id="status-timeline" style="margin-bottom: 8px; display:none; flex-direction:column; gap:8px;">
-                        <span
-                            style="font-family:'Inter'; font-size:0.75rem; font-weight:700; color:#fff; letter-spacing:1px; text-transform:uppercase;">Estado
-                            de Entrega Interna</span>
-                        <span style="font-size:0.7rem; color:rgba(255,255,255,0.65);">Se activa cuando envías el ticket
-                            a ingeniería.</span>
-                        <div
-                            style="display:flex; justify-content:space-between; align-items:center; position:relative; padding:0 10px;">
-                            <!-- Line -->
-                            <div
-                                style="position:absolute; left:10px; right:10px; top:50%; height:2px; background:rgba(255,255,255,0.1); z-index:0;">
-                            </div>
-
-                            <!-- Step 1: Network -->
-                            <div class="timeline-step" id="step-0"
-                                style="position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; gap:4px;">
-                                <div class="step-bubble"
-                                    style="width:12px; height:12px; background:#333; border-radius:50%; transition:all 0.5s; border:2px solid #000;">
-                                </div>
-                                <span
-                                    style="font-size:0.6rem; color:rgba(255,255,255,0.5); font-family:'Inter';">Red</span>
-                            </div>
-                            <!-- Step 2: Engineer -->
-                            <div class="timeline-step" id="step-1"
-                                style="position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; gap:4px;">
-                                <div class="step-bubble"
-                                    style="width:12px; height:12px; background:#333; border-radius:50%; transition:all 0.5s; border:2px solid #000;">
-                                </div>
-                                <span
-                                    style="font-size:0.6rem; color:rgba(255,255,255,0.5); font-family:'Inter';">Ingeniero</span>
-                            </div>
-                            <!-- Step 3: Dev -->
-                            <div class="timeline-step" id="step-2"
-                                style="position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; gap:4px;">
-                                <div class="step-bubble"
-                                    style="width:12px; height:12px; background:#333; border-radius:50%; transition:all 0.5s; border:2px solid #000;">
-                                </div>
-                                <span
-                                    style="font-size:0.6rem; color:rgba(255,255,255,0.5); font-family:'Inter';">Dev</span>
-                            </div>
-                            <!-- Step 4: Ready -->
-                            <div class="timeline-step" id="step-3"
-                                style="position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; gap:4px;">
-                                <div class="step-bubble"
-                                    style="width:12px; height:12px; background:#333; border-radius:50%; transition:all 0.5s; border:2px solid #000;">
-                                </div>
-                                <span
-                                    style="font-size:0.6rem; color:rgba(255,255,255,0.5); font-family:'Inter';">Listo</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="briefStatePanel"
-                        style="display:none; margin-bottom: 15px; border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:12px; background:rgba(0,0,0,0.35);">
-                        <div
-                            style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                            <span
-                                style="font-size:0.72rem; letter-spacing:1px; text-transform:uppercase; opacity:0.8;">Estado
-                                del Brief</span>
-                            <span id="briefScoreText"
-                                style="font-size:0.78rem; color:#93c5fd; font-weight:700;">0%</span>
-                        </div>
-                        <div
-                            style="height:6px; border-radius:999px; background:rgba(255,255,255,0.12); overflow:hidden; margin-bottom:10px;">
-                            <div id="briefScoreBar"
-                                style="height:100%; width:0%; background:linear-gradient(90deg,#3b82f6,#10b981); transition:width 0.3s;">
-                            </div>
-                        </div>
-                        <div style="font-size:0.75rem; opacity:0.8; margin-bottom:6px;">Faltantes críticos</div>
-                        <div id="briefMissingList" style="font-size:0.75rem; line-height:1.45; color:#d1d5db;">summary,
-                            audience, business_model, timeline, features</div>
-                        <div style="font-size:0.75rem; opacity:0.8; margin:10px 0 6px;">Resumen vivo</div>
-                        <div id="briefSummaryText"
-                            style="font-size:0.8rem; line-height:1.45; color:#e5e7eb; min-height:36px;">Esperando
-                            conversación...</div>
-                    </div>
-
                     <section class="ai-console claude-chat">
                         <div class="welcome-auras">
                             <span></span>
@@ -1927,16 +2418,18 @@
                             <span></span>
                         </div>
                         <div class="console-header" style="justify-content: space-between; padding: 0.75rem 1rem;">
-                            <!-- HUMAN CHAT ONLY -->
-                            <div style="display:flex; gap:8px; flex-shrink: 0;">
-                                <div id="chatTabHuman"
-                                    style="background:transparent; color:#e5e7eb; border:1px solid rgba(255,255,255,0.16); padding:6px 14px; border-radius:20px; font-weight:600; font-size:0.72rem; white-space:nowrap;">
-                                    Soporte Humano
-                                </div>
+                            <div style="display:flex; gap:8px; align-items:center; flex-shrink: 0;">
+                                <span style="color:#10b981; font-weight:700; font-size:0.8rem; letter-spacing:0.3px;">
+                                    <i class="fas fa-headset" style="margin-right:5px;"></i>Your Team
+                                </span>
                             </div>
 
-                            <!-- RIGHT STATUS/TOKENS -->
+                            <!-- CHANNEL LABEL + RIGHT STATUS/TOKENS -->
                             <div style="display:flex; gap:8px; align-items:center; justify-content:flex-end;">
+                                <span id="activeChannelBadge"
+                                    style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); padding:4px 10px; border-radius:12px; font-weight:700; font-size:0.65rem; text-transform:uppercase; letter-spacing:0.5px;">
+                                    Build
+                                </span>
                                 <button id="togglePreviewBtn" type="button"
                                     style="background:rgba(255,255,255,0.06); color:#e5e7eb; border:1px solid rgba(255,255,255,0.16); padding:6px 12px; border-radius:10px; cursor:pointer; font-weight:600; font-size:0.7rem;">
                                     Preview
@@ -1944,81 +2437,49 @@
                             </div>
                         </div>
 
-                        <!-- Chat History container (ID preserved for script.js) -->
-                        <div class="terminal-wrapper" id="terminalLog">
-                            <!-- Default Welcome Message -->
-                            <div class="msg-row ai">
-                                <div class="ai-msg">
-                                    > Sistema Anmar inicializado.<br>
-                                    > Conexión establecida con el Núcleo Supra.<br><br>
-                                    Estoy listo, arquitecto. Describe tu visión en lenguaje natural y yo generaré el
-                                    plano,
-                                    el
-                                    código y la estrategia de financiación.<br><br>
-                                    <span style="color:#10b981;">¿Qué vamos a construir hoy?</span>
-                                </div>
-                            </div>
+                        <!-- AI Chat History container (hidden — team chat is primary) -->
+                        <div class=”terminal-wrapper” id=”terminalLog” style=”display:none;”>
+                            <div id=”resultSection” style=”display:none;”></div>
+                        </div>
 
-                            <!-- Hidden Result Section (Need to keep structure for script.js compatibility) -->
-                            <div id="resultSection" style="display:none;">
-                                <div class="msg-row ai">
-                                    <div class="ai-msg">
-                                        <strong>Plan Técnico Generado con Éxito.</strong><br>
-                                        He analizado la arquitectura y seleccionado el Stack óptimo. ¿Deseas proceder a
-                                        la
-                                        fase
-                                        de construcción?
-                                        <button id="buildBtn" class="activate-btn"
-                                            style="width:auto; display:inline-block; margin-top:10px;">
-                                            <i class="fas fa-bolt"></i> Ejecutar Construcción (Build)
-                                        </button>
+                        <!-- Team Chat History Container (visible by default) -->
+                        <div class=”terminal-wrapper” id=”humanLog” style=”display:flex;”>
+                            <div id=”humanChatWelcome” class=”msg-row ai”>
+                                <div class=”ai-msg” style=”text-align:center; padding:32px 24px;”>
+                                    <div style=”width:60px; height:60px; border-radius:16px; background:linear-gradient(135deg,#3b82f6,#8b5cf6); display:flex; align-items:center; justify-content:center; margin:0 auto 16px; box-shadow:0 8px 24px rgba(59,130,246,0.3);”>
+                                        <i class=”fas fa-headset” style=”color:#fff; font-size:1.4rem;”></i>
+                                    </div>
+                                    <div style=”font-weight:700; font-size:1.05rem; color:#e2e8f0; margin-bottom:6px; letter-spacing:-0.01em;”>Engineering Consultation</div>
+                                    <div style=”color:#a1afc4; font-size:0.82rem; line-height:1.6; max-width:280px; margin:0 auto;”>
+                                        Describe your project idea below and one of our engineers will review it with you.
+                                    </div>
+                                    <div style=”margin-top:16px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;”>
+                                        <span style=”background:rgba(59,130,246,0.12); color:#60a5fa; font-size:0.7rem; padding:4px 10px; border-radius:20px; font-weight:600;”>Real-time support</span>
+                                        <span style=”background:rgba(139,92,246,0.12); color:#a78bfa; font-size:0.7rem; padding:4px 10px; border-radius:20px; font-weight:600;”>Expert team</span>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-
-                        <!-- Human Chat History Container (Hidden by Default) -->
-                        <div class="terminal-wrapper" id="humanLog" style="display:none;">
-                            <div class="msg-row ai">
-                                <div class="ai-msg">
-                                    > Soporte humano Anmar.<br>
-                                    Escribe tu primer mensaje y te asignamos un ingeniero.<br><br>
-                                    <span style="color:#3b82f6;">Ejemplo:</span> “Necesito una web para mi estudio y un
-                                    sistema de reservas.”
-                                </div>
-                            </div>
-                            <div id="humanChatContent" style="display:flex; flex-direction:column; gap:8px;"></div>
-                        </div>
-
-                        <div id="paywallBanner"
-                            style="display:none; margin:10px 0 14px 0; padding:12px 14px; border-radius:12px; border:1px solid rgba(251,191,36,0.35); background:rgba(251,191,36,0.08); color:#fde68a; font-size:0.85rem; align-items:center; justify-content:space-between; gap:12px;">
-                            <div>
-                                <strong>Activa tu plan</strong> para habilitar el chat con ingenieros.
-                            </div>
-                            <button id="paywallBtn"
-                                style="background:#fbbf24; color:#111; border:none; padding:8px 14px; border-radius:10px; font-weight:700; cursor:pointer;">
-                                Ver planes
-                            </button>
+                            <div id=”humanChatContent” style=”display:flex; flex-direction:column; gap:8px;”></div>
                         </div>
 
                         <!-- Input Area -->
                         <div class="chat-input-area">
                             <div class="input-glass">
                                 <div class="chat-helper" id="chatHelperText">
-                                    Paso 1: Cuéntanos qué necesitas. Paso 2: Te asignamos un ingeniero en minutos.
+                                    Describe your project and one of our engineers will review it.
                                 </div>
                                 <!-- ID: businessIdea preserved -->
                                 <div class="chat-input-wrap">
-                                    <button id="uploadImageBtn" class="chat-icon-btn" title="Adjuntar archivo">
+                                    <button id="uploadImageBtn" class="chat-icon-btn" title="Attach file">
                                         <i class="fas fa-paperclip"></i>
                                     </button>
                                     <textarea id="businessIdea"
-                                        placeholder="Paso 1: Cuéntanos qué necesitas. Ej: “Necesito una web para mi estudio con reservas.”"
+                                        placeholder="Tell us about your project to consult with our engineers..."
                                         rows="1"></textarea>
-                                    <button id="voiceInputBtn" class="chat-icon-btn" title="Micrófono">
+                                    <button id="voiceInputBtn" class="chat-icon-btn" title="Microphone">
                                         <i class="fas fa-microphone"></i>
                                     </button>
-                                    <button id="generateBtn" class="chat-send-btn" title="Enviar">
+                                    <button id="generateBtn" class="chat-send-btn" title="Send">
                                         <i class="fas fa-arrow-up"></i>
                                     </button>
                                 </div>
@@ -2071,7 +2532,7 @@
                         <div id="emptyState"
                             style="height:100%; width:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#cbd5e1; background:rgba(0,0,0,0.35);">
                             <i class="fas fa-cube" style="font-size:3rem; opacity:0.2; margin-bottom:1rem;"></i>
-                            <p style="opacity:0.75; font-family:'Inter';">Esperando input del motor...</p>
+                            <p style="opacity:0.75; font-family:'Inter';">Waiting for engine input...</p>
                         </div>
 
                         <!-- Marketing Preview -->
@@ -2079,8 +2540,8 @@
                             style="display:none; width:100%; height:100%; overflow:auto; padding:24px; box-sizing:border-box;">
                             <div class="marketing-preview-header">
                                 <div>
-                                    <div class="marketing-preview-title">Previsualización de Campaña</div>
-                                    <div class="marketing-preview-subtitle">Estrategia + copys con métricas proyectadas por plataforma.</div>
+                                    <div class="marketing-preview-title">Campaign Preview</div>
+                                    <div class="marketing-preview-subtitle">Strategy + copy with projected metrics by platform.</div>
                                 </div>
                                 <div class="marketing-preview-chip">Supra Marketing</div>
                             </div>
@@ -2090,10 +2551,10 @@
                                         <div class="social-platform">Instagram</div>
                                         <div class="social-format">Reel</div>
                                     </div>
-                                    <div class="social-hook" data-role="hook">Hook listo para captar atención en 3 segundos.</div>
-                                    <div class="social-caption" data-role="caption">Copy corto con beneficio claro y CTA directo.</div>
+                                    <div class="social-hook" data-role="hook">Hook ready to capture attention in 3 seconds.</div>
+                                    <div class="social-caption" data-role="caption">Short copy with clear benefit and direct CTA.</div>
                                     <div class="social-tags" data-role="hashtags">#startup #growth #product</div>
-                                    <div class="social-cta" data-role="cta">CTA: Visita la landing y convierte hoy.</div>
+                                    <div class="social-cta" data-role="cta">CTA: Visit the landing page and convert today.</div>
                                     <div class="social-metrics">
                                         <div><span class="metric-label">Views</span><span class="metric-value" data-metric="views">--</span></div>
                                         <div><span class="metric-label">CTR</span><span class="metric-value" data-metric="ctr">--</span></div>
@@ -2105,10 +2566,10 @@
                                         <div class="social-platform">TikTok</div>
                                         <div class="social-format">Short</div>
                                     </div>
-                                    <div class="social-hook" data-role="hook">Inicio agresivo con valor inmediato.</div>
-                                    <div class="social-caption" data-role="caption">Script con ritmo rápido y cierre memorable.</div>
-                                    <div class="social-tags" data-role="hashtags">#viral #crecimiento #negocio</div>
-                                    <div class="social-cta" data-role="cta">CTA: Reserva tu demo en 1 clic.</div>
+                                    <div class="social-hook" data-role="hook">Aggressive opening with immediate value.</div>
+                                    <div class="social-caption" data-role="caption">Script with fast pace and memorable closing.</div>
+                                    <div class="social-tags" data-role="hashtags">#viral #growth #business</div>
+                                    <div class="social-cta" data-role="cta">CTA: Book your demo in 1 click.</div>
                                     <div class="social-metrics">
                                         <div><span class="metric-label">Views</span><span class="metric-value" data-metric="views">--</span></div>
                                         <div><span class="metric-label">CTR</span><span class="metric-value" data-metric="ctr">--</span></div>
@@ -2120,10 +2581,10 @@
                                         <div class="social-platform">YouTube</div>
                                         <div class="social-format">Shorts</div>
                                     </div>
-                                    <div class="social-hook" data-role="hook">Demostración rápida con prueba social.</div>
-                                    <div class="social-caption" data-role="caption">Estructura AIDA con CTA a suscripción.</div>
+                                    <div class="social-hook" data-role="hook">Quick demonstration with social proof.</div>
+                                    <div class="social-caption" data-role="caption">AIDA structure with subscription CTA.</div>
                                     <div class="social-tags" data-role="hashtags">#shorts #saas #marketing</div>
-                                    <div class="social-cta" data-role="cta">CTA: Suscríbete y conoce la solución.</div>
+                                    <div class="social-cta" data-role="cta">CTA: Subscribe and discover the solution.</div>
                                     <div class="social-metrics">
                                         <div><span class="metric-label">Views</span><span class="metric-value" data-metric="views">--</span></div>
                                         <div><span class="metric-label">CTR</span><span class="metric-value" data-metric="ctr">--</span></div>
@@ -2135,10 +2596,10 @@
                                         <div class="social-platform">Facebook</div>
                                         <div class="social-format">Ad</div>
                                     </div>
-                                    <div class="social-hook" data-role="hook">Beneficio inmediato en el primer scroll.</div>
-                                    <div class="social-caption" data-role="caption">Copy con prueba social y urgencia.</div>
+                                    <div class="social-hook" data-role="hook">Immediate benefit on first scroll.</div>
+                                    <div class="social-caption" data-role="caption">Copy with social proof and urgency.</div>
                                     <div class="social-tags" data-role="hashtags">#ads #social #conversion</div>
-                                    <div class="social-cta" data-role="cta">CTA: Consigue tu oferta hoy.</div>
+                                    <div class="social-cta" data-role="cta">CTA: Get your offer today.</div>
                                     <div class="social-metrics">
                                         <div><span class="metric-label">Views</span><span class="metric-value" data-metric="views">--</span></div>
                                         <div><span class="metric-label">CTR</span><span class="metric-value" data-metric="ctr">--</span></div>
@@ -2150,10 +2611,10 @@
                                         <div class="social-platform">Google Ads</div>
                                         <div class="social-format">Search</div>
                                     </div>
-                                    <div class="social-hook" data-role="hook">Titular con keyword y promesa directa.</div>
-                                    <div class="social-caption" data-role="caption">Descripción corta enfocada a intención.</div>
+                                    <div class="social-hook" data-role="hook">Headline with keyword and direct promise.</div>
+                                    <div class="social-caption" data-role="caption">Short description focused on intent.</div>
                                     <div class="social-tags" data-role="hashtags">#search #intent #performance</div>
-                                    <div class="social-cta" data-role="cta">CTA: Cotiza en segundos.</div>
+                                    <div class="social-cta" data-role="cta">CTA: Quote in seconds.</div>
                                     <div class="social-metrics">
                                         <div><span class="metric-label">Views</span><span class="metric-value" data-metric="views">--</span></div>
                                         <div><span class="metric-label">CTR</span><span class="metric-value" data-metric="ctr">--</span></div>
@@ -2165,10 +2626,10 @@
                                         <div class="social-platform">LinkedIn</div>
                                         <div class="social-format">Sponsored</div>
                                     </div>
-                                    <div class="social-hook" data-role="hook">Valor B2B con propuesta clara.</div>
-                                    <div class="social-caption" data-role="caption">Copy profesional con CTA directa.</div>
+                                    <div class="social-hook" data-role="hook">B2B value with clear proposal.</div>
+                                    <div class="social-caption" data-role="caption">Professional copy with direct CTA.</div>
                                     <div class="social-tags" data-role="hashtags">#b2b #pipeline #saas</div>
-                                    <div class="social-cta" data-role="cta">CTA: Agenda una demo.</div>
+                                    <div class="social-cta" data-role="cta">CTA: Schedule a demo.</div>
                                     <div class="social-metrics">
                                         <div><span class="metric-label">Views</span><span class="metric-value" data-metric="views">--</span></div>
                                         <div><span class="metric-label">CTR</span><span class="metric-value" data-metric="ctr">--</span></div>
@@ -2180,10 +2641,10 @@
                                         <div class="social-platform">X</div>
                                         <div class="social-format">Thread</div>
                                     </div>
-                                    <div class="social-hook" data-role="hook">Hook corto con promesa y datos.</div>
-                                    <div class="social-caption" data-role="caption">Copy directo + prueba social.</div>
+                                    <div class="social-hook" data-role="hook">Short hook with promise and data.</div>
+                                    <div class="social-caption" data-role="caption">Direct copy plus social proof.</div>
                                     <div class="social-tags" data-role="hashtags">#x #growth #launch</div>
-                                    <div class="social-cta" data-role="cta">CTA: Entra y conoce más.</div>
+                                    <div class="social-cta" data-role="cta">CTA: Enter and learn more.</div>
                                     <div class="social-metrics">
                                         <div><span class="metric-label">Views</span><span class="metric-value" data-metric="views">--</span></div>
                                         <div><span class="metric-label">CTR</span><span class="metric-value" data-metric="ctr">--</span></div>
@@ -2195,10 +2656,10 @@
                                         <div class="social-platform">Pinterest</div>
                                         <div class="social-format">Pin</div>
                                     </div>
-                                    <div class="social-hook" data-role="hook">Idea visual con beneficio claro.</div>
-                                    <div class="social-caption" data-role="caption">Copy inspiracional con CTA.</div>
+                                    <div class="social-hook" data-role="hook">Visual idea with clear benefit.</div>
+                                    <div class="social-caption" data-role="caption">Inspirational copy with CTA.</div>
                                     <div class="social-tags" data-role="hashtags">#ideas #inspo #brand</div>
-                                    <div class="social-cta" data-role="cta">CTA: Guarda y visita la landing.</div>
+                                    <div class="social-cta" data-role="cta">CTA: Save and visit the landing page.</div>
                                     <div class="social-metrics">
                                         <div><span class="metric-label">Views</span><span class="metric-value" data-metric="views">--</span></div>
                                         <div><span class="metric-label">CTR</span><span class="metric-value" data-metric="ctr">--</span></div>
@@ -2212,7 +2673,7 @@
 
             </div>
 
-            <!-- SECTION 2: PROYECTOS -->
+            <!-- SECTION 2: PROJECTS -->
             <div id="section-projects" class="section-view active"
                 style="padding:40px; color:#fff; flex-direction:column; align-items:center; justify-content:center; height:100%;">
                 <div class="projects-panel" style="width:min(980px,92vw); text-align:left;">
@@ -2224,21 +2685,21 @@
                     <div class="panel-content">
                         <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
                             <i class="fas fa-folder-tree" style="font-size:1.4rem; color:#3b82f6;"></i>
-                            <h2 style="color:#fff; margin:0;">Proyectos</h2>
+                            <h2 style="color:#fff; margin:0;">Projects</h2>
                         </div>
                         <p style="opacity:0.75; margin-top:0; line-height:1.6;">
-                            Crea tu proyecto (la carpeta principal) y automáticamente pasas a Construcción.
+                            Create your project (main folder) and automatically move to Build.
                         </p>
 
                         <div style="display:flex; flex-direction:column; gap:10px; margin: 16px 0 8px 0;">
                             <div class="project-cta">
-                                <button id="newProjectFlowBtn" onclick="openWelcomeNewProject()">+ Nuevo proyecto</button>
+                                <button id="newProjectFlowBtn" onclick="openWelcomeNewProject()">+ New project</button>
                             </div>
-                            <span style="font-size:0.85rem; opacity:0.55;">Se abrirá la tarjeta para escribir nombre y teléfono.</span>
+                            <span style="font-size:0.85rem; opacity:0.55;">Fill in your project details to get started.</span>
                         </div>
                     <div id="projectLimitHint"
                         style="display:none; font-size:0.82rem; color:#93c5fd; opacity:0.85; margin-bottom:12px;">
-                        Tu cuenta ya tiene un proyecto activo. Para crear otro, elimina el actual.
+                        Your account already has an active project. To create another, delete the current one.
                     </div>
 
                         <div id="projectsFolderGrid"
@@ -2249,32 +2710,7 @@
             </div>
 
             <!-- SECTION 3: MARKETING (Placeholder) -->
-            <div id="section-market" class="section-view"
-                style="padding:40px; color:#fff; flex-direction:column; align-items:center; justify-content:center; height:100%;">
-                <div
-                    style="background:rgba(59, 130, 246, 0.1); border:1px solid rgba(59, 130, 246, 0.3); padding:40px; border-radius:16px; text-align:center;">
-                    <i class="fas fa-bullhorn" style="font-size:3rem; color:#3b82f6; margin-bottom:20px;"></i>
-                    <h2 style="color:#fff; margin-top:0;">Supra Marketing Engine</h2>
-                    <p style="opacity:0.6; max-width:400px; line-height:1.6;">
-                        Genera campañas, copys y assets visuales optimizados por IA.<br>
-                        <span style="font-size:0.8rem; color:#3b82f6;">PRÓXIMAMENTE v2.1</span>
-                    </p>
-                </div>
-            </div>
-
-            <!-- SECTION 4: GROWTH (Placeholder) -->
-            <div id="section-growth" class="section-view"
-                style="padding:40px; color:#fff; flex-direction:column; align-items:center; justify-content:center; height:100%;">
-                <div
-                    style="background:rgba(245, 158, 11, 0.1); border:1px solid rgba(245, 158, 11, 0.3); padding:40px; border-radius:16px; text-align:center;">
-                    <i class="fas fa-chart-line" style="font-size:3rem; color:#f59e0b; margin-bottom:20px;"></i>
-                    <h2 style="color:#fff; margin-top:0;">Fondo de Inversión Anmar</h2>
-                    <p style="opacity:0.6; max-width:400px; line-height:1.6;">
-                        Solicita capital semilla y monitoriza el crecimiento de tu activo.<br>
-                        <span style="font-size:0.8rem; color:#f59e0b;">PRÓXIMAMENTE v2.1</span>
-                    </p>
-                </div>
-            </div>
+            <!-- section-market and section-growth removed: market/growth/capital all share section-build with channel switching -->
 
             <!-- SECTION 5: PROFILE -->
             <div id="section-profile" class="section-view"
@@ -2287,15 +2723,15 @@
                             <i class="fas fa-user" style="color:#10b981;"></i>
                         </div>
                         <div>
-                            <h2 id="profileName" style="margin:0;">Usuario Anmar</h2>
+                            <h2 id="profileName" style="margin:0;">Anmar User</h2>
                             <div id="profileEmail" style="opacity:0.75; font-size:0.9rem;"></div>
                         </div>
                     </div>
 
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:24px;">
                         <div style="padding:14px; border:1px solid rgba(255,255,255,0.12); border-radius:10px;">
-                            <div style="opacity:0.65; font-size:0.8rem;">Membresía</div>
-                            <div id="profileMemberSince" style="margin-top:6px; font-weight:600;">Activo en Anmar</div>
+                            <div style="opacity:0.65; font-size:0.8rem;">Membership</div>
+                            <div id="profileMemberSince" style="margin-top:6px; font-weight:600;">Active on Anmar</div>
                         </div>
                         <div style="padding:14px; border:1px solid rgba(255,255,255,0.12); border-radius:10px;">
                             <div style="opacity:0.65; font-size:0.8rem;">Plan activo</div>
@@ -2305,7 +2741,7 @@
 
                     <button id="logoutBtn"
                         style="background:rgba(239,68,68,0.18); color:#fecaca; border:1px solid rgba(239,68,68,0.4); padding:10px 16px; border-radius:8px; cursor:pointer; font-weight:600;">
-                        <i class="fas fa-right-from-bracket"></i> Cerrar sesión
+                        <i class="fas fa-right-from-bracket"></i> Logout
                     </button>
                 </div>
             </div>
@@ -2314,52 +2750,35 @@
     </div> <!-- Close App Layout -->
 
     <div class="notif-toast" id="notifToast">
-        <div style="font-weight:700;">Blueprint recibido</div>
-        <div style="font-size:0.85rem; color:rgba(255,255,255,0.75);">Tu ingeniero dejó un blueprint para aprobar.</div>
-        <button id="notifToastBtn">Ver blueprint</button>
+        <div style="font-weight:700;">Blueprint received</div>
+        <div style="font-size:0.85rem; color:rgba(255,255,255,0.75);">Your engineer left a blueprint for approval.</div>
+        <button id="notifToastBtn">View blueprint</button>
     </div>
 
     <div class="notif-panel" id="notifPanel">
         <div class="notif-panel-header">
-            <span>Notificaciones</span>
-            <button id="notifCloseBtn" style="background:transparent; border:1px solid rgba(255,255,255,0.15); color:#aaa; padding:4px 8px; border-radius:8px; cursor:pointer;">Cerrar</button>
+            <span>Notifications</span>
+            <button id="notifCloseBtn" style="background:transparent; border:1px solid rgba(255,255,255,0.15); color:#aaa; padding:4px 8px; border-radius:8px; cursor:pointer;">Close</button>
         </div>
         <div class="notif-panel-body" id="notifList">
-            <div style="color:rgba(255,255,255,0.6); font-size:0.85rem;">Sin notificaciones.</div>
+            <div style="color:rgba(255,255,255,0.6); font-size:0.85rem;">No notifications.</div>
         </div>
     </div>
 
-    <!-- Inline Script for Tab Switch (to avoid adding it to script.js right away) -->
     <script>
-        let isHumanChatActive = false;
-        function switchChatTab(tab) {
-            const logIA = document.getElementById('terminalLog');
-            const logHuman = document.getElementById('humanLog');
-            const isHuman = String(tab || '').toLowerCase().includes('human');
-            isHumanChatActive = isHuman;
-
-            if (logIA) logIA.style.display = isHuman ? 'none' : 'flex';
-            if (logHuman) logHuman.style.display = isHuman ? 'flex' : 'none';
-
-            const activeLog = isHuman ? logHuman : logIA;
-            if (activeLog) {
-                setTimeout(() => {
-                    activeLog.scrollTop = activeLog.scrollHeight;
-                }, 50);
-            }
-
-            document.dispatchEvent(new CustomEvent('chatTabSwitched', { detail: isHuman ? 'Human' : 'AI' }));
-        }
+        // Team chat is always active — no mode switching needed
+        let isHumanChatActive = true;
+        function switchChatTab(tab) { /* no-op — team chat only */ }
     </script>
 </body>
 
 <!-- Hidden Modals preserved from original -->
 <div id="projectsModal"
     style="display:none; position:fixed; left:100px; top:100px; background:rgba(0,0,0,0.9); padding:2rem; border:1px solid #333; border-radius:12px; z-index:200; backdrop-filter:blur(10px); color:#fff; min-width:300px;">
-    <h3 style="border-bottom:1px solid #333; padding-bottom:1rem; margin-top:0;">Proyectos Activos</h3>
+    <h3 style="border-bottom:1px solid #333; padding-bottom:1rem; margin-top:0;">Active Projects</h3>
     <ul id="projectList" style="list-style:none; padding:0; line-height:2;"></ul>
     <button onclick="toggleProjectList()"
-        style="background:transparent; border:1px solid #555; color:#aaa; padding:5px 10px; border-radius:4px; margin-top:1rem; cursor:pointer;">Cerrar</button>
+        style="background:transparent; border:1px solid #555; color:#aaa; padding:5px 10px; border-radius:4px; margin-top:1rem; cursor:pointer;">Close</button>
 </div>
 
 <!-- CANVAS LOGIC -->
@@ -2378,139 +2797,21 @@
 
         <i class="fas fa-lock" style="font-size:3rem; color:#fff; margin-bottom:20px; opacity:0.8;"></i>
 
-        <h2 style="color:#fff; margin-bottom:10px; font-family:'Inter'; letter-spacing:-1px;">Activa tu plan</h2>
+        <h2 style="color:#fff; margin-bottom:10px; font-family:'Inter'; letter-spacing:-1px;">Activate your plan</h2>
         <p style="color:#aaa; font-size:0.95rem; line-height:1.6; margin-bottom:30px;">
-            Para entrar al chat con el equipo necesitas un plan mensual activo. Elige Marketing o Marketing + Construcción.
+            To chat with the team, you need an active monthly plan. Choose Marketing or Marketing + Build.
         </p>
 
         <button onclick="unlockPremium()"
             style="width:100%; padding:15px; background:#fff; color:#000; font-weight:700; border:none; border-radius:10px; cursor:pointer; font-size:1rem; display:flex; align-items:center; justify-content:center; gap:10px; transition:transform 0.2s;">
-            <span>Elegir plan</span> <i class="fas fa-arrow-right"></i>
+            <span>Choose plan</span> <i class="fas fa-arrow-right"></i>
         </button>
-        <div style="margin-top:15px; font-size:0.8rem; color:#555;">Pago seguro vía Stripe</div>
+        <div style="margin-top:15px; font-size:0.8rem; color:#555;">Secure payment via Stripe</div>
 
         <button onclick="document.getElementById('premium-modal').style.display='none'"
-            style="background:transparent; border:none; color:#555; margin-top:20px; cursor:pointer; font-size:0.8rem;">Cancelar</button>
+            style="background:transparent; border:none; color:#555; margin-top:20px; cursor:pointer; font-size:0.8rem;">Cancel</button>
     </div>
 </div>
-
-<!-- PRICING MODAL (Recharge Tokens) -->
-    <div id="pricing-modal"
-        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:9999; background:rgba(0,0,0,0.9); backdrop-filter:blur(15px); align-items:center; justify-content:center; overflow-y:auto;">
-        <div class="pricing-shell"
-            style="background:#0a0a0a; border:1px solid #222; padding:40px; border-radius:24px; max-width:1000px; width:90%; position:relative; box-shadow:0 0 100px rgba(16, 185, 129, 0.1); margin-top:50px;">
-
-        <button onclick="document.getElementById('pricing-modal').style.display='none'"
-            style="position:absolute; top:20px; right:20px; background:transparent; border:none; color:#555; font-size:1.5rem; cursor:pointer;">&times;</button>
-
-        <div style="text-align:center; margin-bottom:24px;">
-            <h2 class="pricing-title" style="color:#fff; margin:0 0 10px 0; font-size:2rem;">Activa tu Plan Mensual</h2>
-            <p class="pricing-subtitle" style="color:#666;">Elige el acceso que deseas antes de iniciar el chat con el equipo.</p>
-        </div>
-
-        <div id="paywallEmailGate" class="paywall-email-gate">
-            <p>Tu proyecto está listo. Ingresa tu correo para activarlo con el equipo.</p>
-            <input id="paywallEmailInput" type="email" placeholder="tu@correo.com" />
-            <button id="paywallEmailBtn" type="button">Continuar</button>
-        </div>
-
-        <div class="pricing-grid">
-
-            <!-- PLAN 0: INICIO -->
-            <div class="plan-card">
-                <div class="plan-icon" style="width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);">
-                    <i class="fas fa-seedling" style="color:#fff;"></i>
-                </div>
-                <h3 class="plan-title"
-                    style="color:#93c5fd; font-size:0.85rem; text-transform:uppercase; letter-spacing:1px; margin:14px 0 8px;">
-                    Inicio</h3>
-                <div class="plan-price" style="font-size:2.3rem; color:#fff; font-weight:bold; margin-bottom:10px;">$47<span
-                        style="font-size:1rem; color:#555;">/mes</span></div>
-                <ul class="plan-list"
-                    style="list-style:none; padding:0; color:#c7c7c7; line-height:1.9; margin-bottom:18px; font-size:0.88rem;">
-                    <li><i class="fas fa-check" style="color:#10b981;"></i> Tokens limitados</li>
-                    <li><i class="fas fa-check" style="color:#10b981;"></i> Diagnóstico inicial</li>
-                    <li><i class="fas fa-check" style="color:#10b981;"></i> Soporte humano básico</li>
-                </ul>
-                <button disabled class="plan-cta"
-                    style="width:100%; padding:12px; background:#1f2937; color:#9ca3af; border:none; border-radius:8px; font-weight:bold; cursor:not-allowed;">
-                    Próximamente</button>
-            </div>
-
-            <!-- PLAN 1: IMPULSO -->
-            <div class="plan-card">
-                <div class="plan-icon" style="width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);">
-                    <i class="fas fa-rocket" style="color:#fff;"></i>
-                </div>
-                <h3 class="plan-title"
-                    style="color:#93c5fd; font-size:0.85rem; text-transform:uppercase; letter-spacing:1px; margin:14px 0 8px;">
-                    Impulso</h3>
-                <div class="plan-price" style="font-size:2.3rem; color:#fff; font-weight:bold; margin-bottom:10px;">$137<span
-                        style="font-size:1rem; color:#555;">/mes</span></div>
-                <ul class="plan-list"
-                    style="list-style:none; padding:0; color:#c7c7c7; line-height:1.9; margin-bottom:18px; font-size:0.88rem;">
-                    <li><i class="fas fa-check" style="color:#10b981;"></i> Más tokens (limitados)</li>
-                    <li><i class="fas fa-check" style="color:#10b981;"></i> Optimización semanal</li>
-                    <li><i class="fas fa-check" style="color:#10b981;"></i> Soporte prioritario</li>
-                </ul>
-                <button disabled class="plan-cta"
-                    style="width:100%; padding:12px; background:#1f2937; color:#9ca3af; border:none; border-radius:8px; font-weight:bold; cursor:not-allowed;">
-                    Próximamente</button>
-            </div>
-
-            <!-- PLAN 2: MARKETING -->
-            <div class="plan-card">
-                <div class="plan-icon" style="width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);">
-                    <i class="fas fa-bullhorn" style="color:#fff;"></i>
-                </div>
-                <h3 class="plan-title"
-                    style="color:#93c5fd; font-size:0.85rem; text-transform:uppercase; letter-spacing:1px; margin:14px 0 8px;">
-                    Marketing Ilimitado</h3>
-                <div class="plan-price" style="font-size:2.3rem; color:#fff; font-weight:bold; margin-bottom:10px;">$297<span
-                        style="font-size:1rem; color:#555;">/mes</span></div>
-                <ul class="plan-list"
-                    style="list-style:none; padding:0; color:#c7c7c7; line-height:1.9; margin-bottom:18px; font-size:0.88rem;">
-                    <li><i class="fas fa-check" style="color:#10b981;"></i> Tokens ilimitados</li>
-                    <li><i class="fas fa-check" style="color:#10b981;"></i> Ads + artes + growth</li>
-                    <li><i class="fas fa-check" style="color:#10b981;"></i> Community manager</li>
-                </ul>
-                <button onclick="purchasePlan('marketing')" class="plan-cta"
-                    style="width:100%; padding:12px; background:#3b82f6; color:#fff; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">
-                    Activar Marketing</button>
-            </div>
-
-            <!-- PLAN 3: MARKETING + CONSTRUCCIÓN -->
-            <div class="plan-card"
-                style="border:1px solid #10b981; box-shadow:0 0 22px rgba(16, 185, 129, 0.2);">
-                <div class="plan-badge"
-                    style="position:absolute; top:-12px; left:50%; transform:translateX(-50%); background:#10b981; color:#000; padding:2px 10px; border-radius:12px; font-size:0.7rem; font-weight:bold;">
-                    RECOMENDADO</div>
-                <div class="plan-icon" style="width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);">
-                    <i class="fas fa-cube" style="color:#fff;"></i>
-                </div>
-                <h3 class="plan-title"
-                    style="color:#10b981; font-size:0.85rem; text-transform:uppercase; letter-spacing:1px; margin:14px 0 8px;">
-                    Marketing + Construcción</h3>
-                <div class="plan-price" style="font-size:2.3rem; color:#fff; font-weight:bold; margin-bottom:10px;">$397<span
-                        style="font-size:1rem; color:#555;">/mes</span></div>
-                <ul class="plan-list"
-                    style="list-style:none; padding:0; color:#fff; line-height:1.9; margin-bottom:18px; font-size:0.88rem;">
-                    <li><i class="fas fa-check" style="color:#10b981;"></i> Tokens ilimitados</li>
-                    <li><i class="fas fa-check" style="color:#10b981;"></i> Web + software completo</li>
-                    <li><i class="fas fa-check" style="color:#10b981;"></i> Ingeniería humana</li>
-                </ul>
-                <button onclick="purchasePlan('marketing_build')" class="plan-cta"
-                    style="width:100%; padding:12px; background:#10b981; color:#001b12; border:none; border-radius:8px; font-weight:bold; cursor:pointer; box-shadow:0 0 10px rgba(16,185,129,0.4);">
-                    Activar Plan Completo</button>
-            </div>
-
-        </div>
-
-        <div style="text-align:center; margin-top:30px; font-size:0.8rem; color:#444;">
-            <i class="fas fa-lock"></i> Pagos encriptados de extremo a extremo. Garantía de satisfacción Anmar.
-        </div>
-
-    </div>
 
     <!-- PROJECT LIMIT MODAL -->
     <div id="project-limit-modal"
@@ -2522,11 +2823,11 @@
                     style="width:40px; height:40px; border-radius:12px; background:rgba(59,130,246,0.15); display:flex; align-items:center; justify-content:center;">
                     <i class="fas fa-lock" style="color:#3b82f6;"></i>
                 </div>
-                <h3 style="margin:0; color:#fff;">Límite de proyectos</h3>
+                <h3 style="margin:0; color:#fff;">Project limit</h3>
             </div>
             <p style="color:#cbd5e1; line-height:1.6; margin:0 0 18px 0;">
-                Tu cuenta está limitada a <strong>1 proyecto activo</strong> para mantener foco y calidad.
-                Si quieres trabajar en otro proyecto, debes crear una cuenta nueva.
+                Your account is limited to <strong>1 active project</strong> to maintain focus and quality.
+                If you want to work on another project, you must create a new account.
             </p>
             <div style="display:flex; gap:10px; justify-content:flex-end;">
                 <button onclick="closeProjectLimitModal()"
@@ -2608,45 +2909,74 @@
 <script>
     // Pre-fallback: define a safe recovery that works even if script.js crashes
     window.__applyDashboardFallback = function () {
+        // Check if onboarding already done — skip welcome screen
+        let fallbackEmail = '';
         try {
-            document.body.classList.add('welcome-mode');
-        } catch (e) {}
+            const raw = localStorage.getItem('currentUser');
+            fallbackEmail = (raw ? JSON.parse(raw) : {}).email || '';
+            fallbackEmail = fallbackEmail.toLowerCase();
+        } catch(_){}
+        const alreadyOnboarded = fallbackEmail && localStorage.getItem(`anmar:welcome_done:${fallbackEmail}`);
+        if (alreadyOnboarded) {
+            // Don't show welcome screen — user already has a project
+            const ws = document.getElementById('welcomeScreen');
+            if (ws) { ws.classList.remove('visible'); ws.style.display = 'none'; }
+            document.body.classList.remove('welcome-mode');
+        } else {
+            try {
+                document.body.classList.add('welcome-mode');
+            } catch (e) {}
+        }
         const welcomeInput = document.getElementById('welcomeProjectInput');
-        const welcomeBtn = document.getElementById('welcomeStartBtn');
-        const welcomePhoneStep = document.getElementById('welcomePhoneStep');
         const welcomePhoneInput = document.getElementById('welcomePhoneInput');
+        const welcomeDescInput = document.getElementById('welcomeDescInput');
+        const welcomeSubmitBtn = document.getElementById('welcomeSubmitBtn');
         function safeSwitchTab(tab) {
-            const sec = document.getElementById(`section-${tab}`);
+            // market, growth, capital all share section-build
+            const sectionId = (tab === 'market' || tab === 'growth' || tab === 'capital') ? 'section-build' : 'section-' + tab;
+            const sec = document.getElementById(sectionId);
             if (!sec) return;
-            document.querySelectorAll('.section-view').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.section-view').forEach(s => {
+                s.classList.remove('active');
+            });
             sec.classList.add('active');
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            const btn = document.getElementById(`tab-${tab}`);
+            const btn = document.getElementById('tab-' + tab);
             if (btn) btn.classList.add('active');
             document.querySelectorAll('.nav-icon').forEach(b => b.classList.remove('active'));
-            const nav = document.getElementById(`nav-${tab}`);
+            // Sync mobile bottom nav
+            document.querySelectorAll('.mobile-bottom-nav .nav-item').forEach(b => b.classList.remove('active'));
+            const nav = document.getElementById('nav-' + tab);
             if (nav) nav.classList.add('active');
         }
 
-        window.switchTab = safeSwitchTab;
+        // Only set fallback switchTab if main script hasn't loaded the full version
+        if (!window.__mainScriptOk) {
+            window.switchTab = safeSwitchTab;
+        }
 
-        async function createProjectByNameFallback(name, phone) {
-            let email = '';
+        function getFallbackEmail() {
             try {
                 const raw = localStorage.getItem('currentUser');
                 const user = raw ? JSON.parse(raw) : null;
-                email = user?.email || '';
-            } catch (e) { }
+                return (user?.email || '').toLowerCase();
+            } catch (e) { return ''; }
+        }
+
+        async function createProjectByNameFallback(name, phone, description) {
+            const email = getFallbackEmail();
 
             const res = await fetch('/api/create-empty-project', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ project_name: name, user_email: email, phone: phone || '' })
+                credentials: 'include',
+                body: JSON.stringify({ project_name: name, user_email: email, phone: phone || '', description: description || '' })
             });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'No se pudo crear el proyecto.');
+            if (!res.ok) throw new Error(data.error || 'Could not create the project.');
             if (email) {
-                localStorage.setItem(`anmar:last_project:${email.toLowerCase()}`, data.project_name);
+                localStorage.setItem(`anmar:last_project:${email}`, data.project_name);
+                localStorage.setItem(`anmar:welcome_done:${email}`, '1');
             }
             return data.project_name;
         }
@@ -2655,65 +2985,110 @@
             const welcome = document.getElementById('welcomeScreen');
             if (welcome) {
                 welcome.classList.add('visible');
+                welcome.classList.remove('fade-out');
+                welcome.style.display = '';
                 document.body.classList.add('welcome-mode');
             }
-            if (welcomePhoneStep) welcomePhoneStep.style.display = 'none';
+            const formStep = document.getElementById('welcomeFormStep');
+            const consultStep = document.getElementById('welcomeConsultingStep');
+            if (formStep) formStep.style.display = 'block';
+            if (consultStep) consultStep.style.display = 'none';
             if (welcomeInput) welcomeInput.value = '';
             if (welcomePhoneInput) welcomePhoneInput.value = '';
-            if (welcomeBtn) welcomeBtn.disabled = true;
-            safeSwitchTab('projects');
+            if (welcomeDescInput) welcomeDescInput.value = '';
+            if (welcomeSubmitBtn) welcomeSubmitBtn.disabled = true;
+            // Do NOT call safeSwitchTab — it can cause welcome to get hidden
         };
 
         window.createProjectFromInput = function () {
             window.openWelcomeNewProject();
         };
 
-        const welcomePhoneBtn = document.getElementById('welcomePhoneBtn');
-        window.__welcomeNameInput = function () {
-            if (!welcomeBtn || !welcomeInput) return;
-            welcomeBtn.disabled = welcomeInput.value.trim().length < 1;
-        };
-
-        window.__welcomeContinue = function () {
-            if (welcomePhoneStep) welcomePhoneStep.style.display = 'flex';
-            if (welcomePhoneInput) welcomePhoneInput.focus();
-        };
-
-        window.__welcomeCreate = async function () {
+        // Enable/disable submit based on all 3 fields
+        function fallbackCheckForm() {
+            if (!welcomeSubmitBtn) return;
             const name = (welcomeInput?.value || '').trim();
             const phone = (welcomePhoneInput?.value || '').trim();
-            if (!name) {
-                alert('Escribe un nombre para el proyecto.');
-                return;
-            }
-            if (!phone) {
-                alert('Escribe tu número de teléfono.');
-                return;
-            }
-            try {
-                await createProjectByNameFallback(name, phone);
-                const welcome = document.getElementById('welcomeScreen');
-                if (welcome) welcome.classList.remove('visible');
-                document.body.classList.remove('welcome-mode');
-                safeSwitchTab('build');
-            } catch (e) {
-                alert(e.message || 'Error de conexión creando proyecto.');
-            }
-        };
+            const desc = (welcomeDescInput?.value || '').trim();
+            welcomeSubmitBtn.disabled = !(name && phone && desc);
+        }
+        if (welcomeInput) welcomeInput.addEventListener('input', fallbackCheckForm);
+        if (welcomePhoneInput) welcomePhoneInput.addEventListener('input', fallbackCheckForm);
+        if (welcomeDescInput) welcomeDescInput.addEventListener('input', fallbackCheckForm);
 
-        if (welcomeBtn && welcomeInput) {
-            window.__welcomeNameInput();
+        // Fallback click handler for Continue button
+        if (welcomeSubmitBtn) {
+            welcomeSubmitBtn.addEventListener('click', async () => {
+                const name = (welcomeInput?.value || '').trim();
+                const phone = (welcomePhoneInput?.value || '').trim();
+                const desc = (welcomeDescInput?.value || '').trim();
+                if (!name || !phone || !desc) return;
+
+                // Hide form, show consulting animation
+                const formStep = document.getElementById('welcomeFormStep');
+                const consultStep = document.getElementById('welcomeConsultingStep');
+                if (formStep) formStep.style.display = 'none';
+                if (consultStep) consultStep.style.display = 'block';
+
+                const steps = [
+                    document.getElementById('consultStep1'),
+                    document.getElementById('consultStep2'),
+                    document.getElementById('consultStep3'),
+                    document.getElementById('consultStep4')
+                ];
+                const titles = [
+                    'Setting up your workspace...',
+                    'Analyzing project requirements...',
+                    'Matching you with the right engineer...',
+                    'Almost ready — preparing your consultation...'
+                ];
+                const titleEl = document.getElementById('consultingTitle');
+
+                // Create project in background
+                welcomeSubmitBtn.disabled = true;
+                const createPromise = createProjectByNameFallback(name, phone, desc).catch(() => null);
+                const progressBar = document.getElementById('consultingProgressBar');
+                if (progressBar) progressBar.style.width = '15%';
+
+                // Animate steps — SLOWER for premium feel
+                const stepDelays = [2800, 3200, 2600];
+                for (let i = 1; i < steps.length; i++) {
+                    await new Promise(r => setTimeout(r, stepDelays[i-1]));
+                    if (steps[i-1]) {
+                        steps[i-1].classList.remove('active');
+                        steps[i-1].classList.add('done');
+                        steps[i-1].querySelector('i').className = 'fas fa-check-circle';
+                    }
+                    if (steps[i]) {
+                        steps[i].classList.add('active');
+                        steps[i].querySelector('i').className = 'fas fa-circle-notch fa-spin';
+                    }
+                    if (titleEl) titleEl.textContent = titles[i];
+                    if (progressBar) progressBar.style.width = `${25 + i * 22}%`;
+                }
+
+                await createPromise;
+                await new Promise(r => setTimeout(r, 1200));
+                if (steps[3]) {
+                    steps[3].classList.remove('active');
+                    steps[3].classList.add('done');
+                    steps[3].querySelector('i').className = 'fas fa-check-circle';
+                }
+                if (progressBar) progressBar.style.width = '100%';
+                if (titleEl) titleEl.textContent = 'Your team is ready!';
+                await new Promise(r => setTimeout(r, 800));
+
+                // Dismiss welcome screen and reload to fully initialize
+                const welcome = document.getElementById('welcomeScreen');
+                if (welcome) {
+                    welcome.classList.add('fade-out');
+                }
+                // Reload page — main script will now find the project and skip onboarding
+                setTimeout(() => { window.location.reload(); }, 400);
+            });
         }
 
-        const welcomeClose = document.getElementById('welcomeCloseBtn');
-        if (welcomeClose) {
-            welcomeClose.onclick = () => {
-                const welcome = document.getElementById('welcomeScreen');
-                if (welcome) welcome.classList.remove('visible');
-                document.body.classList.remove('welcome-mode');
-                safeSwitchTab('projects');
-            };
-        }
+        // No close button — onboarding is mandatory
 
         const logoutBtn = document.getElementById('logoutBtn');
         if (logoutBtn) {
@@ -2729,8 +3104,12 @@
         if (sendBtn) sendBtn.disabled = false;
     };
 
-    window.addEventListener('error', () => window.__applyDashboardFallback());
-    window.addEventListener('unhandledrejection', () => window.__applyDashboardFallback());
+    window.addEventListener('error', () => {
+        if (!window.__mainScriptOk) window.__applyDashboardFallback();
+    });
+    window.addEventListener('unhandledrejection', () => {
+        if (!window.__mainScriptOk) window.__applyDashboardFallback();
+    });
 </script>
 <script src="script-v36.js"></script>
 <script>
@@ -2741,6 +3120,83 @@
         }
     });
 </script>
+
+<!-- MOBILE BOTTOM NAV BAR -->
+<nav class="mobile-bottom-nav" id="mobileBottomNav">
+    <div class="nav-pill">
+        <div class="nav-items">
+            <button class="nav-item active" id="nav-projects" onclick="switchTab('projects')">
+                <i class="fas fa-house"></i>
+                <span>Home</span>
+            </button>
+            <button class="nav-item" id="nav-build" onclick="switchTab('build')">
+                <i class="fas fa-code"></i>
+                <span>Build</span>
+            </button>
+            <button class="nav-item" id="nav-market" onclick="switchTab('market')">
+                <i class="fas fa-rocket"></i>
+                <span>Marketing</span>
+            </button>
+            <button class="nav-item" id="nav-capital" onclick="switchTab('capital')">
+                <i class="fas fa-chart-line"></i>
+                <span>Capital</span>
+            </button>
+            <button class="nav-item" id="nav-profile" onclick="switchTab('profile')">
+                <i class="fas fa-circle-user"></i>
+                <span>Profile</span>
+                <div class="nav-dot" id="navProfileDot"></div>
+            </button>
+        </div>
+    </div>
+</nav>
+
+<!-- Welcome Modal (post-payment) -->
+<div class="welcome-overlay" id="welcomeOverlay">
+    <div class="welcome-card">
+        <div class="welcome-check"><i class="fas fa-check"></i></div>
+        <h3>Welcome to Anmar</h3>
+        <p class="welcome-sub">Your Validate plan is active. Your dedicated team is ready to start working with you.</p>
+        <div class="welcome-includes">
+            <div class="welcome-includes-title">What happens next</div>
+            <ul>
+                <li>Tell us about your idea in the chat</li>
+                <li>We analyze your market and viability</li>
+                <li>You get a custom MVP roadmap</li>
+                <li>Your $147 is credited if you continue</li>
+            </ul>
+        </div>
+        <button class="welcome-btn" id="welcomeStartBtn"><i class="fas fa-arrow-right"></i>&ensp;Start now</button>
+    </div>
+</div>
+
+<!-- Validate Gate Modal -->
+<div class="validate-gate-overlay" id="validateGateOverlay">
+    <div class="validate-gate-card">
+        <div class="gate-badge">START HERE</div>
+        <div class="gate-icon"><i class="fas fa-comments"></i></div>
+        <div class="gate-header">
+            <h4>Validate</h4>
+            <p>Talk to our team and discover if your idea has real potential.</p>
+        </div>
+        <div class="gate-price">$147</div>
+        <div class="gate-commitment">One-time payment</div>
+        <ul class="gate-features">
+            <li>Direct chat access with our team inside the platform</li>
+            <li>We analyze your idea, market, and viability together</li>
+            <li>Clear breakdown of what your MVP should include</li>
+            <li>Honest feedback &mdash; we tell you if it's worth building or not</li>
+            <li>Step-by-step explanation of how we work and what to expect</li>
+            <li>Custom roadmap with timeline and realistic costs</li>
+            <li>Credit fully applied to the MVP plan if you continue with us</li>
+        </ul>
+        <div class="gate-cta">
+            <button class="gate-btn" id="validateGateBtn">Start Validating</button>
+        </div>
+        <div class="gate-note">One-time payment. Everything happens inside the platform &mdash; no calls required.</div>
+        <button class="gate-dismiss" id="validateGateDismiss">Maybe later</button>
+    </div>
+</div>
+
 </body>
 
 </html>
