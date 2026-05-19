@@ -1212,28 +1212,28 @@ document.addEventListener('DOMContentLoaded', () => {
                     successStep.style.cssText = 'text-align:center; animation: fadeIn 0.4s ease;';
                     successStep.innerHTML = `
                         <div style="margin-bottom:18px;">
-                            <div style="width:64px; height:64px; margin:0 auto 14px; border-radius:50%; background:linear-gradient(135deg,#22c55e,#10b981); display:flex; align-items:center; justify-content:center;">
-                                <i class="fas fa-check" style="font-size:28px; color:#fff;"></i>
+                            <div style="width:64px; height:64px; margin:0 auto 14px; border-radius:50%; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); display:flex; align-items:center; justify-content:center;">
+                                <i class="fas fa-check" style="font-size:26px; color:#fff;"></i>
                             </div>
-                            <div style="font-size:1.25rem; font-weight:700; color:#fff; margin-bottom:6px;">¡Tu proyecto está listo!</div>
+                            <div style="font-size:1.25rem; font-weight:700; color:#fff; margin-bottom:6px;">Your project is ready!</div>
                             <div style="color:#94a3b8; font-size:0.9rem; line-height:1.5;">
-                                <strong style="color:#60a5fa;">${escapeHtml(name)}</strong> fue creado exitosamente.<br>
-                                Nuestro equipo de ingeniería fue notificado.
+                                <strong style="color:#e2e8f0;">${escapeHtml(name)}</strong> was created successfully.<br>
+                                Our engineering team has been notified.
                             </div>
                         </div>
-                        <div style="background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.25); border-radius:12px; padding:16px; margin-bottom:20px; text-align:left;">
-                            <div style="font-size:0.85rem; color:#10b981; font-weight:600; margin-bottom:8px;">
-                                <i class="fas fa-folder-open" style="margin-right:6px;"></i> Siguiente paso
+                        <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:16px; margin-bottom:20px; text-align:left;">
+                            <div style="font-size:0.85rem; color:rgba(255,255,255,0.7); font-weight:600; margin-bottom:8px;">
+                                <i class="fas fa-arrow-right" style="margin-right:6px;"></i> Next step
                             </div>
-                            <div style="color:#cbd5e1; font-size:0.88rem; line-height:1.5;">
-                                Tu proyecto ya aparece en <strong style="color:#fff;">Mis Proyectos</strong>. Desde ahí puedes entrar al chat con nuestro equipo.
+                            <div style="color:rgba(255,255,255,0.55); font-size:0.88rem; line-height:1.5;">
+                                Your project is now listed under <strong style="color:#fff;">My Projects</strong>. From there you can start chatting with our team.
                             </div>
                         </div>
-                        <button id="onboardingGoToProjects" style="width:100%; padding:14px 24px; border:none; border-radius:12px; background:linear-gradient(135deg,#10b981,#059669); color:#fff; font-size:1rem; font-weight:600; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:10px;">
-                            <i class="fas fa-folder-open"></i> Ver mi proyecto
+                        <button id="onboardingGoToProjects" style="width:100%; padding:14px 24px; border:1px solid rgba(255,255,255,0.2); border-radius:12px; background:rgba(255,255,255,0.08); color:#fff; font-size:1rem; font-weight:600; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:10px; backdrop-filter:blur(8px);">
+                            <i class="fas fa-folder-open"></i> View my project
                         </button>
-                        <button id="onboardingGoToBuild" style="width:100%; padding:11px 24px; border:1px solid rgba(99,102,241,0.4); border-radius:12px; background:rgba(99,102,241,0.12); color:#a5b4fc; font-size:0.9rem; font-weight:600; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:8px;">
-                            <i class="fas fa-comments"></i> Ir directo al chat
+                        <button id="onboardingGoToBuild" style="width:100%; padding:11px 24px; border:1px solid rgba(255,255,255,0.1); border-radius:12px; background:transparent; color:rgba(255,255,255,0.5); font-size:0.9rem; font-weight:600; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:8px;">
+                            <i class="fas fa-comments"></i> Go straight to chat
                         </button>
                     `;
                     const welcomeCard = welcomeScreen?.querySelector('.welcome-card');
