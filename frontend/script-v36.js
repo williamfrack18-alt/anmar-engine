@@ -3361,23 +3361,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (projectsFolderGrid) {
                     const card = document.createElement('div');
-                    card.style.cssText = 'position:relative; text-align:left; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); padding:16px; border-radius:12px; color:#fff; cursor:pointer; min-height:120px; transition:all 0.2s; overflow:hidden;';
+                    card.style.cssText = 'position:relative; text-align:left; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.09); padding:20px; border-radius:14px; color:#fff; cursor:pointer; min-height:140px; transition:all 0.25s ease; overflow:hidden; display:flex; flex-direction:column; justify-content:space-between;';
+                    const descText = (meta && meta.description) ? escapeHtml(meta.description) : 'No description provided.';
                     card.innerHTML = `
-                        <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px; min-width:0;">
-                            <i class="fas fa-folder-open" style="color:#3b82f6;"></i>
-                            <strong title="${escapeHtml(project)}" style="font-size:0.95rem; display:block; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                                ${escapeHtml(project)}
-                            </strong>
+                        <div>
+                            <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px; min-width:0;">
+                                <div style="width:32px; height:32px; border-radius:8px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                    <i class="fas fa-folder" style="color:rgba(255,255,255,0.7); font-size:0.85rem;"></i>
+                                </div>
+                                <strong title="${escapeHtml(project)}" style="font-size:1rem; display:block; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; letter-spacing:-0.2px;">
+                                    ${escapeHtml(project)}
+                                </strong>
+                            </div>
+                            <div style="color:rgba(255,255,255,0.45); font-size:0.8rem; line-height:1.5; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">${descText}</div>
                         </div>
-                        <div style="opacity:0.65; font-size:0.8rem; overflow-wrap:anywhere;">${phoneLabel || 'No phone registered'} · Open preview and continue adjustments.</div>
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:14px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.07);">
+                            <span style="font-size:0.75rem; color:rgba(255,255,255,0.3);"><i class="fas fa-phone" style="margin-right:4px; font-size:0.65rem;"></i>${escapeHtml(phoneLabel || '—')}</span>
+                            <span style="font-size:0.75rem; color:rgba(255,255,255,0.4); font-weight:600; letter-spacing:0.3px;">Open →</span>
+                        </div>
                     `;
                     card.onmouseenter = () => {
-                        card.style.transform = 'translateY(-1px)';
-                        card.style.borderColor = 'rgba(59,130,246,0.5)';
+                        card.style.transform = 'translateY(-2px)';
+                        card.style.background = 'rgba(255,255,255,0.07)';
+                        card.style.borderColor = 'rgba(255,255,255,0.2)';
+                        card.style.boxShadow = '0 8px 32px rgba(0,0,0,0.3)';
                     };
                     card.onmouseleave = () => {
                         card.style.transform = 'none';
-                        card.style.borderColor = 'rgba(255,255,255,0.1)';
+                        card.style.background = 'rgba(255,255,255,0.04)';
+                        card.style.borderColor = 'rgba(255,255,255,0.09)';
+                        card.style.boxShadow = 'none';
                     };
                     card.onclick = async () => {
                         currentProjectName = project;
