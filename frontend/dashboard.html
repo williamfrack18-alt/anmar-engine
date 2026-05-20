@@ -405,7 +405,9 @@
             border-color: rgba(255,255,255,0.4);
             box-shadow: 0 0 0 1px rgba(255,255,255,0.15), 0 4px 20px rgba(0,0,0,0.3);
         }
-        .wiz-card-icon { font-size: 1.5rem; line-height: 1; }
+        .wiz-card-icon { font-size: 1rem; line-height: 1; color: rgba(255,255,255,0.45); transition: color 0.2s; }
+        .wiz-card.selected .wiz-card-icon { color: rgba(255,255,255,0.9); }
+        .wiz-card:hover .wiz-card-icon { color: rgba(255,255,255,0.65); }
         .wiz-card-label {
             font-size: 0.72rem;
             color: rgba(255,255,255,0.65);
@@ -2498,27 +2500,27 @@
                     <div class="welcome-sub" style="margin-bottom:1rem;">What type of project is this?</div>
                     <div class="wiz-cards-grid">
                         <div class="wiz-card" data-value="ecommerce">
-                            <span class="wiz-card-icon">🛒</span>
-                            <span class="wiz-card-label">eCommerce / Online Store</span>
+                            <i class="fas fa-bag-shopping wiz-card-icon"></i>
+                            <span class="wiz-card-label">eCommerce / Store</span>
                         </div>
                         <div class="wiz-card" data-value="software">
-                            <span class="wiz-card-icon">💻</span>
+                            <i class="fas fa-code wiz-card-icon"></i>
                             <span class="wiz-card-label">Software / App / SaaS</span>
                         </div>
                         <div class="wiz-card" data-value="service">
-                            <span class="wiz-card-icon">🤝</span>
+                            <i class="fas fa-briefcase wiz-card-icon"></i>
                             <span class="wiz-card-label">Service Business</span>
                         </div>
                         <div class="wiz-card" data-value="marketplace">
-                            <span class="wiz-card-icon">🏪</span>
+                            <i class="fas fa-store wiz-card-icon"></i>
                             <span class="wiz-card-label">Marketplace</span>
                         </div>
                         <div class="wiz-card" data-value="content">
-                            <span class="wiz-card-icon">🎨</span>
+                            <i class="fas fa-pen-nib wiz-card-icon"></i>
                             <span class="wiz-card-label">Content / Brand</span>
                         </div>
                         <div class="wiz-card" data-value="other">
-                            <span class="wiz-card-icon">✦</span>
+                            <i class="fas fa-ellipsis wiz-card-icon"></i>
                             <span class="wiz-card-label">Other</span>
                         </div>
                     </div>
@@ -2529,23 +2531,23 @@
                     <div class="welcome-sub" style="margin-bottom:1rem;">What's your business model?</div>
                     <div class="wiz-cards-grid">
                         <div class="wiz-card" data-value="subscription">
-                            <span class="wiz-card-icon">🔄</span>
+                            <i class="fas fa-rotate wiz-card-icon"></i>
                             <span class="wiz-card-label">Subscription</span>
                         </div>
                         <div class="wiz-card" data-value="direct_sale">
-                            <span class="wiz-card-icon">💳</span>
+                            <i class="fas fa-arrow-right-arrow-left wiz-card-icon"></i>
                             <span class="wiz-card-label">Direct Sale</span>
                         </div>
                         <div class="wiz-card" data-value="commission">
-                            <span class="wiz-card-icon">📊</span>
-                            <span class="wiz-card-label">Commission / Marketplace</span>
+                            <i class="fas fa-percent wiz-card-icon"></i>
+                            <span class="wiz-card-label">Commission</span>
                         </div>
                         <div class="wiz-card" data-value="b2b">
-                            <span class="wiz-card-icon">🏢</span>
+                            <i class="fas fa-building wiz-card-icon"></i>
                             <span class="wiz-card-label">B2B</span>
                         </div>
                         <div class="wiz-card" data-value="unsure">
-                            <span class="wiz-card-icon">🤔</span>
+                            <i class="fas fa-circle-question wiz-card-icon"></i>
                             <span class="wiz-card-label">Not sure yet</span>
                         </div>
                     </div>
@@ -2556,19 +2558,19 @@
                     <div class="welcome-sub" style="margin-bottom:1rem;">Where are you right now?</div>
                     <div class="wiz-cards-grid-2">
                         <div class="wiz-card" data-value="idea">
-                            <span class="wiz-card-icon">💡</span>
+                            <i class="fas fa-lightbulb wiz-card-icon"></i>
                             <span class="wiz-card-label">Just an idea</span>
                         </div>
                         <div class="wiz-card" data-value="early_customers">
-                            <span class="wiz-card-icon">👥</span>
+                            <i class="fas fa-user-group wiz-card-icon"></i>
                             <span class="wiz-card-label">Have early customers</span>
                         </div>
                         <div class="wiz-card" data-value="prototype">
-                            <span class="wiz-card-icon">⚙️</span>
+                            <i class="fas fa-flask wiz-card-icon"></i>
                             <span class="wiz-card-label">Have a prototype</span>
                         </div>
                         <div class="wiz-card" data-value="scale">
-                            <span class="wiz-card-icon">🚀</span>
+                            <i class="fas fa-arrow-trend-up wiz-card-icon"></i>
                             <span class="wiz-card-label">Ready to scale</span>
                         </div>
                     </div>
