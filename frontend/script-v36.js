@@ -1015,8 +1015,70 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // No close button — onboarding is mandatory for new users
 
-        // Validate all 3 fields to enable submit
+        // ===================== WIZARD STATE =====================
+        let wizCurrentStep = 1;
+        const wizData = {};
+
+        function wizGoToStep(newStep) {
+            // Hide all panels
+            for (let i = 1; i <= 4; i++) {
+                const panel = document.getElementById(`wizPanel${i}`);
+                if (panel) panel.style.display = i === newStep ? '' : 'none';
+            }
+            // Update progress dots
+            document.querySelectorAll('.wiz-dot-wrap').forEach(el => {
+                const s = parseInt(el.dataset.step);
+                el.classList.toggle('active', s === newStep);
+                el.classList.toggle('done', s < newStep);
+            });
+            // Back button visibility
+            const backBtn = document.getElementById('wizBackBtn');
+            if (backBtn) backBtn.style.display = newStep > 1 ? '' : 'none';
+            // Continue button label
+            if (welcomeSubmitBtn) {
+                welcomeSubmitBtn.innerHTML = newStep === 4
+                    ? 'Launch &ensp;<i class="fas fa-rocket"></i>'
+                    : 'Continue &ensp;<i class="fas fa-arrow-right"></i>';
+            }
+            wizCurrentStep = newStep;
+            wizValidateStep(newStep);
+            if (welcomeStatus) welcomeStatus.textContent = '';
+        }
+
+        function wizValidateStep(step) {
+            if (!welcomeSubmitBtn) return;
+            if (step === 1) {
+                const name = (welcomeInput?.value || '').trim();
+                const phone = (welcomePhoneInput?.value || '').trim();
+                const desc = (welcomeDescInput?.value || '').trim();
+                welcomeSubmitBtn.disabled = !(name && phone && desc);
+            } else {
+                const panel = document.getElementById(`wizPanel${step}`);
+                welcomeSubmitBtn.disabled = !panel?.querySelector('.wiz-card.selected');
+            }
+        }
+
+        // Card click logic for steps 2-4
+        document.querySelectorAll('#wizPanel2 .wiz-card, #wizPanel3 .wiz-card, #wizPanel4 .wiz-card').forEach(card => {
+            card.addEventListener('click', () => {
+                // Deselect siblings
+                card.closest('.wiz-cards-grid, .wiz-cards-grid-2')?.querySelectorAll('.wiz-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                wizValidateStep(wizCurrentStep);
+            });
+        });
+
+        // Back button
+        const wizBackBtn = document.getElementById('wizBackBtn');
+        if (wizBackBtn) {
+            wizBackBtn.addEventListener('click', () => {
+                if (wizCurrentStep > 1) wizGoToStep(wizCurrentStep - 1);
+            });
+        }
+
+        // Validate all 3 fields to enable submit on step 1
         function checkFormValid() {
+            if (wizCurrentStep !== 1) return;
             const name = (welcomeInput?.value || '').trim();
             const phone = (welcomePhoneInput?.value || '').trim();
             const desc = (welcomeDescInput?.value || '').trim();
@@ -1028,16 +1090,42 @@ document.addEventListener('DOMContentLoaded', () => {
         if (welcomePhoneInput) welcomePhoneInput.addEventListener('input', checkFormValid);
         if (welcomeDescInput) welcomeDescInput.addEventListener('input', checkFormValid);
 
-        // Submit → consulting animation → create project → chat
+        // Submit → wizard step advance OR consulting animation → create project → chat
         if (welcomeSubmitBtn) {
             welcomeSubmitBtn.addEventListener('click', async () => {
-                const name = (welcomeInput?.value || '').trim();
-                const phone = (welcomePhoneInput?.value || '').trim();
-                const desc = (welcomeDescInput?.value || '').trim();
 
-                if (!name) { if (welcomeStatus) welcomeStatus.textContent = 'Enter a project name.'; return; }
-                if (!phone) { if (welcomeStatus) welcomeStatus.textContent = 'Enter your phone number.'; return; }
-                if (!desc) { if (welcomeStatus) welcomeStatus.textContent = 'Describe your project briefly.'; return; }
+                // Steps 1-3: collect data and advance
+                if (wizCurrentStep < 4) {
+                    if (wizCurrentStep === 1) {
+                        const name = (welcomeInput?.value || '').trim();
+                        const phone = (welcomePhoneInput?.value || '').trim();
+                        const desc = (welcomeDescInput?.value || '').trim();
+                        if (!name) { if (welcomeStatus) welcomeStatus.textContent = 'Enter a project name.'; return; }
+                        if (!phone) { if (welcomeStatus) welcomeStatus.textContent = 'Enter your phone number.'; return; }
+                        if (!desc) { if (welcomeStatus) welcomeStatus.textContent = 'Describe your project briefly.'; return; }
+                        wizData.name = name;
+                        wizData.phone = phone;
+                        wizData.desc = desc;
+                    } else {
+                        const panel = document.getElementById(`wizPanel${wizCurrentStep}`);
+                        const sel = panel?.querySelector('.wiz-card.selected');
+                        if (!sel) return;
+                        if (wizCurrentStep === 2) wizData.project_type = sel.dataset.value;
+                        if (wizCurrentStep === 3) wizData.business_model = sel.dataset.value;
+                    }
+                    wizGoToStep(wizCurrentStep + 1);
+                    return;
+                }
+
+                // Step 4: collect stage → fire animation
+                const panel4 = document.getElementById('wizPanel4');
+                const stageCard = panel4?.querySelector('.wiz-card.selected');
+                if (!stageCard) return;
+                wizData.stage = stageCard.dataset.value;
+
+                const name = wizData.name;
+                const phone = wizData.phone;
+                const desc = wizData.desc;
 
                 // === FUTURISTIC SOUND ENGINE (Web Audio API) ===
                 const SFX = (() => {
@@ -1148,6 +1236,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     skipNavigation: true,
                     phone,
                     description: desc,
+                    project_type: wizData.project_type || '',
+                    business_model: wizData.business_model || '',
+                    stage: wizData.stage || '',
                     onError: (msg) => {
                         _createError = msg || 'Error creating project.';
                     }
@@ -1270,10 +1361,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         goBtn.addEventListener('mouseleave', () => { goBtn.style.transform = 'none'; });
                     }
                 } else {
-                    // Error — go back to form mostrando el error real del servidor
+                    // Error — go back to wizard step 1 showing the real error
                     if (welcomeFormStep) welcomeFormStep.style.display = 'block';
                     if (welcomeConsultingStep) welcomeConsultingStep.style.display = 'none';
                     if (welcomeCloseBtn) welcomeCloseBtn.style.display = '';
+                    wizGoToStep(1);
                     if (welcomeStatus) welcomeStatus.textContent = _createError || 'Something went wrong. Please try again.';
                 }
             });
@@ -1324,8 +1416,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (welcomePhoneInput) welcomePhoneInput.value = '';
         const descInput = document.getElementById('welcomeDescInput');
         if (descInput) descInput.value = '';
-        const submitBtn = document.getElementById('welcomeSubmitBtn');
-        if (submitBtn) submitBtn.disabled = true;
+        // Reset all wizard card selections
+        document.querySelectorAll('.wiz-card.selected').forEach(c => c.classList.remove('selected'));
+        // Go back to step 1 (resets dots, back btn, button label)
+        try { wizGoToStep(1); } catch(_) {
+            // fallback if wizard state not yet initialized
+            const submitBtn = document.getElementById('welcomeSubmitBtn');
+            if (submitBtn) submitBtn.disabled = true;
+        }
         const welcomeStatus = document.getElementById('welcomeStatus');
         if (welcomeStatus) welcomeStatus.textContent = '';
         setWelcomeVisible(true);
@@ -3142,12 +3240,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const onError = typeof options.onError === 'function' ? options.onError : null;
         const phone = (options.phone || '').trim();
         const description = (options.description || '').trim();
+        const project_type = (options.project_type || '').trim();
+        const business_model = (options.business_model || '').trim();
+        const stage = (options.stage || '').trim();
         // skipNavigation: true → no cierra la pantalla de onboarding ni cambia de tab
         // (lo maneja el caller para no interrumpir animaciones en curso)
         const skipNavigation = !!options.skipNavigation;
         try {
             const payload = { project_name: name, user_email: currentUser?.email || '', phone };
             if (description) payload.description = description;
+            if (project_type) payload.project_type = project_type;
+            if (business_model) payload.business_model = business_model;
+            if (stage) payload.stage = stage;
             const res = await fetch('/api/create-empty-project', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

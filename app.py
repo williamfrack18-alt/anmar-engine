@@ -6163,13 +6163,19 @@ def create_empty_project():
             owners[project_name] = user_email
             save_project_owners(owners)
 
-        # Save metadata (phone, owner, description)
+        # Save metadata (phone, owner, description, wizard fields)
         description = str(data.get('description') or '').strip()[:500]
+        project_type = str(data.get('project_type') or '').strip()[:100]
+        business_model = str(data.get('business_model') or '').strip()[:100]
+        stage = str(data.get('stage') or '').strip()[:100]
         meta = load_project_meta()
         meta[project_name] = {
             "phone": phone,
             "owner": user_email,
             "description": description,
+            "project_type": project_type,
+            "business_model": business_model,
+            "stage": stage,
             "created_at": datetime.utcnow().isoformat()
         }
         save_project_meta(meta)

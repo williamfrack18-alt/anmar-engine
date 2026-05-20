@@ -321,6 +321,122 @@
             transform: none;
         }
 
+        /* ---- Wizard Onboarding ---- */
+        .wiz-progress {
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            margin-bottom: 1.6rem;
+            position: relative;
+            z-index: 1;
+        }
+        .wiz-dot-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+        .wiz-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.25);
+            transition: all 0.3s ease;
+        }
+        .wiz-dot-wrap.active .wiz-dot {
+            background: #fff;
+            border-color: #fff;
+            box-shadow: 0 0 10px rgba(255,255,255,0.5);
+        }
+        .wiz-dot-wrap.done .wiz-dot {
+            background: rgba(255,255,255,0.55);
+            border-color: rgba(255,255,255,0.55);
+        }
+        .wiz-label {
+            font-size: 0.63rem;
+            color: rgba(255,255,255,0.3);
+            letter-spacing: 0.3px;
+            transition: color 0.3s;
+            white-space: nowrap;
+        }
+        .wiz-dot-wrap.active .wiz-label { color: rgba(255,255,255,0.85); }
+        .wiz-dot-wrap.done .wiz-label { color: rgba(255,255,255,0.45); }
+        .wiz-line {
+            flex: 1;
+            height: 1px;
+            background: rgba(255,255,255,0.1);
+            margin: 4px 10px 0;
+        }
+        .wiz-panel { position: relative; z-index: 1; }
+        .wiz-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        .wiz-cards-grid-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        .wiz-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 16px 10px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.09);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+            user-select: none;
+        }
+        .wiz-card:hover {
+            background: rgba(255,255,255,0.07);
+            border-color: rgba(255,255,255,0.22);
+        }
+        .wiz-card.selected {
+            background: rgba(255,255,255,0.11);
+            border-color: rgba(255,255,255,0.4);
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.15), 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .wiz-card-icon { font-size: 1.5rem; line-height: 1; }
+        .wiz-card-label {
+            font-size: 0.72rem;
+            color: rgba(255,255,255,0.65);
+            font-weight: 500;
+            line-height: 1.3;
+        }
+        .wiz-card.selected .wiz-card-label { color: #fff; }
+        .wiz-nav {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-top: 18px;
+        }
+        #wizBackBtn {
+            flex-shrink: 0;
+            padding: 14px 18px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 14px;
+            color: rgba(255,255,255,0.5);
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        #wizBackBtn:hover {
+            background: rgba(255,255,255,0.08);
+            color: rgba(255,255,255,0.85);
+        }
+        .wiz-nav .welcome-submit-btn { flex: 1; margin-top: 0; }
+
         /* Consulting Animation — Premium Tech Experience */
         .consulting-animation {
             text-align: center;
@@ -2337,23 +2453,135 @@
             <!-- Close button removed: onboarding is mandatory -->
             <div id="welcomeType" class="welcome-title"></div>
 
-            <!-- Step 1: Project Info Form -->
+            <!-- Wizard Onboarding (4 steps) -->
             <div id="welcomeFormStep">
-                <div class="welcome-sub">Tell us about your project so we can assign the right team.</div>
-                <div class="welcome-input-wrap" style="margin-bottom:12px;">
-                    <input id="welcomeProjectInput" type="text" placeholder="Project name (e.g. FitTrack App)" />
+
+                <!-- Progress dots -->
+                <div class="wiz-progress" id="wizProgress">
+                    <div class="wiz-dot-wrap active" data-step="1">
+                        <div class="wiz-dot"></div>
+                        <span class="wiz-label">Basics</span>
+                    </div>
+                    <div class="wiz-line"></div>
+                    <div class="wiz-dot-wrap" data-step="2">
+                        <div class="wiz-dot"></div>
+                        <span class="wiz-label">Project</span>
+                    </div>
+                    <div class="wiz-line"></div>
+                    <div class="wiz-dot-wrap" data-step="3">
+                        <div class="wiz-dot"></div>
+                        <span class="wiz-label">Model</span>
+                    </div>
+                    <div class="wiz-line"></div>
+                    <div class="wiz-dot-wrap" data-step="4">
+                        <div class="wiz-dot"></div>
+                        <span class="wiz-label">Stage</span>
+                    </div>
                 </div>
-                <div class="welcome-input-wrap" style="margin-bottom:12px;">
-                    <input id="welcomePhoneInput" type="tel" placeholder="Your phone number" />
+
+                <!-- Step 1: Basics -->
+                <div class="wiz-panel" id="wizPanel1">
+                    <div class="welcome-sub" style="margin-bottom:1rem;">Let's start with the basics about your project.</div>
+                    <div class="welcome-input-wrap" style="margin-bottom:12px;">
+                        <input id="welcomeProjectInput" type="text" placeholder="Project name (e.g. FitTrack App)" />
+                    </div>
+                    <div class="welcome-input-wrap" style="margin-bottom:12px;">
+                        <input id="welcomePhoneInput" type="tel" placeholder="Your phone number" />
+                    </div>
+                    <div class="welcome-input-wrap" style="flex-direction:column; align-items:stretch;">
+                        <textarea id="welcomeDescInput" placeholder="Briefly describe your project idea..." rows="3" style="flex:1; background:transparent; border:none; color:#fff; font-size:0.95rem; outline:none; resize:none; font-family:inherit; line-height:1.5;"></textarea>
+                    </div>
                 </div>
-                <div class="welcome-input-wrap" style="flex-direction:column; align-items:stretch;">
-                    <textarea id="welcomeDescInput" placeholder="Briefly describe your project idea..." rows="3" style="flex:1; background:transparent; border:none; color:#fff; font-size:0.95rem; outline:none; resize:none; font-family:inherit; line-height:1.5;"></textarea>
+
+                <!-- Step 2: Project type -->
+                <div class="wiz-panel" id="wizPanel2" style="display:none;">
+                    <div class="welcome-sub" style="margin-bottom:1rem;">What type of project is this?</div>
+                    <div class="wiz-cards-grid">
+                        <div class="wiz-card" data-value="ecommerce">
+                            <span class="wiz-card-icon">🛒</span>
+                            <span class="wiz-card-label">eCommerce / Online Store</span>
+                        </div>
+                        <div class="wiz-card" data-value="software">
+                            <span class="wiz-card-icon">💻</span>
+                            <span class="wiz-card-label">Software / App / SaaS</span>
+                        </div>
+                        <div class="wiz-card" data-value="service">
+                            <span class="wiz-card-icon">🤝</span>
+                            <span class="wiz-card-label">Service Business</span>
+                        </div>
+                        <div class="wiz-card" data-value="marketplace">
+                            <span class="wiz-card-icon">🏪</span>
+                            <span class="wiz-card-label">Marketplace</span>
+                        </div>
+                        <div class="wiz-card" data-value="content">
+                            <span class="wiz-card-icon">🎨</span>
+                            <span class="wiz-card-label">Content / Brand</span>
+                        </div>
+                        <div class="wiz-card" data-value="other">
+                            <span class="wiz-card-icon">✦</span>
+                            <span class="wiz-card-label">Other</span>
+                        </div>
+                    </div>
                 </div>
-                <button id="welcomeSubmitBtn" type="button" class="welcome-submit-btn" disabled>
-                    <i class="fas fa-arrow-right"></i>&ensp;Continue
-                </button>
-                <div class="welcome-hint">All fields are required. This helps our team prepare before your first conversation.</div>
-                <div id="welcomeStatus" class="welcome-hint" style="color:#fca5a5; min-height:18px;"></div>
+
+                <!-- Step 3: Business model -->
+                <div class="wiz-panel" id="wizPanel3" style="display:none;">
+                    <div class="welcome-sub" style="margin-bottom:1rem;">What's your business model?</div>
+                    <div class="wiz-cards-grid">
+                        <div class="wiz-card" data-value="subscription">
+                            <span class="wiz-card-icon">🔄</span>
+                            <span class="wiz-card-label">Subscription</span>
+                        </div>
+                        <div class="wiz-card" data-value="direct_sale">
+                            <span class="wiz-card-icon">💳</span>
+                            <span class="wiz-card-label">Direct Sale</span>
+                        </div>
+                        <div class="wiz-card" data-value="commission">
+                            <span class="wiz-card-icon">📊</span>
+                            <span class="wiz-card-label">Commission / Marketplace</span>
+                        </div>
+                        <div class="wiz-card" data-value="b2b">
+                            <span class="wiz-card-icon">🏢</span>
+                            <span class="wiz-card-label">B2B</span>
+                        </div>
+                        <div class="wiz-card" data-value="unsure">
+                            <span class="wiz-card-icon">🤔</span>
+                            <span class="wiz-card-label">Not sure yet</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 4: Current stage -->
+                <div class="wiz-panel" id="wizPanel4" style="display:none;">
+                    <div class="welcome-sub" style="margin-bottom:1rem;">Where are you right now?</div>
+                    <div class="wiz-cards-grid-2">
+                        <div class="wiz-card" data-value="idea">
+                            <span class="wiz-card-icon">💡</span>
+                            <span class="wiz-card-label">Just an idea</span>
+                        </div>
+                        <div class="wiz-card" data-value="early_customers">
+                            <span class="wiz-card-icon">👥</span>
+                            <span class="wiz-card-label">Have early customers</span>
+                        </div>
+                        <div class="wiz-card" data-value="prototype">
+                            <span class="wiz-card-icon">⚙️</span>
+                            <span class="wiz-card-label">Have a prototype</span>
+                        </div>
+                        <div class="wiz-card" data-value="scale">
+                            <span class="wiz-card-icon">🚀</span>
+                            <span class="wiz-card-label">Ready to scale</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation -->
+                <div class="wiz-nav">
+                    <button id="wizBackBtn" type="button" style="display:none;">← Back</button>
+                    <button id="welcomeSubmitBtn" type="button" class="welcome-submit-btn" disabled>
+                        Continue &ensp;<i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+                <div id="welcomeStatus" class="welcome-hint" style="color:#fca5a5; min-height:18px; margin-top:8px;"></div>
             </div>
 
             <!-- Step 2: Consulting Animation -->
@@ -3004,7 +3232,7 @@
             window.openWelcomeNewProject();
         };
 
-        // Enable/disable submit based on all 3 fields
+        // Enable/disable submit based on all 3 fields (fallback only)
         function fallbackCheckForm() {
             if (!welcomeSubmitBtn) return;
             const name = (welcomeInput?.value || '').trim();
@@ -3012,12 +3240,14 @@
             const desc = (welcomeDescInput?.value || '').trim();
             welcomeSubmitBtn.disabled = !(name && phone && desc);
         }
-        if (welcomeInput) welcomeInput.addEventListener('input', fallbackCheckForm);
-        if (welcomePhoneInput) welcomePhoneInput.addEventListener('input', fallbackCheckForm);
-        if (welcomeDescInput) welcomeDescInput.addEventListener('input', fallbackCheckForm);
+        if (!window.__mainScriptOk) {
+            if (welcomeInput) welcomeInput.addEventListener('input', fallbackCheckForm);
+            if (welcomePhoneInput) welcomePhoneInput.addEventListener('input', fallbackCheckForm);
+            if (welcomeDescInput) welcomeDescInput.addEventListener('input', fallbackCheckForm);
+        }
 
-        // Fallback click handler for Continue button
-        if (welcomeSubmitBtn) {
+        // Fallback click handler for Continue button — only run if main script failed
+        if (welcomeSubmitBtn && !window.__mainScriptOk) {
             welcomeSubmitBtn.addEventListener('click', async () => {
                 const name = (welcomeInput?.value || '').trim();
                 const phone = (welcomePhoneInput?.value || '').trim();
