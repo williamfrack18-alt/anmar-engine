@@ -1019,11 +1019,28 @@ document.addEventListener('DOMContentLoaded', () => {
         let wizCurrentStep = 1;
         const wizData = {};
 
+        const wizTitles = [
+            'Tell us about your project.',
+            'What type of project is this?',
+            'What\'s your business model?',
+            'Where are you right now?'
+        ];
+
         function wizGoToStep(newStep) {
             // Hide all panels
             for (let i = 1; i <= 4; i++) {
                 const panel = document.getElementById(`wizPanel${i}`);
                 if (panel) panel.style.display = i === newStep ? '' : 'none';
+            }
+            // Update main heading with the step question
+            const titleEl = document.getElementById('welcomeType');
+            if (titleEl) {
+                titleEl.style.transition = 'opacity 0.2s';
+                titleEl.style.opacity = '0';
+                setTimeout(() => {
+                    titleEl.textContent = wizTitles[newStep - 1];
+                    titleEl.style.opacity = '1';
+                }, 180);
             }
             // Update progress dots
             document.querySelectorAll('.wiz-dot-wrap').forEach(el => {
