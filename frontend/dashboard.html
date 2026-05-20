@@ -2670,17 +2670,17 @@
                         </div>
 
                         <!-- Team Chat History Container (visible by default) -->
-                        <div class=”terminal-wrapper” id=”humanLog” style=”display:flex;”>
-                            <div id=”humanChatWelcome” style=”display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1; text-align:center; padding:40px 24px; gap:0;”>
-                                <div style=”width:44px; height:44px; border-radius:12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:center; margin-bottom:14px;”>
-                                    <i class=”fas fa-headset” style=”color:rgba(255,255,255,0.5); font-size:1rem;”></i>
+                        <div class=”terminal-wrapper” id=”humanLog” style=”display:flex; position:relative;”>
+                            <div id=”humanChatWelcome” style=”position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:24px; pointer-events:none;”>
+                                <div style=”width:42px; height:42px; border-radius:12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.09); display:flex; align-items:center; justify-content:center; margin-bottom:14px;”>
+                                    <i class=”fas fa-headset” style=”color:rgba(255,255,255,0.4); font-size:0.95rem;”></i>
                                 </div>
-                                <div style=”font-weight:600; font-size:0.95rem; color:rgba(255,255,255,0.85); margin-bottom:8px; letter-spacing:-0.01em;”>Your team is ready</div>
-                                <div style=”color:rgba(255,255,255,0.38); font-size:0.82rem; line-height:1.6; max-width:260px;”>
-                                    Send a message and an engineer will respond shortly.
+                                <div style=”font-weight:600; font-size:0.88rem; color:rgba(255,255,255,0.65); margin-bottom:6px; letter-spacing:-0.01em;”>Your team is ready</div>
+                                <div style=”color:rgba(255,255,255,0.28); font-size:0.78rem; line-height:1.55; max-width:220px;”>
+                                    Send a message and an engineer will respond.
                                 </div>
                             </div>
-                            <div id=”humanChatContent” style=”display:flex; flex-direction:column; gap:8px;”></div>
+                            <div id=”humanChatContent” style=”display:flex; flex-direction:column; gap:8px; width:100%;”></div>
                         </div>
 
                         <!-- Input Area -->
