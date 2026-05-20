@@ -259,7 +259,7 @@ document.addEventListener('DOMContentLoaded', () => {
         container.innerHTML = '';
         // Hide welcome when there are messages
         const welcomeEl = document.getElementById('humanChatWelcome');
-        if (welcomeEl) welcomeEl.style.display = (history && history.length > 0) ? 'none' : 'block';
+        if (welcomeEl) welcomeEl.style.display = (history && history.length > 0) ? 'none' : 'flex';
         history.forEach(msg => {
             const isClient = msg.role === 'client';
             const row = document.createElement('div');
