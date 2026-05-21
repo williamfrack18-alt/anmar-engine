@@ -1247,6 +1247,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (welcomeFormStep) welcomeFormStep.style.display = 'none';
                 if (welcomeConsultingStep) welcomeConsultingStep.style.display = 'block';
                 if (welcomeCloseBtn) welcomeCloseBtn.style.display = 'none';
+                const wizTypeHeading = document.getElementById('welcomeType');
+                if (wizTypeHeading) wizTypeHeading.textContent = "We're setting everything up.";
 
                 // Start ambient hum
                 const ambientHum = SFX.ambient();
@@ -1338,6 +1340,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Show success step — llevar primero a Projects para que el cliente
                     // vea su proyecto, y desde ahí puede entrar al chat
                     if (welcomeConsultingStep) welcomeConsultingStep.style.display = 'none';
+                    const wizTypeHeading2 = document.getElementById('welcomeType');
+                    if (wizTypeHeading2) wizTypeHeading2.textContent = "You're all set!";
                     const successStep = document.createElement('div');
                     successStep.id = 'welcomeSuccessStep';
                     successStep.style.cssText = 'text-align:center; animation: fadeIn 0.4s ease;';
