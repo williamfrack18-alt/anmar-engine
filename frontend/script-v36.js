@@ -3684,6 +3684,19 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimelineVisible(false);
     (async () => {
         if (forceWelcome) {
+            // Before showing the wizard, check backend — user may have projects from another device
+            try {
+                const emailQuery = currentUser?.email ? `?email=${encodeURIComponent(currentUser.email)}` : '';
+                const checkResp = await fetch(`/list-projects${emailQuery}`, { credentials: 'include' });
+                const existingProjects = await checkResp.json();
+                if (Array.isArray(existingProjects) && existingProjects.length > 0) {
+                    // User already has projects — skip wizard, go to Projects tab
+                    forceWelcome = false;
+                    markWelcomeDone();
+                    switchTab('projects');
+                    return;
+                }
+            } catch (_) { }
             setWelcomeVisible(true);
             // Don't switchTab here — it calls loadProjects() which can hide the welcome
             return;
