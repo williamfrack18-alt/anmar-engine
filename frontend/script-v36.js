@@ -253,13 +253,36 @@ document.addEventListener('DOMContentLoaded', () => {
         return [];
     }
 
+    function positionChatWelcome() {
+        const welcome = document.getElementById('humanChatWelcome');
+        const log = document.getElementById('humanLog');
+        if (!welcome || !log) return;
+        const r = log.getBoundingClientRect();
+        if (r.width === 0 || r.height === 0) return;
+        welcome.style.position = 'fixed';
+        welcome.style.top  = Math.round(r.top + r.height * 0.45) + 'px';
+        welcome.style.left = Math.round(r.left + r.width / 2) + 'px';
+        welcome.style.transform = 'translate(-50%, -50%)';
+        welcome.style.width = '220px';
+        welcome.style.display = 'flex';
+        welcome.style.flexDirection = 'column';
+        welcome.style.alignItems = 'center';
+        welcome.style.textAlign = 'center';
+        welcome.style.pointerEvents = 'none';
+        welcome.style.zIndex = '5';
+    }
+
     function renderHumanChat(history) {
         const container = document.getElementById('humanChatContent');
         if (!container) return;
         container.innerHTML = '';
         // Hide welcome when there are messages
         const welcomeEl = document.getElementById('humanChatWelcome');
-        if (welcomeEl) welcomeEl.style.display = (history && history.length > 0) ? 'none' : 'flex';
+        if (welcomeEl) {
+            const hasMessages = history && history.length > 0;
+            welcomeEl.style.display = hasMessages ? 'none' : 'flex';
+            if (!hasMessages) positionChatWelcome();
+        }
         history.forEach(msg => {
             const isClient = msg.role === 'client';
             const row = document.createElement('div');
@@ -3601,6 +3624,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 s.classList.remove('active');
             });
             targetSec.classList.add('active');
+            // Re-position chat welcome card after section becomes visible
+            if (['build', 'market', 'growth', 'capital'].includes(tab)) {
+                requestAnimationFrame(() => positionChatWelcome());
+            }
         }
 
         // 5. Channel switching (only for chat-related tabs)
@@ -4041,6 +4068,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (humanChatInterval) clearInterval(humanChatInterval);
         if (typeof pollInterval !== 'undefined' && pollInterval) clearInterval(pollInterval);
     });
+
+    // Reposition chat welcome on resize
+    window.addEventListener('resize', () => {
+        const w = document.getElementById('humanChatWelcome');
+        if (w && w.style.display !== 'none') positionChatWelcome();
+    });
+    // Initial position after layout settles
+    setTimeout(positionChatWelcome, 300);
 
     window.__mainScriptOk = true;
     } catch (e) {
