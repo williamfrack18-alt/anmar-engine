@@ -1343,8 +1343,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     successStep.style.cssText = 'text-align:center; animation: fadeIn 0.4s ease;';
                     successStep.innerHTML = `
                         <div style="margin-bottom:18px;">
-                            <div style="width:64px; height:64px; margin:0 auto 14px; border-radius:50%; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); display:flex; align-items:center; justify-content:center;">
-                                <i class="fas fa-check" style="font-size:26px; color:#fff;"></i>
+                            <div style="width:64px; height:64px; margin:0 auto 14px; border-radius:50%; background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.4); display:flex; align-items:center; justify-content:center; box-shadow:0 0 24px rgba(16,185,129,0.2);">
+                                <i class="fas fa-check" style="font-size:26px; color:#10b981;"></i>
                             </div>
                             <div style="font-size:1.25rem; font-weight:700; color:#fff; margin-bottom:6px;">Your project is ready!</div>
                             <div style="color:#94a3b8; font-size:0.9rem; line-height:1.5;">
@@ -1352,15 +1352,15 @@ document.addEventListener('DOMContentLoaded', () => {
                                 Our engineering team has been notified.
                             </div>
                         </div>
-                        <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:16px; margin-bottom:20px; text-align:left;">
-                            <div style="font-size:0.85rem; color:rgba(255,255,255,0.7); font-weight:600; margin-bottom:8px;">
+                        <div style="background:rgba(16,185,129,0.06); border:1px solid rgba(16,185,129,0.18); border-left:3px solid #10b981; border-radius:12px; padding:16px; margin-bottom:20px; text-align:left;">
+                            <div style="font-size:0.85rem; color:#34d399; font-weight:600; margin-bottom:8px;">
                                 <i class="fas fa-arrow-right" style="margin-right:6px;"></i> Next step
                             </div>
                             <div style="color:rgba(255,255,255,0.55); font-size:0.88rem; line-height:1.5;">
                                 Your project is now listed under <strong style="color:#fff;">My Projects</strong>. From there you can start chatting with our team.
                             </div>
                         </div>
-                        <button id="onboardingGoToProjects" style="width:100%; padding:14px 24px; border:1px solid rgba(255,255,255,0.2); border-radius:12px; background:rgba(255,255,255,0.08); color:#fff; font-size:1rem; font-weight:600; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:10px; backdrop-filter:blur(8px);">
+                        <button id="onboardingGoToProjects" style="width:100%; padding:14px 24px; border:1px solid rgba(16,185,129,0.45); border-radius:12px; background:rgba(16,185,129,0.18); color:#fff; font-size:1rem; font-weight:600; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:10px; backdrop-filter:blur(8px); box-shadow:0 2px 16px rgba(16,185,129,0.15);">
                             <i class="fas fa-folder-open"></i> View my project
                         </button>
                         <button id="onboardingGoToBuild" style="width:100%; padding:11px 24px; border:1px solid rgba(255,255,255,0.1); border-radius:12px; background:transparent; color:rgba(255,255,255,0.5); font-size:0.9rem; font-weight:600; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:8px;">
