@@ -1046,12 +1046,13 @@ document.addEventListener('DOMContentLoaded', () => {
             'Tell us about your project.',
             'What type of project is this?',
             'What\'s your business model?',
-            'Where are you right now?'
+            'Where are you right now?',
+            'What do you need help with?'
         ];
 
         function wizGoToStep(newStep) {
             // Hide all panels
-            for (let i = 1; i <= 4; i++) {
+            for (let i = 1; i <= 5; i++) {
                 const panel = document.getElementById(`wizPanel${i}`);
                 if (panel) panel.style.display = i === newStep ? '' : 'none';
             }
@@ -1076,7 +1077,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (backBtn) backBtn.style.display = newStep > 1 ? '' : 'none';
             // Continue button label
             if (welcomeSubmitBtn) {
-                welcomeSubmitBtn.innerHTML = newStep === 4
+                welcomeSubmitBtn.innerHTML = newStep === 5
                     ? 'Launch &ensp;<i class="fas fa-rocket"></i>'
                     : 'Continue &ensp;<i class="fas fa-arrow-right"></i>';
             }
@@ -1092,13 +1093,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 const phone = (welcomePhoneInput?.value || '').trim();
                 const desc = (welcomeDescInput?.value || '').trim();
                 welcomeSubmitBtn.disabled = !(name && phone && desc);
+            } else if (step === 5) {
+                // Multi-select: at least 1 card must be selected
+                const panel = document.getElementById('wizPanel5');
+                welcomeSubmitBtn.disabled = !panel?.querySelector('.wiz-card.selected');
             } else {
                 const panel = document.getElementById(`wizPanel${step}`);
                 welcomeSubmitBtn.disabled = !panel?.querySelector('.wiz-card.selected');
             }
         }
 
-        // Card click logic for steps 2-4
+        // Card click logic for steps 2-4 (single select)
         document.querySelectorAll('#wizPanel2 .wiz-card, #wizPanel3 .wiz-card, #wizPanel4 .wiz-card').forEach(card => {
             card.addEventListener('click', () => {
                 // Deselect siblings
@@ -1107,6 +1112,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 wizValidateStep(wizCurrentStep);
             });
         });
+
+        // Card click logic for step 5 (multi-select — toggle)
+        document.querySelectorAll('#wizPanel5 .wiz-card').forEach(card => {
+            card.addEventListener('click', () => {
+                card.classList.toggle('selected');
+                wizValidateStep(5);
+            });
+        });
+
+        // Select All button for step 5
+        const wizSelectAllBtn = document.getElementById('wizSelectAll');
+        if (wizSelectAllBtn) {
+            wizSelectAllBtn.addEventListener('click', () => {
+                const cards = document.querySelectorAll('#wizPanel5 .wiz-card');
+                const allSelected = [...cards].every(c => c.classList.contains('selected'));
+                cards.forEach(c => allSelected ? c.classList.remove('selected') : c.classList.add('selected'));
+                // Toggle button label
+                wizSelectAllBtn.innerHTML = allSelected
+                    ? '<i class="fas fa-check-double" style="margin-right:5px;"></i>Select All'
+                    : '<i class="fas fa-times" style="margin-right:5px;"></i>Deselect All';
+                wizValidateStep(5);
+            });
+        }
 
         // Back button
         const wizBackBtn = document.getElementById('wizBackBtn');
@@ -1134,8 +1162,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (welcomeSubmitBtn) {
             welcomeSubmitBtn.addEventListener('click', async () => {
 
-                // Steps 1-3: collect data and advance
-                if (wizCurrentStep < 4) {
+                // Steps 1-4: collect data and advance
+                if (wizCurrentStep < 5) {
                     if (wizCurrentStep === 1) {
                         const name = (welcomeInput?.value || '').trim();
                         const phone = (welcomePhoneInput?.value || '').trim();
@@ -1152,16 +1180,19 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (!sel) return;
                         if (wizCurrentStep === 2) wizData.project_type = sel.dataset.value;
                         if (wizCurrentStep === 3) wizData.business_model = sel.dataset.value;
+                        if (wizCurrentStep === 4) {
+                            wizData.stage = sel.dataset.value;
+                        }
                     }
                     wizGoToStep(wizCurrentStep + 1);
                     return;
                 }
 
-                // Step 4: collect stage → fire animation
-                const panel4 = document.getElementById('wizPanel4');
-                const stageCard = panel4?.querySelector('.wiz-card.selected');
-                if (!stageCard) return;
-                wizData.stage = stageCard.dataset.value;
+                // Step 5: collect help areas → fire animation
+                const panel5 = document.getElementById('wizPanel5');
+                const selectedHelpCards = panel5?.querySelectorAll('.wiz-card.selected');
+                if (!selectedHelpCards || selectedHelpCards.length === 0) return;
+                wizData.help_areas = [...selectedHelpCards].map(c => c.dataset.value);
 
                 const name = wizData.name;
                 const phone = wizData.phone;

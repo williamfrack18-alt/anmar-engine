@@ -2480,6 +2480,11 @@
                         <div class="wiz-dot"></div>
                         <span class="wiz-label">Stage</span>
                     </div>
+                    <div class="wiz-line"></div>
+                    <div class="wiz-dot-wrap" data-step="5">
+                        <div class="wiz-dot"></div>
+                        <span class="wiz-label">Needs</span>
+                    </div>
                 </div>
 
                 <!-- Step 1: Basics -->
@@ -2582,6 +2587,37 @@
                         <div class="wiz-card" data-value="scale">
                             <i class="fas fa-arrow-trend-up wiz-card-icon"></i>
                             <span class="wiz-card-label">Ready to scale</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 5: Areas of help (multi-select) -->
+                <div class="wiz-panel" id="wizPanel5" style="display:none;">
+                    <div style="text-align:right; margin-bottom:10px;">
+                        <button id="wizSelectAll" type="button" style="background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.35); color:#34d399; border-radius:8px; padding:6px 14px; font-size:0.78rem; font-family:inherit; cursor:pointer; transition:all 0.2s;">
+                            <i class="fas fa-check-double" style="margin-right:5px;"></i>Select All
+                        </button>
+                    </div>
+                    <div class="wiz-cards-grid">
+                        <div class="wiz-card wiz-multi" data-value="business_model">
+                            <i class="fas fa-brain wiz-card-icon"></i>
+                            <span class="wiz-card-label">Business Model</span>
+                        </div>
+                        <div class="wiz-card wiz-multi" data-value="build">
+                            <i class="fas fa-hammer wiz-card-icon"></i>
+                            <span class="wiz-card-label">Build</span>
+                        </div>
+                        <div class="wiz-card wiz-multi" data-value="paid_marketing">
+                            <i class="fas fa-rectangle-ad wiz-card-icon"></i>
+                            <span class="wiz-card-label">Paid Marketing</span>
+                        </div>
+                        <div class="wiz-card wiz-multi" data-value="organic_marketing">
+                            <i class="fas fa-seedling wiz-card-icon"></i>
+                            <span class="wiz-card-label">Organic Marketing</span>
+                        </div>
+                        <div class="wiz-card wiz-multi" data-value="fundraising">
+                            <i class="fas fa-hand-holding-dollar wiz-card-icon"></i>
+                            <span class="wiz-card-label">Fundraising</span>
                         </div>
                     </div>
                 </div>
