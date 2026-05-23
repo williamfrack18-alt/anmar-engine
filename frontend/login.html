@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Anmar Enterprises | Sign In</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
@@ -14,7 +14,7 @@
             background: #070e0b;
             height: 100vh; width: 100vw;
             overflow: hidden;
-            font-family: 'Inter', sans-serif;
+            font-family: 'Plus Jakarta Sans', sans-serif;
             color: #fff;
             display: flex;
         }
@@ -38,30 +38,33 @@
 
         /* Logo */
         .brand-mark {
-            width: 44px; height: 44px;
-            border-radius: 12px;
-            background: rgba(16,185,129,0.1);
-            border: 1px solid rgba(16,185,129,0.22);
+            width: 48px; height: 48px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, rgba(16,185,129,0.18) 0%, rgba(16,185,129,0.06) 100%);
+            border: 1px solid rgba(16,185,129,0.28);
             display: flex; align-items: center; justify-content: center;
-            margin: 0 auto 28px;
-            font-family: 'Syne', sans-serif;
-            font-size: 18px; font-weight: 800;
+            margin: 0 auto 32px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 20px; font-weight: 700;
             color: #10b981;
+            letter-spacing: -0.5px;
         }
 
         /* Headline */
         .form-title {
-            font-family: 'Syne', sans-serif;
-            font-size: 26px; font-weight: 800;
-            color: #fff; letter-spacing: -0.8px;
-            text-align: center; margin-bottom: 6px;
-            line-height: 1.2;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 30px; font-weight: 700;
+            color: #fff; letter-spacing: -1.2px;
+            text-align: center; margin-bottom: 8px;
+            line-height: 1.1;
         }
         .form-sub {
-            font-size: 13px; font-weight: 400;
-            color: rgba(255,255,255,0.35);
-            text-align: center; margin-bottom: 32px;
-            line-height: 1.5;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 14px; font-weight: 400;
+            color: rgba(255,255,255,0.38);
+            text-align: center; margin-bottom: 34px;
+            line-height: 1.55;
+            letter-spacing: 0.1px;
         }
 
         /* Google button */
@@ -72,7 +75,7 @@
             border-radius: 12px;
             padding: 13px 18px;
             color: rgba(255,255,255,0.82);
-            font-family: 'Inter', sans-serif;
+            font-family: 'Plus Jakarta Sans', sans-serif;
             font-size: 14px; font-weight: 500;
             cursor: pointer;
             display: flex; align-items: center; justify-content: center; gap: 10px;
@@ -103,46 +106,47 @@
         }
 
         /* Inputs */
-        .field { margin-bottom: 12px; }
+        .field { margin-bottom: 14px; }
         .field-label {
+            font-family: 'Plus Jakarta Sans', sans-serif;
             font-size: 11px; font-weight: 600;
-            letter-spacing: 0.8px; text-transform: uppercase;
-            color: rgba(255,255,255,0.35);
-            display: block; margin-bottom: 7px;
+            letter-spacing: 0.9px; text-transform: uppercase;
+            color: rgba(255,255,255,0.32);
+            display: block; margin-bottom: 8px;
         }
         .field-input {
             width: 100%;
             background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.09);
             border-radius: 10px;
             padding: 13px 16px;
             color: #fff;
-            font-family: 'Inter', sans-serif;
+            font-family: 'Plus Jakarta Sans', sans-serif;
             font-size: 14px; font-weight: 400;
             outline: none;
             transition: border-color 0.2s, background 0.2s;
         }
-        .field-input::placeholder { color: rgba(255,255,255,0.22); }
+        .field-input::placeholder { color: rgba(255,255,255,0.2); }
         .field-input:focus {
-            border-color: rgba(16,185,129,0.45);
-            background: rgba(16,185,129,0.03);
+            border-color: rgba(16,185,129,0.5);
+            background: rgba(16,185,129,0.04);
         }
 
         /* Primary CTA */
         .cta-btn {
             width: 100%;
             background: rgba(5,60,42,1);
-            border: 1px solid rgba(16,185,129,0.3);
+            border: 1px solid rgba(16,185,129,0.32);
             border-radius: 10px;
             padding: 14px 20px;
             color: #34d399;
-            font-family: 'Inter', sans-serif;
+            font-family: 'Space Grotesk', sans-serif;
             font-size: 14px; font-weight: 600;
             cursor: pointer;
             display: flex; align-items: center; justify-content: center; gap: 8px;
             transition: background 0.18s, border-color 0.18s, transform 0.12s;
             margin-top: 4px;
-            letter-spacing: 0.1px;
+            letter-spacing: 0.2px;
         }
         .cta-btn:hover {
             background: rgba(6,72,50,1);
@@ -156,12 +160,13 @@
             display: flex; align-items: center;
             justify-content: space-between;
             margin-top: 12px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
             font-size: 12px; color: rgba(255,255,255,0.28);
         }
         .link-btn {
             background: none; border: none;
             color: rgba(16,185,129,0.75);
-            cursor: pointer; font-family: 'Inter', sans-serif;
+            cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif;
             font-size: 12px; padding: 0;
             transition: color 0.2s;
         }
@@ -262,28 +267,32 @@
             box-shadow: 0 0 6px rgba(16,185,129,0.8);
         }
         .right-tag-txt {
-            font-size: 11px; font-weight: 500;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 11px; font-weight: 600;
             color: rgba(16,185,129,0.85);
-            letter-spacing: 0.5px;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
         }
 
         .right-headline {
-            font-family: 'Syne', sans-serif;
-            font-size: clamp(36px, 5vw, 60px);
-            font-weight: 800;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(40px, 5.5vw, 68px);
+            font-weight: 700;
             color: #fff;
-            line-height: 1.08;
-            letter-spacing: -2px;
-            margin-bottom: 18px;
+            line-height: 1.04;
+            letter-spacing: -2.5px;
+            margin-bottom: 20px;
         }
         .right-headline .hl-green { color: #10b981; }
 
         .right-desc {
-            font-size: 14px; font-weight: 400;
-            color: rgba(255,255,255,0.42);
-            line-height: 1.65;
-            max-width: 400px;
-            margin-bottom: 30px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 15px; font-weight: 400;
+            color: rgba(255,255,255,0.4);
+            line-height: 1.7;
+            max-width: 420px;
+            margin-bottom: 32px;
+            letter-spacing: 0.1px;
         }
 
         .right-pills {
@@ -292,13 +301,15 @@
         .right-pill {
             display: flex; align-items: center; gap: 6px;
             background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.09);
             border-radius: 999px;
-            padding: 6px 14px;
-            font-size: 11px; color: rgba(255,255,255,0.55);
+            padding: 7px 16px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 12px; color: rgba(255,255,255,0.55);
             font-weight: 500;
+            letter-spacing: 0.1px;
         }
-        .right-pill i { color: #10b981; font-size: 10px; }
+        .right-pill i { color: #10b981; font-size: 9px; }
 
         /* Mobile: stack vertically */
         @media (max-width: 768px) {
@@ -324,8 +335,8 @@
         <div class="brand-mark">A</div>
 
         <!-- Headline -->
-        <div class="form-title">Log in to Anmar</div>
-        <div class="form-sub">Enter your account and continue building</div>
+        <div class="form-title">Welcome back.</div>
+        <div class="form-sub">Sign in to continue building your future</div>
 
         <!-- Google -->
         <div id="g_id_onload"
