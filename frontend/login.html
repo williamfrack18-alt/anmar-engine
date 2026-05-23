@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Anmar Enterprises | Sign In</title>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
@@ -14,9 +14,95 @@
             background: #070e0b;
             height: 100vh; width: 100vw;
             overflow: hidden;
-            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-family: 'Inter', sans-serif;
             color: #fff;
             display: flex;
+            flex-direction: column;
+        }
+
+        /* ── NAVBAR ── */
+        header {
+            position: relative;
+            z-index: 100;
+            flex-shrink: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 4vw;
+            height: 64px;
+            background: rgba(7,14,11,0.95);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            backdrop-filter: blur(14px);
+        }
+
+        .nav-logo {
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: -0.4px;
+            color: #fff;
+            text-decoration: none;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        header nav {
+            display: flex;
+            gap: 1.8rem;
+        }
+
+        header nav a {
+            text-decoration: none;
+            color: rgba(255,255,255,0.55);
+            font-size: 0.85rem;
+            font-weight: 500;
+            letter-spacing: 0.2px;
+            transition: color 0.22s;
+            white-space: nowrap;
+        }
+
+        header nav a:hover { color: #fff; }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .nav-btn-login {
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: color 0.22s;
+        }
+        .nav-btn-login:hover { color: #fff; }
+
+        .nav-btn-start {
+            background: #fff;
+            color: #000;
+            padding: 0.5rem 1.1rem;
+            border-radius: 7px;
+            font-weight: 700;
+            font-size: 0.82rem;
+            text-decoration: none;
+            transition: transform 0.18s, box-shadow 0.18s;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+            white-space: nowrap;
+        }
+        .nav-btn-start:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 24px rgba(0,0,0,0.35);
+        }
+
+        /* ── SPLIT WRAP ── */
+        .split-wrap {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
         }
 
         /* ── LEFT PANEL ── */
@@ -24,133 +110,128 @@
             width: 480px;
             flex-shrink: 0;
             background: #080e0b;
-            border-right: 1px solid rgba(16,185,129,0.1);
+            border-right: 1px solid rgba(16,185,129,0.08);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 60px 52px;
+            padding: 52px;
             position: relative;
             z-index: 20;
         }
 
         .form-wrap { width: 100%; max-width: 360px; }
 
-        /* Logo */
+        /* Logo mark */
         .brand-mark {
-            width: 48px; height: 48px;
-            border-radius: 14px;
-            background: linear-gradient(135deg, rgba(16,185,129,0.18) 0%, rgba(16,185,129,0.06) 100%);
-            border: 1px solid rgba(16,185,129,0.28);
+            width: 46px; height: 46px;
+            border-radius: 12px;
+            background: rgba(16,185,129,0.08);
+            border: 1px solid rgba(16,185,129,0.2);
             display: flex; align-items: center; justify-content: center;
-            margin: 0 auto 32px;
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 20px; font-weight: 700;
+            margin: 0 auto 28px;
+            font-family: 'Inter', sans-serif;
+            font-size: 19px; font-weight: 700;
             color: #10b981;
             letter-spacing: -0.5px;
         }
 
         /* Headline */
         .form-title {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 30px; font-weight: 700;
-            color: #fff; letter-spacing: -1.2px;
-            text-align: center; margin-bottom: 8px;
-            line-height: 1.1;
+            font-family: 'Inter', sans-serif;
+            font-size: 1.75rem; font-weight: 500;
+            color: #fff; letter-spacing: -0.6px;
+            text-align: center; margin-bottom: 6px;
+            line-height: 1.15;
         }
         .form-sub {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            font-size: 14px; font-weight: 400;
-            color: rgba(255,255,255,0.38);
-            text-align: center; margin-bottom: 34px;
+            font-size: 13.5px; font-weight: 400;
+            color: rgba(255,255,255,0.35);
+            text-align: center; margin-bottom: 30px;
             line-height: 1.55;
-            letter-spacing: 0.1px;
         }
-
-        /* Google button */
-        .google-btn {
-            width: 100%;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 12px;
-            padding: 13px 18px;
-            color: rgba(255,255,255,0.82);
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            font-size: 14px; font-weight: 500;
-            cursor: pointer;
-            display: flex; align-items: center; justify-content: center; gap: 10px;
-            transition: background 0.18s, border-color 0.18s;
-            margin-bottom: 20px;
-        }
-        .google-btn:hover {
-            background: rgba(255,255,255,0.09);
-            border-color: rgba(255,255,255,0.18);
-        }
-        .g-wrap {
-            width: 20px; height: 20px; border-radius: 4px;
-            background: #fff; display: flex; align-items: center; justify-content: center;
-            flex-shrink: 0;
-        }
-        .g-wrap svg { width: 13px; height: 13px; }
 
         /* Divider */
         .divider {
             display: flex; align-items: center; gap: 12px;
-            margin-bottom: 20px;
-            color: rgba(255,255,255,0.2);
-            font-size: 11px; letter-spacing: 0.8px; text-transform: uppercase;
+            margin: 0 0 16px;
+            color: rgba(255,255,255,0.18);
+            font-size: 11px; letter-spacing: 0.7px; text-transform: uppercase;
         }
         .divider::before, .divider::after {
             content: ''; flex: 1; height: 1px;
-            background: rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.07);
         }
 
+        /* Email toggle button (shown before email input) */
+        .email-toggle-btn {
+            width: 100%;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.09);
+            border-radius: 10px;
+            padding: 13px 18px;
+            color: rgba(255,255,255,0.75);
+            font-family: 'Inter', sans-serif;
+            font-size: 14px; font-weight: 500;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 9px;
+            transition: background 0.18s, border-color 0.18s;
+        }
+        .email-toggle-btn:hover {
+            background: rgba(255,255,255,0.07);
+            border-color: rgba(255,255,255,0.15);
+            color: #fff;
+        }
+        .email-toggle-btn i { font-size: 13px; opacity: 0.7; }
+
+        /* Email input area (hidden until email-toggle clicked) */
+        #emailInputArea { display: none; margin-top: 14px; }
+
         /* Inputs */
-        .field { margin-bottom: 14px; }
+        .field { margin-bottom: 12px; }
         .field-label {
-            font-family: 'Plus Jakarta Sans', sans-serif;
             font-size: 11px; font-weight: 600;
-            letter-spacing: 0.9px; text-transform: uppercase;
-            color: rgba(255,255,255,0.32);
-            display: block; margin-bottom: 8px;
+            letter-spacing: 0.8px; text-transform: uppercase;
+            color: rgba(255,255,255,0.3);
+            display: block; margin-bottom: 7px;
         }
         .field-input {
             width: 100%;
             background: rgba(255,255,255,0.04);
             border: 1px solid rgba(255,255,255,0.09);
-            border-radius: 10px;
-            padding: 13px 16px;
+            border-radius: 9px;
+            padding: 13px 15px;
             color: #fff;
-            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-family: 'Inter', sans-serif;
             font-size: 14px; font-weight: 400;
             outline: none;
             transition: border-color 0.2s, background 0.2s;
         }
-        .field-input::placeholder { color: rgba(255,255,255,0.2); }
+        .field-input::placeholder { color: rgba(255,255,255,0.18); }
         .field-input:focus {
-            border-color: rgba(16,185,129,0.5);
-            background: rgba(16,185,129,0.04);
+            border-color: rgba(16,185,129,0.45);
+            background: rgba(16,185,129,0.03);
         }
 
         /* Primary CTA */
         .cta-btn {
             width: 100%;
-            background: rgba(5,60,42,1);
-            border: 1px solid rgba(16,185,129,0.32);
-            border-radius: 10px;
-            padding: 14px 20px;
-            color: #34d399;
-            font-family: 'Space Grotesk', sans-serif;
+            background: #0d1f16;
+            border: 1px solid rgba(16,185,129,0.18);
+            border-radius: 9px;
+            padding: 13px 20px;
+            color: rgba(255,255,255,0.88);
+            font-family: 'Inter', sans-serif;
             font-size: 14px; font-weight: 600;
             cursor: pointer;
             display: flex; align-items: center; justify-content: center; gap: 8px;
             transition: background 0.18s, border-color 0.18s, transform 0.12s;
-            margin-top: 4px;
-            letter-spacing: 0.2px;
+            margin-top: 2px;
+            letter-spacing: 0.1px;
         }
         .cta-btn:hover {
-            background: rgba(6,72,50,1);
-            border-color: rgba(16,185,129,0.5);
+            background: #122a1c;
+            border-color: rgba(16,185,129,0.35);
             transform: translateY(-1px);
         }
         .cta-btn:active { transform: translateY(0); }
@@ -159,14 +240,13 @@
         .step-row {
             display: flex; align-items: center;
             justify-content: space-between;
-            margin-top: 12px;
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            font-size: 12px; color: rgba(255,255,255,0.28);
+            margin-top: 10px;
+            font-size: 12px; color: rgba(255,255,255,0.26);
         }
         .link-btn {
             background: none; border: none;
-            color: rgba(16,185,129,0.75);
-            cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif;
+            color: rgba(16,185,129,0.7);
+            cursor: pointer; font-family: 'Inter', sans-serif;
             font-size: 12px; padding: 0;
             transition: color 0.2s;
         }
@@ -175,8 +255,8 @@
         /* T&C */
         .terms-row {
             display: flex; align-items: flex-start; gap: 10px;
-            margin-top: 18px;
-            font-size: 11px; color: rgba(255,255,255,0.28);
+            margin-top: 16px;
+            font-size: 11px; color: rgba(255,255,255,0.26);
             line-height: 1.55;
         }
         .terms-row input[type="checkbox"] {
@@ -184,7 +264,7 @@
             accent-color: #10b981;
             flex-shrink: 0; margin-top: 1px;
         }
-        .terms-row a { color: rgba(16,185,129,0.7); text-decoration: none; }
+        .terms-row a { color: rgba(16,185,129,0.65); text-decoration: none; }
         .terms-row a:hover { color: #10b981; }
 
         /* Status */
@@ -192,20 +272,20 @@
             color: #fca5a5; font-size: 12px;
             margin-top: 12px; background: rgba(239,68,68,0.07);
             padding: 10px 12px; border-radius: 8px; display: none;
-            border: 1px solid rgba(239,68,68,0.15);
+            border: 1px solid rgba(239,68,68,0.14);
         }
         .success-msg {
             color: #6ee7b7; font-size: 12px;
-            margin-top: 12px; background: rgba(6,78,59,0.2);
+            margin-top: 12px; background: rgba(6,78,59,0.18);
             padding: 10px 12px; border-radius: 8px; display: none;
-            border: 1px solid rgba(16,185,129,0.2);
+            border: 1px solid rgba(16,185,129,0.18);
         }
 
         /* Footer */
         .left-footer {
-            position: absolute; bottom: 28px; left: 0; right: 0;
+            position: absolute; bottom: 22px; left: 0; right: 0;
             text-align: center;
-            font-size: 10px; color: rgba(255,255,255,0.15);
+            font-size: 10px; color: rgba(255,255,255,0.13);
         }
 
         /* ── RIGHT PANEL ── */
@@ -216,7 +296,7 @@
             background: #030806;
         }
 
-        /* Video bg inside right panel */
+        /* Video bg */
         .right-video {
             position: absolute; top: 0; left: 0;
             width: 100%; height: 100%;
@@ -226,100 +306,53 @@
             position: absolute; top: 50%; left: 50%;
             width: 180%; height: 180%;
             transform: translate(-50%, -50%);
-            pointer-events: none; opacity: 0.55;
+            pointer-events: none; opacity: 0.5;
         }
 
-        /* Particle canvas inside right panel */
+        /* Particle canvas */
         #rightCanvas {
             position: absolute; top: 0; left: 0;
             width: 100%; height: 100%;
             z-index: 1; pointer-events: none;
         }
 
-        /* Dark overlay on right */
+        /* Dark overlay */
         .right-overlay {
             position: absolute; inset: 0; z-index: 2;
             background: linear-gradient(135deg,
-                rgba(2,8,5,0.45) 0%,
-                rgba(3,12,8,0.3) 50%,
-                rgba(2,8,5,0.5) 100%);
+                rgba(2,8,5,0.5) 0%,
+                rgba(3,12,8,0.28) 50%,
+                rgba(2,8,5,0.55) 100%);
         }
 
-        /* Right content */
+        /* Right content — only the headline */
         .right-content {
             position: absolute; inset: 0; z-index: 3;
             display: flex; flex-direction: column;
             align-items: flex-start; justify-content: flex-end;
-            padding: 56px 52px;
-        }
-
-        .right-tag {
-            display: inline-flex; align-items: center; gap: 7px;
-            background: rgba(16,185,129,0.1);
-            border: 1px solid rgba(16,185,129,0.22);
-            border-radius: 999px;
-            padding: 5px 14px;
-            margin-bottom: 20px;
-        }
-        .right-tag-dot {
-            width: 6px; height: 6px; border-radius: 50%;
-            background: #10b981;
-            box-shadow: 0 0 6px rgba(16,185,129,0.8);
-        }
-        .right-tag-txt {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            font-size: 11px; font-weight: 600;
-            color: rgba(16,185,129,0.85);
-            letter-spacing: 0.6px;
-            text-transform: uppercase;
+            padding: 60px 56px;
         }
 
         .right-headline {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: clamp(40px, 5.5vw, 68px);
-            font-weight: 700;
+            font-family: 'Inter', sans-serif;
+            font-size: clamp(2.4rem, 5.5vw, 4.2rem);
+            font-weight: 500;
             color: #fff;
-            line-height: 1.04;
-            letter-spacing: -2.5px;
-            margin-bottom: 20px;
+            line-height: 1.08;
+            letter-spacing: -1.5px;
         }
         .right-headline .hl-green { color: #10b981; }
 
-        .right-desc {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            font-size: 15px; font-weight: 400;
-            color: rgba(255,255,255,0.4);
-            line-height: 1.7;
-            max-width: 420px;
-            margin-bottom: 32px;
-            letter-spacing: 0.1px;
-        }
-
-        .right-pills {
-            display: flex; gap: 10px; flex-wrap: wrap;
-        }
-        .right-pill {
-            display: flex; align-items: center; gap: 6px;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.09);
-            border-radius: 999px;
-            padding: 7px 16px;
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            font-size: 12px; color: rgba(255,255,255,0.55);
-            font-weight: 500;
-            letter-spacing: 0.1px;
-        }
-        .right-pill i { color: #10b981; font-size: 9px; }
-
-        /* Mobile: stack vertically */
+        /* Mobile */
         @media (max-width: 768px) {
-            body { flex-direction: column; }
+            header nav { display: none; }
+            .split-wrap { flex-direction: column; }
             .split-left {
                 width: 100%; border-right: none;
-                border-bottom: 1px solid rgba(16,185,129,0.1);
-                padding: 40px 28px;
+                border-bottom: 1px solid rgba(16,185,129,0.08);
+                padding: 36px 24px;
                 justify-content: flex-start;
-                padding-top: 60px;
+                padding-top: 48px;
             }
             .split-right { display: none; }
         }
@@ -327,131 +360,152 @@
 </head>
 <body>
 
-<!-- ── LEFT: FORM ── -->
-<div class="split-left">
-    <div class="form-wrap">
+<!-- ── NAVBAR ── -->
+<header>
+    <a href="index.html" class="nav-logo">Anmar Enterprises</a>
 
-        <!-- Brand mark -->
-        <div class="brand-mark">A</div>
+    <nav>
+        <a href="index.html">Home</a>
+        <a href="index.html#genesis">Build</a>
+        <a href="index.html#impulso">Growth</a>
+        <a href="index.html#escala">Capital</a>
+        <a href="pricing.html">Pricing</a>
+        <a href="index.html#faq">FAQ</a>
+    </nav>
 
-        <!-- Headline -->
-        <div class="form-title">Welcome back.</div>
-        <div class="form-sub">Sign in to continue building your future</div>
+    <div class="nav-actions">
+        <a href="login.html" class="nav-btn-login">
+            <i class="fas fa-arrow-right-to-bracket"></i> Log In
+        </a>
+        <a href="login.html" class="nav-btn-start">Get Started</a>
+    </div>
+</header>
 
-        <!-- Google -->
-        <div id="g_id_onload"
-            data-client_id="676077959478-uo9f6h70osjmaeklm17ktithkualc4p3.apps.googleusercontent.com"
-            data-context="signin" data-ux_mode="popup"
-            data-callback="handleGoogleLogin" data-auto_prompt="false">
+<!-- ── SPLIT PANELS ── -->
+<div class="split-wrap">
+
+    <!-- LEFT: FORM -->
+    <div class="split-left">
+        <div class="form-wrap">
+
+            <!-- Brand mark -->
+            <div class="brand-mark">A</div>
+
+            <!-- Headline -->
+            <div class="form-title">Welcome back.</div>
+            <div class="form-sub">Sign in to continue building your future</div>
+
+            <!-- Google GIS -->
+            <div id="g_id_onload"
+                data-client_id="676077959478-uo9f6h70osjmaeklm17ktithkualc4p3.apps.googleusercontent.com"
+                data-context="signin" data-ux_mode="popup"
+                data-callback="handleGoogleLogin" data-auto_prompt="false">
+            </div>
+            <div style="width:100%; display:flex; justify-content:center; margin-bottom:16px;">
+                <div class="g_id_signin" data-type="standard" data-shape="rectangular"
+                    data-theme="filled_black" data-text="continue_with"
+                    data-size="large" data-logo_alignment="center" data-width="360">
+                </div>
+            </div>
+
+            <div class="divider">or</div>
+
+            <!-- Email toggle button (shown first) -->
+            <div id="emailToggleWrap">
+                <button type="button" class="email-toggle-btn" id="emailToggleBtn">
+                    <i class="fas fa-envelope"></i> Continue with email
+                </button>
+            </div>
+
+            <!-- Email input area (hidden until toggle clicked) -->
+            <div id="emailInputArea">
+                <!-- Step 1: Email -->
+                <div id="emailStep">
+                    <div class="field">
+                        <label class="field-label">Email</label>
+                        <input type="email" id="email" class="field-input" placeholder="you@example.com" required>
+                    </div>
+                    <button type="button" class="cta-btn" id="continueBtn">
+                        Continue <i class="fas fa-arrow-right" style="font-size:11px;"></i>
+                    </button>
+                </div>
+
+                <!-- Step 2: Password / Name -->
+                <form id="authForm" onsubmit="handleAuth(event)" style="display:none;">
+                    <div class="field" id="nameGroup" style="display:none;">
+                        <label class="field-label">Full Name</label>
+                        <input type="text" id="name" class="field-input" placeholder="John Doe">
+                    </div>
+                    <div class="field">
+                        <label class="field-label">Password</label>
+                        <input type="password" id="password" class="field-input" placeholder="••••••••" required>
+                    </div>
+                    <button type="submit" class="cta-btn" id="submitBtn">
+                        <span id="btnText">Sign in</span>
+                        <i class="fas fa-arrow-right" style="font-size:11px;"></i>
+                    </button>
+                    <div class="step-row">
+                        <span id="authHint"></span>
+                        <button type="button" class="link-btn" id="changeEmailBtn">Change email</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- T&C -->
+            <div class="terms-row" id="termsGroup">
+                <input type="checkbox" id="termsAccepted">
+                <label for="termsAccepted">
+                    I agree to the <a href="terms.html" target="_blank" rel="noopener">Terms & Conditions</a> of Anmar Enterprises.
+                </label>
+            </div>
+
+            <div id="statusMsg" class="error-msg"></div>
         </div>
-        <div style="width:100%; display:flex; justify-content:center; margin-bottom:20px;">
-            <div class="g_id_signin" data-type="standard" data-shape="rectangular"
-                data-theme="filled_black" data-text="continue_with"
-                data-size="large" data-logo_alignment="center" data-width="360">
-            </div>
-        </div>
 
-        <div class="divider">or</div>
-
-        <!-- Step 1: Email -->
-        <div id="emailStep">
-            <div class="field">
-                <label class="field-label">Email</label>
-                <input type="email" id="email" class="field-input" placeholder="you@example.com" required>
-            </div>
-            <button type="button" class="cta-btn" id="continueBtn">
-                Continue <i class="fas fa-arrow-right" style="font-size:12px;"></i>
-            </button>
-        </div>
-
-        <!-- Step 2: Password / Name -->
-        <form id="authForm" onsubmit="handleAuth(event)" style="display:none;">
-            <div class="field" id="nameGroup" style="display:none;">
-                <label class="field-label">Full Name</label>
-                <input type="text" id="name" class="field-input" placeholder="John Doe">
-            </div>
-            <div class="field">
-                <label class="field-label">Password</label>
-                <input type="password" id="password" class="field-input" placeholder="••••••••" required>
-            </div>
-            <button type="submit" class="cta-btn" id="submitBtn">
-                <span id="btnText">Sign in</span>
-                <i class="fas fa-arrow-right" style="font-size:12px;"></i>
-            </button>
-            <div class="step-row">
-                <span id="authHint"></span>
-                <button type="button" class="link-btn" id="changeEmailBtn">Change email</button>
-            </div>
-        </form>
-
-        <!-- T&C -->
-        <div class="terms-row" id="termsGroup">
-            <input type="checkbox" id="termsAccepted">
-            <label for="termsAccepted">
-                I agree to the <a href="terms.html" target="_blank" rel="noopener">Terms & Conditions</a> of Anmar Enterprises.
-            </label>
-        </div>
-
-        <div id="statusMsg" class="error-msg"></div>
+        <div class="left-footer">© 2026 anmarenterprices.com</div>
     </div>
 
-    <div class="left-footer">© 2026 anmarenterprices.com</div>
-</div>
-
-<!-- ── RIGHT: VISUAL ── -->
-<div class="split-right">
-    <!-- Video background -->
-    <div class="right-video">
-        <iframe src="https://www.youtube.com/embed/Uc1NI4COG9k?autoplay=1&mute=1&loop=1&playlist=Uc1NI4COG9k&controls=0&showinfo=0&rel=0&iv_load_policy=3&disablekb=1&modestbranding=1&start=120"
-            frameborder="0" allow="autoplay; encrypted-media"></iframe>
-    </div>
-
-    <!-- Neural particles -->
-    <canvas id="rightCanvas"></canvas>
-
-    <!-- Overlay -->
-    <div class="right-overlay"></div>
-
-    <!-- Content -->
-    <div class="right-content">
-        <div class="right-tag">
-            <div class="right-tag-dot"></div>
-            <span class="right-tag-txt">Supra AI Platform</span>
+    <!-- RIGHT: VISUAL -->
+    <div class="split-right">
+        <!-- Video background -->
+        <div class="right-video">
+            <iframe src="https://www.youtube.com/embed/Uc1NI4COG9k?autoplay=1&mute=1&loop=1&playlist=Uc1NI4COG9k&controls=0&showinfo=0&rel=0&iv_load_policy=3&disablekb=1&modestbranding=1&start=120"
+                frameborder="0" allow="autoplay; encrypted-media"></iframe>
         </div>
 
-        <div class="right-headline">
-            Your idea.<br>
-            <span class="hl-green">Built.</span> Launched.<br>
-            Funded.
-        </div>
+        <!-- Neural particles -->
+        <canvas id="rightCanvas"></canvas>
 
-        <div class="right-desc">
-            The AI platform that takes what's in your head and turns it into a real,
-            revenue-generating business — with elite engineers, marketers,
-            and capital backing you every step.
-        </div>
+        <!-- Overlay -->
+        <div class="right-overlay"></div>
 
-        <div class="right-pills">
-            <div class="right-pill"><i class="fas fa-circle"></i> Build</div>
-            <div class="right-pill"><i class="fas fa-circle"></i> Marketing</div>
-            <div class="right-pill"><i class="fas fa-circle"></i> Capital</div>
-            <div class="right-pill"><i class="fas fa-circle"></i> Validated</div>
+        <!-- Only the headline -->
+        <div class="right-content">
+            <div class="right-headline">
+                Your idea.<br>
+                <span class="hl-green">Built.</span> Launched.<br>
+                Funded.
+            </div>
         </div>
     </div>
-</div>
+
+</div><!-- end split-wrap -->
 
 <script>
     // --- AUTH LOGIC ---
     let mode = 'login';
     const API_URL = '/api';
     const urlParams = new URLSearchParams(window.location.search);
-    const emailStep    = document.getElementById('emailStep');
-    const continueBtn  = document.getElementById('continueBtn');
-    const authForm     = document.getElementById('authForm');
-    const nameGroup    = document.getElementById('nameGroup');
-    const termsGroup   = document.getElementById('termsGroup');
-    const authHint     = document.getElementById('authHint');
+    const emailStep     = document.getElementById('emailStep');
+    const continueBtn   = document.getElementById('continueBtn');
+    const authForm      = document.getElementById('authForm');
+    const nameGroup     = document.getElementById('nameGroup');
+    const termsGroup    = document.getElementById('termsGroup');
+    const authHint      = document.getElementById('authHint');
     const changeEmailBtn = document.getElementById('changeEmailBtn');
+    const emailToggleBtn = document.getElementById('emailToggleBtn');
+    const emailInputArea = document.getElementById('emailInputArea');
+    const emailToggleWrap = document.getElementById('emailToggleWrap');
 
     // Skip login if already authenticated
     if (!urlParams.has('fresh')) {
@@ -461,9 +515,20 @@
         } catch (_) { localStorage.removeItem('currentUser'); }
     }
 
+    // Show email input area when button clicked
+    if (emailToggleBtn) {
+        emailToggleBtn.addEventListener('click', () => {
+            emailToggleWrap.style.display = 'none';
+            emailInputArea.style.display = 'block';
+            setStep('email');
+            const emailInput = document.getElementById('email');
+            if (emailInput) setTimeout(() => emailInput.focus(), 50);
+        });
+    }
+
     function setMode(nextMode) {
         mode = nextMode;
-        const nameInput    = document.getElementById('name');
+        const nameInput     = document.getElementById('name');
         const termsAccepted = document.getElementById('termsAccepted');
         if (nameGroup && nameInput) {
             nameGroup.style.display = mode === 'register' ? 'block' : 'none';
@@ -506,7 +571,7 @@
             showStatus(err.message || 'Error verifying email.', 'error');
         } finally {
             continueBtn.disabled = false;
-            continueBtn.innerHTML = 'Continue <i class="fas fa-arrow-right" style="font-size:12px;"></i>';
+            continueBtn.innerHTML = 'Continue <i class="fas fa-arrow-right" style="font-size:11px;"></i>';
         }
     }
 
@@ -527,7 +592,7 @@
                 if (!termsAccepted) {
                     showStatus('You must accept the Terms & Conditions.', 'error');
                     btn.disabled = false;
-                    btn.innerHTML = '<span id="btnText">Create Account</span> <i class="fas fa-arrow-right" style="font-size:12px;"></i>';
+                    btn.innerHTML = '<span id="btnText">Create Account</span> <i class="fas fa-arrow-right" style="font-size:11px;"></i>';
                     return;
                 }
                 payload.name = name;
@@ -542,13 +607,13 @@
                 showStatus(data.message, 'success');
                 if (data.user) localStorage.setItem('currentUser', JSON.stringify(data.user));
                 btn.innerHTML = '<i class="fas fa-check"></i> Done';
-                btn.style.background = 'rgba(6,95,70,1)';
+                btn.style.background = '#0a2a1a';
                 if (mode === 'login') setTimeout(() => window.location.href = 'dashboard.html', 900);
                 else setTimeout(() => { setMode('login'); setStep('details'); document.getElementById('email').value = email; btn.disabled = false; }, 1500);
             } else {
                 showStatus(data.error || 'Unknown error', 'error');
                 btn.disabled = false;
-                btn.innerHTML = '<span id="btnText">' + (mode === 'register' ? 'Create Account' : 'Sign in') + '</span> <i class="fas fa-arrow-right" style="font-size:12px;"></i>';
+                btn.innerHTML = '<span id="btnText">' + (mode === 'register' ? 'Create Account' : 'Sign in') + '</span> <i class="fas fa-arrow-right" style="font-size:11px;"></i>';
             }
         } catch (err) {
             showStatus('Connection error. Please try again.', 'error');
@@ -596,8 +661,10 @@
     if (continueBtn) continueBtn.addEventListener('click', checkEmail);
     const emailInput = document.getElementById('email');
     if (emailInput) emailInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); checkEmail(); } });
-    if (changeEmailBtn) changeEmailBtn.addEventListener('click', () => { setStep('email'); if (emailInput) emailInput.focus(); });
-    setStep('email');
+    if (changeEmailBtn) changeEmailBtn.addEventListener('click', () => {
+        setStep('email');
+        if (emailInput) emailInput.focus();
+    });
 
     // --- RIGHT PANEL NEURAL PARTICLES ---
     const canvas = document.getElementById('rightCanvas');
@@ -645,7 +712,7 @@
         draw() {
             ctx.beginPath();
             ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
-            ctx.fillStyle = 'rgba(255,255,255,0.75)';
+            ctx.fillStyle = 'rgba(255,255,255,0.7)';
             ctx.fill();
         }
     }
@@ -663,7 +730,7 @@
                 const dy = particles[a].y - particles[b].y;
                 const d  = Math.sqrt(dx*dx + dy*dy);
                 if (d < maxDist) {
-                    const op = (1 - d / maxDist) * 0.18;
+                    const op = (1 - d / maxDist) * 0.16;
                     ctx.strokeStyle = `rgba(255,255,255,${op})`;
                     ctx.lineWidth = 0.8;
                     ctx.beginPath();
