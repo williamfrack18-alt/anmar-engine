@@ -3652,7 +3652,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (navIcon) navIcon.classList.add('active');
 
         // 4. Sections — simple display toggle via .active class (CSS handles display:none/flex)
-        const sectionId = (tab === 'market' || tab === 'growth' || tab === 'capital') ? 'section-build' : `section-${tab}`;
+        const sectionId = (tab === 'market' || tab === 'growth' || tab === 'capital') ? 'section-build' : (tab === 'business' ? 'section-business' : `section-${tab}`);
         const targetSec = document.getElementById(sectionId);
         if (targetSec) {
             document.querySelectorAll('.section-view').forEach(s => {

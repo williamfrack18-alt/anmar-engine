@@ -2465,6 +2465,9 @@
             <button onclick="switchTab('projects')" class="tab-btn active" id="tab-projects">
                 <i class="fas fa-folder-tree"></i> PROJECTS
             </button>
+            <button onclick="switchTab('business')" class="tab-btn" id="tab-business">
+                <i class="fas fa-chart-line"></i> BUSINESS MODEL
+            </button>
             <button onclick="switchTab('build')" class="tab-btn" id="tab-build">
                 <i class="fas fa-hammer"></i> BUILD
             </button>
@@ -3039,6 +3042,43 @@
                 </div>
             </div>
 
+            <!-- SECTION: BUSINESS MODEL -->
+            <div id="section-business" class="section-view"
+                style="padding:40px; color:#fff; flex-direction:column; align-items:center; justify-content:flex-start; height:100%; overflow-y:auto;">
+                <div style="width:min(860px,92vw); text-align:left; padding-top:20px;">
+                    <div style="margin-bottom:32px;">
+                        <h2 style="font-size:1.5rem; font-weight:700; color:#fff; margin:0 0 6px 0; letter-spacing:-0.02em;">Business Model</h2>
+                        <p style="color:rgba(255,255,255,0.45); font-size:0.88rem; margin:0;">Your business blueprint — revenue model, target market, and key assumptions.</p>
+                    </div>
+
+                    <!-- Placeholder cards -->
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px;">
+                        <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:14px; padding:24px;">
+                            <div style="font-size:0.72rem; text-transform:uppercase; letter-spacing:0.5px; color:rgba(255,255,255,0.35); margin-bottom:10px;">Value Proposition</div>
+                            <div style="color:rgba(255,255,255,0.55); font-size:0.88rem; line-height:1.6;">Define what makes your product uniquely valuable to your target customer.</div>
+                        </div>
+                        <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:14px; padding:24px;">
+                            <div style="font-size:0.72rem; text-transform:uppercase; letter-spacing:0.5px; color:rgba(255,255,255,0.35); margin-bottom:10px;">Revenue Model</div>
+                            <div style="color:rgba(255,255,255,0.55); font-size:0.88rem; line-height:1.6;">How will the business make money? Subscriptions, one-time, marketplace, ads?</div>
+                        </div>
+                        <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:14px; padding:24px;">
+                            <div style="font-size:0.72rem; text-transform:uppercase; letter-spacing:0.5px; color:rgba(255,255,255,0.35); margin-bottom:10px;">Target Market</div>
+                            <div style="color:rgba(255,255,255,0.55); font-size:0.88rem; line-height:1.6;">Who are your customers? Demographics, behaviors, pain points, market size.</div>
+                        </div>
+                        <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:14px; padding:24px;">
+                            <div style="font-size:0.72rem; text-transform:uppercase; letter-spacing:0.5px; color:rgba(255,255,255,0.35); margin-bottom:10px;">Key Metrics</div>
+                            <div style="color:rgba(255,255,255,0.55); font-size:0.88rem; line-height:1.6;">CAC, LTV, churn, MRR — the numbers that tell you if the model works.</div>
+                        </div>
+                    </div>
+
+                    <div style="background:rgba(16,185,129,0.06); border:1px solid rgba(16,185,129,0.2); border-radius:14px; padding:24px; text-align:center;">
+                        <i class="fas fa-chart-line" style="color:#10b981; font-size:1.4rem; margin-bottom:12px; display:block;"></i>
+                        <div style="font-weight:600; font-size:0.9rem; color:rgba(255,255,255,0.8); margin-bottom:6px;">Your business model is being built</div>
+                        <div style="font-size:0.82rem; color:rgba(255,255,255,0.35); line-height:1.55;">Complete your onboarding and our team will populate this section with your validated business model canvas.</div>
+                    </div>
+                </div>
+            </div>
+
             <!-- SECTION 3: MARKETING (Placeholder) -->
             <!-- section-market and section-growth removed: market/growth/capital all share section-build with channel switching -->
 
@@ -3262,8 +3302,8 @@
         const welcomeDescInput = document.getElementById('welcomeDescInput');
         const welcomeSubmitBtn = document.getElementById('welcomeSubmitBtn');
         function safeSwitchTab(tab) {
-            // market, growth, capital all share section-build
-            const sectionId = (tab === 'market' || tab === 'growth' || tab === 'capital') ? 'section-build' : 'section-' + tab;
+            // market, growth, capital all share section-build; business has its own section
+            const sectionId = (tab === 'market' || tab === 'growth' || tab === 'capital') ? 'section-build' : (tab === 'business' ? 'section-business' : 'section-' + tab);
             const sec = document.getElementById(sectionId);
             if (!sec) return;
             document.querySelectorAll('.section-view').forEach(s => {
