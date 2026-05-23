@@ -4081,9 +4081,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (key.startsWith('anmar:')) localStorage.removeItem(key);
                 });
             } catch (e) {}
-            window.location.href = 'login.html';
+            // Use replace() so dashboard is removed from history — back button won't return here
+            window.location.replace('login.html');
         });
     }
+
+    // Guard against bfcache restore (browser Back button after logout)
+    window.addEventListener('pageshow', (e) => {
+        if (e.persisted) {
+            // Page restored from cache — re-check auth
+            const raw = localStorage.getItem('currentUser');
+            if (!raw) {
+                window.location.replace('login.html');
+            }
+        }
+    });
 
     // === Consume pendingPlan AFTER purchasePlan is defined ===
     (function consumePendingPlan() {
