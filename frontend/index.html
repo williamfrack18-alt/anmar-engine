@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>anmarenterprices.com | Plataforma de Impulso</title>
+    <title>Anmar Enterprises | Supra AI Builder</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css?v=11">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -28,31 +28,6 @@
             width: 100%;
             font-family: 'Inter', sans-serif;
             color: #fff;
-            zoom: 1;
-        }
-
-        /* --- CONTENT STYLE UPDATES --- */
-        h1.main-title,
-        h2.section-header,
-        p.hero-subtitle,
-        p.section-body {
-            margin-left: 0;
-            margin-right: 0;
-            /* Was auto */
-        }
-
-        .concept-box {
-            border-top: 1px solid rgba(255, 255, 255, 0.32);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.32);
-            border-left: none;
-            padding: 1.2rem 0;
-            margin: 2rem auto;
-            font-family: 'Merriweather', serif;
-            font-style: italic;
-            font-size: 1.35rem;
-            color: rgba(255, 255, 255, 0.95);
-            max-width: 700px;
-            width: 100%;
         }
 
         /* --- VIDEO BACKGROUND (YouTube) --- */
@@ -71,19 +46,15 @@
             position: absolute;
             top: 50%;
             left: 50%;
-            width: 100vw;
-            height: 100vh;
-            transform: translate(-50%, -50%) scale(1.5);
-            /* Zoom to remove borders */
             pointer-events: none;
-            opacity: 0.6;
-            /* Slight dim */
+            opacity: 0.55;
         }
 
         @media (min-aspect-ratio: 16/9) {
             .video-background iframe {
                 width: 100vw;
                 height: 56.25vw;
+                transform: translate(-50%, -50%);
             }
         }
 
@@ -91,10 +62,11 @@
             .video-background iframe {
                 width: 177.78vh;
                 height: 100vh;
+                transform: translate(-50%, -50%);
             }
         }
 
-        /* --- TEXTURE OVERLAYS (Scanlines look) --- */
+        /* --- TEXTURE OVERLAYS --- */
         .scanlines {
             position: fixed;
             top: 0;
@@ -104,8 +76,8 @@
             background: linear-gradient(to bottom,
                     rgba(255, 255, 255, 0),
                     rgba(255, 255, 255, 0) 50%,
-                    rgba(0, 0, 0, 0.2) 50%,
-                    rgba(0, 0, 0, 0.2));
+                    rgba(0, 0, 0, 0.18) 50%,
+                    rgba(0, 0, 0, 0.18));
             background-size: 100% 4px;
             z-index: -50;
             pointer-events: none;
@@ -117,46 +89,50 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(20, 40, 20, 0.4);
-            /* Greenish tint from image */
+            background: rgba(14, 32, 18, 0.38);
             z-index: -51;
             pointer-events: none;
         }
 
         /* --- NAVIGATION HEADER --- */
         header {
-            position: absolute;
+            position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 1.75rem 4vw;
-            z-index: 100;
-            backdrop-filter: blur(6px);
+            padding: 1.4rem 4vw;
+            z-index: 1000;
+            backdrop-filter: blur(14px);
+            background: rgba(0, 0, 0, 0.3);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
         }
 
         .logo {
             font-weight: 700;
-            font-size: 1.3rem;
-            letter-spacing: -0.6px;
+            font-size: 1.15rem;
+            letter-spacing: -0.4px;
             color: #fff;
             text-decoration: none;
+            white-space: nowrap;
+            flex-shrink: 0;
         }
 
         nav {
             display: flex;
-            gap: 1.6rem;
+            gap: 1.8rem;
         }
 
         nav a {
             text-decoration: none;
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.65);
+            font-size: 0.88rem;
             font-weight: 500;
             letter-spacing: 0.2px;
-            transition: color 0.3s;
+            transition: color 0.25s;
+            white-space: nowrap;
         }
 
         nav a:hover {
@@ -166,71 +142,136 @@
         .nav-actions {
             display: flex;
             align-items: center;
-            gap: 1.5rem;
+            gap: 1.2rem;
+            flex-shrink: 0;
         }
 
         .btn-login {
-            color: #fff;
+            color: rgba(255, 255, 255, 0.8);
             text-decoration: none;
-            font-size: 0.9rem;
+            font-size: 0.88rem;
+            font-weight: 500;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.45rem;
+            transition: color 0.25s;
+        }
+
+        .btn-login:hover {
+            color: #fff;
         }
 
         .btn-start {
             background: #fff;
             color: #000;
-            padding: 0.7rem 1.3rem;
+            padding: 0.6rem 1.2rem;
             border-radius: 8px;
             font-weight: 700;
-            font-size: 0.9rem;
+            font-size: 0.88rem;
             text-decoration: none;
             transition: transform 0.2s, box-shadow 0.2s;
-            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            white-space: nowrap;
         }
 
         .btn-start:hover {
             transform: translateY(-2px);
+            box-shadow: 0 12px 28px rgba(255, 255, 255, 0.15);
         }
 
-        /* --- HERO SELECTION center-left --- */
+        /* Hamburger (mobile) */
+        .nav-hamburger {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        .nav-hamburger span {
+            display: block;
+            width: 22px;
+            height: 2px;
+            background: #fff;
+            border-radius: 2px;
+            transition: all 0.3s;
+        }
+
+        .mobile-nav-menu {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.96);
+            z-index: 999;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2rem;
+        }
+
+        .mobile-nav-menu.open {
+            display: flex;
+        }
+
+        .mobile-nav-menu a {
+            color: rgba(255, 255, 255, 0.85);
+            text-decoration: none;
+            font-size: 1.4rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .mobile-nav-menu a:hover {
+            color: #fff;
+        }
+
+        .mobile-nav-close {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            font-size: 1.5rem;
+            color: rgba(255, 255, 255, 0.7);
+            cursor: pointer;
+            background: none;
+            border: none;
+        }
+
+        /* --- HERO --- */
         .hero-container {
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: flex-start;
-            /* LEFT ALIGN */
-            text-align: left;
-            padding-left: 8vw;
-            padding-right: 6vw;
+            padding: 9rem 8vw 5rem;
             position: relative;
             z-index: 10;
         }
 
         h1.main-title {
-            font-size: 4.2rem;
-            line-height: 1.08;
+            font-size: clamp(2.6rem, 6vw, 4.8rem);
+            line-height: 1.07;
             font-weight: 500;
             letter-spacing: -2px;
-            margin-bottom: 1.4rem;
-            max-width: 900px;
+            margin: 0 0 1.5rem 0;
+            max-width: 860px;
         }
 
-        h1.main-title strong {
-            display: block;
-            font-weight: 400;
-            color: rgba(255, 255, 255, 0.9);
+        h1.main-title span {
+            color: rgba(255, 255, 255, 0.65);
         }
 
         p.hero-subtitle {
-            font-size: 1.2rem;
-            color: rgba(255, 255, 255, 0.95);
-            max-width: 760px;
-            margin-bottom: 2.2rem;
-            line-height: 1.7;
-            text-shadow: 0 8px 22px rgba(0, 0, 0, 0.5);
+            font-size: clamp(1rem, 2vw, 1.18rem);
+            color: rgba(255, 255, 255, 0.88);
+            max-width: 680px;
+            margin: 0 0 2.4rem 0;
+            line-height: 1.72;
+            font-weight: 300;
+            text-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
         }
 
         /* MAIN CTA BUTTON */
@@ -238,18 +279,19 @@
             background: #fff;
             color: #000;
             font-weight: 700;
-            font-size: 1rem;
-            padding: 1rem 2.2rem;
+            font-size: 0.98rem;
+            padding: 0.95rem 2.2rem;
             text-decoration: none;
             border-radius: 8px;
             display: inline-block;
-            transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
             box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+            letter-spacing: 0.3px;
         }
 
         .cta-button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 16px 36px rgba(255, 255, 255, 0.2);
+            box-shadow: 0 18px 36px rgba(255, 255, 255, 0.18);
         }
 
         .cta-button:active {
@@ -259,35 +301,32 @@
         .cta-secondary {
             background: transparent;
             color: #fff;
-            border: 1px solid rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.55);
         }
 
         .cta-secondary:hover {
-            background: rgba(255, 255, 255, 0.08);
-            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+            background: rgba(255, 255, 255, 0.07);
         }
 
         .cta-row {
             display: flex;
             gap: 1rem;
-            justify-content: center;
             align-items: center;
             flex-wrap: wrap;
         }
 
-        /* --- SCROLL MOUSE INDICATOR --- */
+        /* --- SCROLL INDICATOR --- */
         .scroll-indicator {
             position: absolute;
-            bottom: 2rem;
+            bottom: 2.5rem;
             left: 50%;
             transform: translateX(-50%);
             width: 24px;
             height: 40px;
-            border: 2px solid rgba(255, 255, 255, 0.5);
+            border: 2px solid rgba(255, 255, 255, 0.45);
             border-radius: 20px;
             display: flex;
             justify-content: center;
-            opacity: 0.8;
         }
 
         .scroll-dot {
@@ -300,211 +339,213 @@
         }
 
         @keyframes scrollAnim {
-            0% {
-                transform: translateY(0);
-                opacity: 1;
-            }
-
-            100% {
-                transform: translateY(15px);
-                opacity: 0;
-            }
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(15px); opacity: 0; }
         }
 
-        /* --- CONTENT SECTIONS (GENESIS) --- */
+        /* --- CONTENT SECTIONS --- */
         .content-section {
-            min-height: 90vh;
+            min-height: 85vh;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             text-align: center;
-            padding: 5rem 2rem;
+            padding: 6rem 6vw;
             position: relative;
             z-index: 10;
-            /* Fade bg as user scrolls for readability */
-            background: linear-gradient(to bottom, transparent, rgba(5, 5, 5, 0.8));
-        }
-
-        .info-strip {
-            width: min(980px, 92vw);
-            margin: 2.5rem auto 3.5rem;
-            padding: 1.6rem 2.2rem;
-            border-radius: 18px;
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            background: rgba(5, 8, 8, 0.55);
-            backdrop-filter: blur(8px);
-            text-align: left;
-            box-shadow: 0 18px 45px rgba(0, 0, 0, 0.4);
-        }
-
-        .info-strip h3 {
-            margin: 0 0 0.6rem 0;
-            font-size: 1.1rem;
-            letter-spacing: 0.5px;
-        }
-
-        .info-strip p {
-            margin: 0;
-            color: rgba(255, 255, 255, 0.75);
-            line-height: 1.6;
-            font-size: 0.95rem;
-        }
-
-        .plans-grid,
-        .testimonial-grid {
-            width: min(1120px, 92vw);
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 1.5rem;
-            margin: 2rem auto 0;
-        }
-
-        .plan-card,
-        .testimonial-card {
-            padding: 1.8rem;
-            border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            background: rgba(6, 8, 8, 0.58);
-            backdrop-filter: blur(10px);
-            box-shadow: 0 18px 42px rgba(0, 0, 0, 0.35);
-            text-align: left;
-        }
-
-        .plan-card h4 {
-            margin: 0 0 0.6rem 0;
-            font-size: 1.1rem;
-        }
-
-        .plan-card ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            color: rgba(255, 255, 255, 0.75);
-            font-size: 0.9rem;
-            line-height: 1.6;
-        }
-
-        .plan-card ul li::before {
-            content: "• ";
-            color: rgba(16, 185, 129, 0.8);
-        }
-
-        .plan-tag {
-            display: inline-block;
-            margin-top: 0.8rem;
-            font-size: 0.75rem;
-            letter-spacing: 1px;
-            color: rgba(255, 255, 255, 0.6);
-            text-transform: uppercase;
-        }
-
-        .testimonial-card p {
-            color: rgba(255, 255, 255, 0.75);
-            font-size: 0.95rem;
-            line-height: 1.6;
-            margin: 0 0 1rem 0;
-        }
-
-        .testimonial-card span {
-            color: rgba(255, 255, 255, 0.55);
-            font-size: 0.85rem;
+            background: linear-gradient(to bottom, transparent, rgba(4, 4, 4, 0.82));
         }
 
         .step-badge {
             --badge-rgb: 16, 185, 129;
-            background: linear-gradient(180deg, rgba(var(--badge-rgb), 0.17), rgba(var(--badge-rgb), 0.08));
-            border: 1px solid rgba(var(--badge-rgb), 0.38);
-            box-shadow: 0 0 22px rgba(var(--badge-rgb), 0.14), inset 0 0 12px rgba(var(--badge-rgb), 0.08);
-            padding: 12px 24px;
+            background: linear-gradient(180deg, rgba(var(--badge-rgb), 0.16), rgba(var(--badge-rgb), 0.07));
+            border: 1px solid rgba(var(--badge-rgb), 0.36);
+            box-shadow: 0 0 20px rgba(var(--badge-rgb), 0.12), inset 0 0 10px rgba(var(--badge-rgb), 0.07);
+            padding: 10px 22px;
             border-radius: 999px;
-            font-size: 0.95rem;
+            font-size: 0.82rem;
             text-transform: uppercase;
-            letter-spacing: 2.4px;
+            letter-spacing: 2.2px;
             color: rgb(var(--badge-rgb));
-            margin-bottom: 2rem;
+            margin-bottom: 1.8rem;
             font-weight: 700;
             backdrop-filter: blur(9px);
             line-height: 1;
         }
 
-        .step-badge.step-genesis {
-            --badge-rgb: 16, 185, 129;
-        }
-
-        .step-badge.step-impulso {
-            --badge-rgb: 59, 130, 246;
-        }
-
-        .step-badge.step-escala {
-            --badge-rgb: 245, 158, 11;
-        }
+        .step-badge.step-genesis { --badge-rgb: 16, 185, 129; }
+        .step-badge.step-impulso { --badge-rgb: 59, 130, 246; }
+        .step-badge.step-escala  { --badge-rgb: 245, 158, 11; }
 
         h2.section-header {
-            font-size: 3.2rem;
+            font-size: clamp(2rem, 5vw, 3.4rem);
             font-weight: 700;
-            margin-bottom: 1.6rem;
+            margin: 0 0 1.5rem 0;
             color: #fff;
             letter-spacing: -1.2px;
-            max-width: 900px;
+            max-width: 860px;
+            line-height: 1.1;
         }
 
         p.section-body {
-            font-size: 1.22rem;
-            line-height: 1.75;
-            color: rgba(255, 255, 255, 0.82);
-            max-width: 840px;
-            margin-bottom: 3rem;
+            font-size: clamp(1rem, 1.8vw, 1.2rem);
+            line-height: 1.78;
+            color: rgba(255, 255, 255, 0.78);
+            max-width: 800px;
+            margin: 0 0 2.8rem 0;
             font-weight: 300;
+        }
+
+        .concept-box {
+            border-top: 1px solid rgba(255, 255, 255, 0.28);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.28);
+            padding: 1.3rem 0;
+            margin: 0 auto 2.5rem;
+            font-style: italic;
+            font-size: clamp(1.05rem, 2vw, 1.3rem);
+            color: rgba(255, 255, 255, 0.92);
+            max-width: 680px;
+            width: 100%;
+        }
+
+        /* --- PLANS / TESTIMONIALS GRIDS --- */
+        .testimonial-grid {
+            width: min(1100px, 92vw);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.4rem;
+            margin: 0 auto 2.5rem;
+        }
+
+        .testimonial-card {
+            padding: 1.8rem;
+            border-radius: 18px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(6, 8, 8, 0.55);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3);
+            text-align: left;
+        }
+
+        .testimonial-card p {
+            color: rgba(255, 255, 255, 0.78);
+            font-size: 0.95rem;
+            line-height: 1.65;
+            margin: 0 0 1rem 0;
+        }
+
+        .testimonial-card span {
+            color: rgba(255, 255, 255, 0.45);
+            font-size: 0.82rem;
+            letter-spacing: 0.3px;
+        }
+
+        /* --- FAQ --- */
+        .faq-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2.5rem;
+            text-align: left;
+            width: min(1100px, 92vw);
+            margin: 0 auto;
+        }
+
+        .faq-item h3 {
+            color: #fff;
+            font-size: 1.05rem;
+            margin: 0 0 0.7rem 0;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+
+        .faq-item p {
+            color: rgba(255, 255, 255, 0.58);
+            font-size: 0.9rem;
+            line-height: 1.65;
+            margin: 0;
+        }
+
+        /* --- SOCIAL FOOTER --- */
+        .social-footer {
+            padding: 5rem 6vw 3.5rem;
+            text-align: center;
+        }
+
+        .social-footer h3 {
+            margin: 0 0 8px 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        .social-footer p {
+            margin: 0 0 1.4rem 0;
+            color: rgba(255, 255, 255, 0.55);
+            font-size: 0.9rem;
+        }
+
+        .social-icons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .social-icons a {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.75);
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+        }
+
+        .social-icons a:hover {
+            border-color: rgba(255, 255, 255, 0.5);
+            color: #fff;
+            transform: translateY(-2px);
         }
 
         /* --- MOBILE RESPONSIVENESS --- */
         @media (max-width: 768px) {
-            body {
-                zoom: 1;
+            /* Header — hide nav, show hamburger */
+            header nav {
+                display: none;
+            }
+
+            header .nav-actions .btn-login {
+                display: none;
+            }
+
+            .nav-hamburger {
+                display: flex;
             }
 
             header {
-                padding: 1.5rem 1rem;
-                flex-direction: column;
-                gap: 1.2rem;
+                padding: 1.1rem 5vw;
             }
 
-            nav {
-                flex-wrap: wrap;
-                justify-content: center;
-                gap: 1rem;
-            }
-
-            .nav-actions {
-                width: 100%;
-                flex-direction: column;
-                gap: 0.8rem;
-            }
-
-            .btn-start,
-            .btn-login {
-                width: 100%;
-                justify-content: center;
-            }
-
+            /* Hero */
             .hero-container {
-                padding-left: 1.5rem !important;
-                padding-right: 1.5rem !important;
-                align-items: center !important;
-                text-align: center !important;
+                padding: 7rem 6vw 4rem;
+                align-items: center;
+                text-align: center;
             }
 
             h1.main-title {
-                font-size: 2.8rem !important;
-                letter-spacing: -1px !important;
+                letter-spacing: -1px;
+                margin-bottom: 1.2rem;
             }
 
             p.hero-subtitle {
-                font-size: 1.02rem !important;
-                text-align: center !important;
-                margin-left: auto !important;
-                margin-right: auto !important;
+                text-align: center;
+                font-size: 1rem;
             }
 
             .cta-button {
@@ -512,34 +553,61 @@
                 text-align: center;
             }
 
+            .cta-row {
+                width: 100%;
+                flex-direction: column;
+            }
+
+            .cta-secondary {
+                width: 100%;
+                text-align: center;
+            }
+
+            .scroll-indicator {
+                display: none;
+            }
+
+            /* Sections */
             .content-section {
-                padding: 3rem 1.5rem;
-            }
-
-            h2.section-header {
-                font-size: 2rem !important;
-                text-align: center !important;
-            }
-
-            p.section-body {
-                font-size: 1rem !important;
+                padding: 4rem 6vw;
+                min-height: auto;
             }
 
             .concept-box {
-                font-size: 1.1rem !important;
-                padding: 1rem 0 !important;
+                font-size: 1rem;
+                padding: 1rem 0;
             }
 
-        .faq-grid {
-            grid-template-columns: 1fr !important;
-            gap: 1.5rem !important;
+            .step-badge {
+                font-size: 0.7rem;
+                padding: 8px 14px;
+                letter-spacing: 1.5px;
+                line-height: 1.5;
+            }
+
+            .faq-grid {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+
+            .testimonial-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .social-footer {
+                padding: 4rem 6vw 3rem;
+            }
         }
 
-            .step-badge {
-                font-size: 0.75rem !important;
-                padding: 8px 16px !important;
-                text-align: center;
-                line-height: 1.4 !important;
+        @media (max-width: 480px) {
+            h1.main-title {
+                font-size: 2.2rem;
+                letter-spacing: -0.8px;
+            }
+
+            h2.section-header {
+                font-size: 1.85rem;
+                letter-spacing: -0.5px;
             }
         }
     </style>
@@ -555,7 +623,7 @@
         </iframe>
     </div>
 
-    <!-- OVERLAYS (The "Look") -->
+    <!-- OVERLAYS -->
     <div class="green-tint" style="position:fixed;"></div>
     <div class="scanlines" style="position:fixed;"></div>
 
@@ -564,65 +632,75 @@
         <a href="#" class="logo">Anmar Enterprises</a>
 
         <nav>
-            <a href="#">Inicio</a>
-            <a href="#genesis">Construcción</a>
-            <a href="#impulso">Crecimiento</a>
-            <a href="#escala">Financiación</a>
-            <a href="pricing.html">Precios</a>
-            <a href="#preguntas">Preguntas</a>
+            <a href="#">Home</a>
+            <a href="#genesis">Build</a>
+            <a href="#impulso">Growth</a>
+            <a href="#escala">Capital</a>
+            <a href="pricing.html">Pricing</a>
+            <a href="#faq">FAQ</a>
         </nav>
 
         <div class="nav-actions">
-            <!-- Simulated Login -->
             <a href="login.html" class="btn-login js-auth-link" id="navAuthLink">
-                <i class="fas fa-arrow-right-to-bracket"></i> Iniciar Sesión
+                <i class="fas fa-arrow-right-to-bracket"></i> Log In
             </a>
-            <!-- Main Action -->
-            <a href="login.html" class="btn-start js-auth-link" id="navStartLink">Comenzar</a>
+            <a href="login.html" class="btn-start js-auth-link" id="navStartLink">Get Started</a>
+        </div>
+
+        <!-- Hamburger (mobile) -->
+        <div class="nav-hamburger" id="navHamburger" aria-label="Open menu">
+            <span></span><span></span><span></span>
         </div>
     </header>
 
-    <!-- SECTION 1: HERO -->
-    <!-- SECTION 1: HERO -->
-    <div class="hero-container" style="align-items: flex-start; padding-left: 8vw; text-align: left;">
+    <!-- MOBILE NAV MENU -->
+    <div class="mobile-nav-menu" id="mobileNavMenu">
+        <button class="mobile-nav-close" id="mobileNavClose" aria-label="Close menu">
+            <i class="fas fa-times"></i>
+        </button>
+        <a href="#" onclick="closeMobileNav()">Home</a>
+        <a href="#genesis" onclick="closeMobileNav()">Build</a>
+        <a href="#impulso" onclick="closeMobileNav()">Growth</a>
+        <a href="#escala" onclick="closeMobileNav()">Capital</a>
+        <a href="pricing.html" onclick="closeMobileNav()">Pricing</a>
+        <a href="#faq" onclick="closeMobileNav()">FAQ</a>
+        <a href="login.html" class="btn-start js-auth-link" style="margin-top:1rem;" id="mobileAuthLink">Log In</a>
+    </div>
 
-        <h1 class="main-title"
-            style="font-size: 4.4rem; line-height: 1.08; letter-spacing: -2.2px; font-weight: 500; max-width: 900px;">
-            Construye tu imperio<br>
-            <span style="color: rgba(255,255,255,0.7);">a la velocidad de la luz.</span>
+    <!-- SECTION 1: HERO -->
+    <div class="hero-container">
+        <h1 class="main-title">
+            Your idea.<br>
+            <span>Built. Launched. Funded.</span>
         </h1>
 
-        <p class="hero-subtitle"
-            style="text-align: left; max-width: 720px; margin-left: 0; font-size: 1.2rem; opacity: 0.98; line-height: 1.65; font-weight: 300; text-shadow: 0 8px 22px rgba(0,0,0,0.5);">
-            Anmar es la Supra IA que transforma ideas crudas en productos reales, combinando inteligencia artificial con
-            talento humano de élite. Tú chateas con ingenieros y marketers dentro de la plataforma; nosotros ponemos el
-            código, el crecimiento y el capital. El acceso es mensual antes del chat humano.
+        <p class="hero-subtitle">
+            Anmar is the Supra AI platform that takes what's in your head and turns it into a real,
+            revenue-generating business — with elite engineers, marketers, and capital backing you
+            every step of the way.
         </p>
 
-        <a href="login.html" class="cta-button js-auth-link" id="heroCtaLink"
-            style="margin-left: 0; padding: 1rem 2rem; letter-spacing: 0.5px; font-size: 1rem;">
-            Empezar ahora
+        <a href="login.html" class="cta-button js-auth-link" id="heroCtaLink">
+            Start building now
         </a>
 
-        <!-- MOUSE SCROLL located inside hero to indicate scroll -->
-        <div class="scroll-indicator" style="bottom: 40px; position:absolute; left: 50%; transform: translateX(-50%);">
+        <div class="scroll-indicator">
             <div class="scroll-dot"></div>
         </div>
     </div>
 
     <!-- SECTION 1.5: DEMO VIDEO -->
-    <section class="content-section" id="demo" style="min-height:auto; padding-top: 6rem; padding-bottom: 6rem;">
-        <div style="max-width:1200px; margin:0 auto; text-align:center;">
-            <h2 class="section-header" style="margin-bottom:1rem; text-align:center;">Conoce Anmar Enterprises.</h2>
-            <p class="section-body" style="max-width:720px; margin:0 auto 2.5rem;">
-                Te mostramos el flujo completo: eliges el nivel de detalle, apruebas el blueprint y nuestros ingenieros
-                ejecutan. Todo dentro de un panel limpio y humano, con IA trabajando a tu favor.
+    <section class="content-section" id="demo" style="min-height:auto; padding-top:5rem; padding-bottom:5rem;">
+        <div style="max-width:1100px; margin:0 auto; width:100%; text-align:center;">
+            <h2 class="section-header" style="margin-bottom:0.8rem;">See Anmar in action.</h2>
+            <p class="section-body" style="max-width:660px; margin:0 auto 2.2rem;">
+                Watch the full flow: describe your idea, get the blueprint, and watch a team of engineers and
+                marketers execute — all from one clean platform.
             </p>
-            <div style="background: rgba(10, 12, 14, 0.72); border: 1px solid rgba(255,255,255,0.12); border-radius:26px; padding:14px; box-shadow:0 26px 55px rgba(0,0,0,0.45); max-width:1040px; width:88vw; margin:0 auto;">
-                <div style="position:relative; width:100%; padding-top:56.25%; border-radius:20px; overflow:hidden; background:#0b0f14;">
-                    <!-- Reemplaza este video con tu enlace real cuando me lo pases -->
+            <div style="background:rgba(8,10,12,0.72); border:1px solid rgba(255,255,255,0.1); border-radius:24px; padding:12px; box-shadow:0 24px 52px rgba(0,0,0,0.5); max-width:980px; width:100%; margin:0 auto;">
+                <div style="position:relative; width:100%; padding-top:56.25%; border-radius:16px; overflow:hidden; background:#0a0d12;">
                     <iframe src="https://www.youtube.com/embed/Uc1NI4COG9k?rel=0&modestbranding=1&controls=1"
-                        title="Demo Anmar" frameborder="0"
+                        title="Anmar Demo" frameborder="0"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowfullscreen
                         style="position:absolute; inset:0; width:100%; height:100%; border:0;"></iframe>
@@ -631,247 +709,224 @@
         </div>
     </section>
 
-    <!-- SECTION 2: GENESIS -->
+    <!-- SECTION 2: BUILD -->
     <section class="content-section" id="genesis">
-        <div class="step-badge step-genesis">Paso 01: El Génesis (Ingeniería & Ejecución Híbrida)</div>
+        <div class="step-badge step-genesis">Step 01 &nbsp;·&nbsp; Build</div>
 
-        <h2 class="section-header">Tu visión, construida por expertos.</h2>
+        <h2 class="section-header">From idea to product in weeks, not months.</h2>
 
         <p class="section-body">
-            Describe tu idea en lenguaje natural. Nuestra Supra IA genera el plano técnico y el sistema lo ejecuta con
-            ingenieros de élite. Construimos desde webs, software, e‑commerce y apps a medida. Tú chateas con el equipo,
-            ves la previsualización y pides cambios en tiempo real. El resultado es un producto robusto, seguro y
-            escalable.
+            Describe what you want to build in plain language. Our Supra AI generates the full technical blueprint —
+            and our elite engineers execute it. Websites, software, SaaS, e-commerce, custom apps. You stay in
+            control: chat directly with the team inside the platform, review live previews, and request changes in
+            real time. No technical background needed. No agency back-and-forth.
         </p>
 
         <div class="concept-box">
-            "La velocidad de la IA con la artesanía del mejor talento humano."
+            "The speed of AI. The precision of world-class engineers."
         </div>
 
         <div class="cta-row">
-            <a href="login.html" class="cta-button js-auth-link">Crear mi proyecto</a>
+            <a href="login.html" class="cta-button js-auth-link">Start my project</a>
         </div>
     </section>
 
-    <!-- SECTION 3: IMPULSO -->
+    <!-- SECTION 3: GROWTH -->
     <section class="content-section" id="impulso">
-        <div class="step-badge step-impulso">
-            Paso 02: El Impulso (Crecimiento Estratégico)
-        </div>
+        <div class="step-badge step-impulso">Step 02 &nbsp;·&nbsp; Growth</div>
 
-        <h2 class="section-header">Marketing de precisión humana.</h2>
+        <h2 class="section-header">Turn traffic into customers. Consistently.</h2>
 
         <p class="section-body">
-            Aquí es donde hacemos el marketing y te traemos más clientes. La Supra IA analiza el mercado y genera los
-            activos base, pero son nuestros estrategas humanos quienes los pulen. Creamos los artes (videos e imágenes
-            para anuncios), y asignamos un community manager para gestionar tus redes sociales y empujar el crecimiento
-            orgánico. Chateas con el equipo de marketing, apruebas campañas y ves métricas y previsualizaciones diseñadas
-            para convertir desde el primer día.
+            Growth doesn't happen by accident. Our Supra AI builds the strategy and your human marketing team
+            executes it. Paid campaigns, ad creatives (video and image), a dedicated community manager for your
+            social channels, and a full organic growth engine — all managed inside the platform. You approve, we
+            execute, you grow.
         </p>
 
         <div class="concept-box">
-            "Estrategias que respiran, ejecutadas por expertos."
+            "Campaigns built to convert. Humans who know how to win."
         </div>
 
         <div class="cta-row">
-            <a href="login.html" class="cta-button js-auth-link">Activar marketing</a>
+            <a href="login.html" class="cta-button js-auth-link">Activate growth</a>
         </div>
     </section>
 
-    <!-- SECTION 4: ESCALA -->
-    <section class="content-section" style="padding-bottom: 8rem;" id="escala">
-        <div class="step-badge step-escala">
-            Paso 03: La Escala (Financiación Directa)
-        </div>
+    <!-- SECTION 4: CAPITAL -->
+    <section class="content-section" id="escala" style="padding-bottom:8rem;">
+        <div class="step-badge step-escala">Step 03 &nbsp;·&nbsp; Capital</div>
 
-        <h2 class="section-header">Invertimos en lo que construimos.</h2>
+        <h2 class="section-header">We back what we build.</h2>
 
         <p class="section-body">
-            Conocemos tu producto porque nosotros lo construimos. Si hay tracción real, puedes recibir ofertas de
-            financiación: capital directo de Anmar, inversión de terceros o líneas de crédito. Sin intermediarios y sin
-            humo: solo se financia lo que funciona.
+            When your product shows real traction, Anmar puts capital behind it. Direct investment from Anmar,
+            third-party investors, or credit lines — all available through the platform. No pitch deck theater.
+            No cold investor meetings. We already know your business because we built it with you.
         </p>
 
         <div class="concept-box">
-            "Tu socio tecnológico y financiero."
+            "Your tech partner. Your growth engine. Your investor."
         </div>
 
-        <div class="cta-row" style="margin-top: 2.5rem;">
-            <a href="login.html" class="cta-button js-auth-link">Solicitar financiación</a>
-            <a href="login.html" class="cta-button cta-secondary js-auth-link">Ver requisitos</a>
+        <div class="cta-row" style="margin-top:0.5rem;">
+            <a href="login.html" class="cta-button js-auth-link">Apply for funding</a>
+            <a href="login.html" class="cta-button cta-secondary js-auth-link">View requirements</a>
         </div>
     </section>
 
     <!-- PLANS CTA -->
-    <section class="content-section" id="planes" style="min-height: auto; padding-top: 2rem; padding-bottom: 6rem;">
-        <h2 class="section-header" style="margin-bottom: 1rem;">Planes mensuales, claridad total.</h2>
-        <p class="section-body" style="max-width: 760px;">
-            Tenemos dos planes simples: Marketing o Marketing + Construcción. Los detalles completos están en la página de
-            precios.
+    <section class="content-section" id="plans" style="min-height:auto; padding-top:2rem; padding-bottom:6rem;">
+        <h2 class="section-header" style="margin-bottom:0.8rem;">Two plans. No confusion.</h2>
+        <p class="section-body" style="max-width:680px;">
+            Pick Marketing ($297/mo) or Marketing + Build ($397/mo). Your dedicated team is assigned
+            from day one — no hidden fees, no long-term contracts.
         </p>
-        <div class="cta-row" style="margin-top: 2rem;">
-            <a href="pricing.html" class="cta-button">Ver precios</a>
-            <a href="login.html" class="cta-button cta-secondary js-auth-link">Activar plan</a>
+        <div class="cta-row" style="margin-top:1.5rem; justify-content:center;">
+            <a href="pricing.html" class="cta-button">See pricing</a>
+            <a href="login.html" class="cta-button cta-secondary js-auth-link">Get started</a>
         </div>
     </section>
 
     <!-- TESTIMONIALS -->
-    <section class="content-section" style="min-height: auto; padding-top: 2rem; padding-bottom: 6rem;">
-        <h2 class="section-header" style="margin-bottom: 1.5rem;">Casos piloto reales.</h2>
-        <p class="section-body" style="margin-bottom: 1.5rem;">
-            Empresas y emprendedores ya están construyendo con el modelo híbrido Anmar.
+    <section class="content-section" style="min-height:auto; padding-top:2rem; padding-bottom:6rem;">
+        <h2 class="section-header" style="margin-bottom:0.8rem;">Built, launched, and funded — for real.</h2>
+        <p class="section-body" style="margin-bottom:2rem;">
+            Founders and businesses already building their next chapter with Anmar.
         </p>
         <div class="testimonial-grid">
             <div class="testimonial-card">
-                <p>“Llegamos con una idea y salimos con un producto funcional en semanas. El chat con ingeniería fue
-                    brutal.”</p>
-                <span>Proyecto piloto • SaaS B2B</span>
+                <p>"We walked in with a napkin idea and shipped a working product in three weeks. The engineering
+                    chat alone was worth every dollar."</p>
+                <span>Pilot project &nbsp;·&nbsp; B2B SaaS</span>
             </div>
             <div class="testimonial-card">
-                <p>“El equipo de marketing convirtió nuestra web en un canal de adquisición real. Todo desde la misma
-                    plataforma.”</p>
-                <span>Negocio tradicional • Servicios</span>
+                <p>"The growth team turned our site from a dead page into our top acquisition channel. All of it
+                    managed inside one platform — no agency chaos."</p>
+                <span>Service business &nbsp;·&nbsp; Local market</span>
             </div>
             <div class="testimonial-card">
-                <p>“Después de validar tracción, recibimos opciones de financiación sin salir del panel.”</p>
-                <span>Startup en crecimiento</span>
+                <p>"We hit traction, activated the capital track, and had funding options on the table within
+                    30 days. No pitch deck. No cold emails."</p>
+                <span>Early-stage startup &nbsp;·&nbsp; E-commerce</span>
             </div>
         </div>
 
-        <div class="cta-row" style="margin-top: 2.5rem;">
-            <a href="login.html" class="cta-button js-auth-link">Crear cuenta</a>
+        <div class="cta-row" style="margin-top:2rem; justify-content:center;">
+            <a href="login.html" class="cta-button js-auth-link">Join them</a>
         </div>
     </section>
 
-    <!-- SECTION 5: PREGUNTAS (FAQ) -->
-    <section class="content-section" id="preguntas" style="padding-bottom: 8rem;">
-        <h2 class="section-header" style="margin-bottom: 3rem; font-size: 2.5rem; text-align: left;">Preguntas
-            Frecuentes.</h2>
+    <!-- FAQ -->
+    <section class="content-section" id="faq" style="padding-bottom:8rem; min-height:auto;">
+        <h2 class="section-header" style="margin-bottom:2.5rem; text-align:left; width:min(1100px,92vw);">
+            Frequently Asked Questions.
+        </h2>
 
-        <div class="faq-grid"
-            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 3rem; text-align: left;">
-
+        <div class="faq-grid">
             <div class="faq-item">
-                <h3 style="color: #fff; font-size: 1.1rem; margin-bottom: 0.8rem; font-weight: 600;">¿Anmar retiene mi
-                    propiedad intelectual?</h3>
-                <p style="color: rgba(255,255,255,0.6); font-size: 0.9rem; line-height: 1.6;">
-                    No. Todo lo que construyes es 100% tuyo desde el día uno. Nosotros operamos como co-fundadores
-                    estratégicos durante la fase de construcción.
-                </p>
+                <h3>Do I keep full ownership of what we build?</h3>
+                <p>100%. Everything built on Anmar is yours from day one — the code, the brand, the product.
+                    We operate as a strategic partner, not a co-owner.</p>
             </div>
 
             <div class="faq-item">
-                <h3 style="color: #fff; font-size: 1.1rem; margin-bottom: 0.8rem; font-weight: 600;">¿Qué tan rápido
-                    puedo lanzar?</h3>
-                <p style="color: rgba(255,255,255,0.6); font-size: 0.9rem; line-height: 1.6;">
-                    Semanas, no meses. Gracias a nuestro motor Supra IA, reducimos el tiempo de desarrollo en un 90%. Lo
-                    que antes tomaba un equipo de 10 personas en 6 meses, Anmar lo hace en 3 semanas.
-                </p>
+                <h3>How fast can I go from idea to launch?</h3>
+                <p>Most projects go live in 2–4 weeks. Our Supra AI engine cuts development time by up to 90% —
+                    what used to take a 10-person team six months, we deliver in weeks.</p>
             </div>
 
             <div class="faq-item">
-                <h3 style="color: #fff; font-size: 1.1rem; margin-bottom: 0.8rem; font-weight: 600;">¿Cómo funciona la
-                    financiación?</h3>
-                <p style="color: rgba(255,255,255,0.6); font-size: 0.9rem; line-height: 1.6;">
-                    Una vez tu producto está en vivo y mostrando tracción, activamos nuestro comité de inversión. Si los
-                    números cuadran, inyectamos capital semilla directamente.
-                </p>
+                <h3>How does the funding work?</h3>
+                <p>Once your product is live and showing traction, our capital committee reviews the numbers.
+                    If it checks out, we move fast — direct investment, third-party capital, or credit lines.
+                    No pitch required.</p>
             </div>
 
             <div class="faq-item">
-                <h3 style="color: #fff; font-size: 1.1rem; margin-bottom: 0.8rem; font-weight: 600;">¿Cómo se cobra el
-                    servicio?</h3>
-                <p style="color: rgba(255,255,255,0.6); font-size: 0.9rem; line-height: 1.6;">
-                    El acceso es mensual y se activa antes del chat humano. Puedes elegir Marketing ($297/mes) o
-                    Marketing + Construcción ($397/mes). Así asignamos equipo desde el primer día.
-                </p>
+                <h3>What exactly does my subscription include?</h3>
+                <p>Marketing ($297/mo) covers paid campaigns, creatives, and a community manager. Marketing + Build
+                    ($397/mo) adds the full engineering team. Your team is active from day one.</p>
             </div>
 
             <div class="faq-item">
-                <h3 style="color: #fff; font-size: 1.1rem; margin-bottom: 0.8rem; font-weight: 600;">¿Qué recibo en la
-                    fase de Construcción?</h3>
-                <p style="color: rgba(255,255,255,0.6); font-size: 0.9rem; line-height: 1.6;">
-                    Un producto funcional o web real con previsualización, iteraciones por chat y la base técnica lista
-                    para operar.
-                </p>
+                <h3>What does the Build phase actually deliver?</h3>
+                <p>A real, functional product — not a mockup. Live previews, chat-based iterations with the
+                    engineering team, and a production-ready codebase you own completely.</p>
             </div>
 
             <div class="faq-item">
-                <h3 style="color: #fff; font-size: 1.1rem; margin-bottom: 0.8rem; font-weight: 600;">¿Qué pasa si no
-                    tengo la idea clara?</h3>
-                <p style="color: rgba(255,255,255,0.6); font-size: 0.9rem; line-height: 1.6;">
-                    El chat guía el brief paso a paso. Te ayudamos a definir el problema, el público y la solución antes
-                    de construir.
-                </p>
+                <h3>What if my idea isn't fully defined yet?</h3>
+                <p>That's what the first chat is for. We guide you through defining the problem, the audience,
+                    and the solution before a single line of code is written.</p>
             </div>
 
             <div class="faq-item">
-                <h3 style="color: #fff; font-size: 1.1rem; margin-bottom: 0.8rem; font-weight: 600;">¿Cuándo puedo
-                    acceder a financiación?</h3>
-                <p style="color: rgba(255,255,255,0.6); font-size: 0.9rem; line-height: 1.6;">
-                    Cuando tu proyecto demuestra tracción real. Entonces puedes recibir ofertas de Anmar, inversionistas
-                    externos o líneas de crédito.
-                </p>
+                <h3>When does the capital track open?</h3>
+                <p>When your project has real, demonstrable traction. At that point, you unlock access to
+                    Anmar's investment committee and third-party funding options — all inside the platform.</p>
             </div>
-
         </div>
     </section>
 
-    <section style="padding: 80px 4vw 40px 4vw; text-align:center;">
-        <div style="max-width: 900px; margin: 0 auto;">
-            <h3 style="margin:0 0 10px 0; font-size:1.2rem; letter-spacing:0.3px;">Síguenos</h3>
-            <p style="margin:0 0 18px 0; color:rgba(255,255,255,0.65); font-size:0.95rem;">
-                Noticias, casos y lanzamientos de Anmar Enterprises.
-            </p>
-            <div style="display:flex; justify-content:center; gap:12px; flex-wrap:wrap;">
-                <a href="https://instagram.com/anmarenterprices" target="_blank" rel="noopener"
-                    style="width:36px; height:36px; border-radius:10px; border:1px solid rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; color:#fff; text-decoration:none;">
+    <!-- SOCIAL FOOTER -->
+    <section class="social-footer" style="position:relative; z-index:10;">
+        <div style="max-width:860px; margin:0 auto;">
+            <h3>Follow the build</h3>
+            <p>Case studies, launches, and behind-the-scenes from Anmar Enterprises.</p>
+            <div class="social-icons">
+                <a href="https://instagram.com/anmarenterprices" target="_blank" rel="noopener" aria-label="Instagram">
                     <i class="fab fa-instagram"></i>
                 </a>
-                <a href="https://facebook.com/anmarenterprices" target="_blank" rel="noopener"
-                    style="width:36px; height:36px; border-radius:10px; border:1px solid rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; color:#fff; text-decoration:none;">
+                <a href="https://facebook.com/anmarenterprices" target="_blank" rel="noopener" aria-label="Facebook">
                     <i class="fab fa-facebook-f"></i>
                 </a>
-                <a href="https://www.linkedin.com/company/anmarenterprices" target="_blank" rel="noopener"
-                    style="width:36px; height:36px; border-radius:10px; border:1px solid rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; color:#fff; text-decoration:none;">
+                <a href="https://www.linkedin.com/company/anmarenterprices" target="_blank" rel="noopener" aria-label="LinkedIn">
                     <i class="fab fa-linkedin-in"></i>
                 </a>
-                <a href="https://tiktok.com/@anmarenterprices" target="_blank" rel="noopener"
-                    style="width:36px; height:36px; border-radius:10px; border:1px solid rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; color:#fff; text-decoration:none;">
+                <a href="https://tiktok.com/@anmarenterprices" target="_blank" rel="noopener" aria-label="TikTok">
                     <i class="fab fa-tiktok"></i>
                 </a>
-                <a href="https://x.com/anmarenterprices" target="_blank" rel="noopener"
-                    style="width:36px; height:36px; border-radius:10px; border:1px solid rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; color:#fff; text-decoration:none;">
+                <a href="https://x.com/anmarenterprices" target="_blank" rel="noopener" aria-label="X / Twitter">
                     <i class="fab fa-twitter"></i>
                 </a>
-                <a href="https://www.youtube.com/@anmarenterprices" target="_blank" rel="noopener"
-                    style="width:36px; height:36px; border-radius:10px; border:1px solid rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; color:#fff; text-decoration:none;">
+                <a href="https://www.youtube.com/@anmarenterprices" target="_blank" rel="noopener" aria-label="YouTube">
                     <i class="fab fa-youtube"></i>
                 </a>
             </div>
         </div>
     </section>
 
-
     <!-- INTERACTIVE PARTICLES CANVAS -->
     <canvas id="gravityCanvas"
         style="position:fixed; top:0; left:0; width:100%; height:100%; z-index:-40; pointer-events:none;"></canvas>
 
     <script>
+        // Mobile nav
+        const navHamburger = document.getElementById('navHamburger');
+        const mobileNavMenu = document.getElementById('mobileNavMenu');
+        const mobileNavClose = document.getElementById('mobileNavClose');
+
+        function openMobileNav() { mobileNavMenu.classList.add('open'); }
+        function closeMobileNav() { mobileNavMenu.classList.remove('open'); }
+
+        if (navHamburger) navHamburger.addEventListener('click', openMobileNav);
+        if (mobileNavClose) mobileNavClose.addEventListener('click', closeMobileNav);
+
+        // Particles
         const canvas = document.getElementById('gravityCanvas');
         const ctx = canvas.getContext('2d');
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
         let particlesArray;
-        let signalsArray = []; // To store traveling signals
+        let signalsArray = [];
 
-        // Mouse interaction
         let mouse = {
             x: null,
             y: null,
             radius: (canvas.height / 60) * (canvas.width / 60)
-        }
+        };
 
         window.addEventListener('mousemove', function (event) {
             mouse.x = event.x;
@@ -908,8 +963,6 @@
             update() {
                 if (this.x > canvas.width || this.x < 0) this.directionX = -this.directionX;
                 if (this.y > canvas.height || this.y < 0) this.directionY = -this.directionY;
-
-                // Mouse interaction
                 let dx = mouse.x - this.x;
                 let dy = mouse.y - this.y;
                 let distance = Math.sqrt(dx * dx + dy * dy);
@@ -978,16 +1031,14 @@
                 for (let b = a; b < particlesArray.length; b++) {
                     let distance = ((particlesArray[a].x - particlesArray[b].x) * (particlesArray[a].x - particlesArray[b].x)) +
                         ((particlesArray[a].y - particlesArray[b].y) * (particlesArray[a].y - particlesArray[b].y));
-
                     if (distance < (canvas.width / 7) * (canvas.height / 7)) {
                         opacityValue = 1 - (distance / 20000);
-                        ctx.strokeStyle = 'rgba(255, 255, 255,' + opacityValue * 0.15 + ')';
+                        ctx.strokeStyle = 'rgba(255, 255, 255,' + opacityValue * 0.13 + ')';
                         ctx.lineWidth = 1;
                         ctx.beginPath();
                         ctx.moveTo(particlesArray[a].x, particlesArray[a].y);
                         ctx.lineTo(particlesArray[b].x, particlesArray[b].y);
                         ctx.stroke();
-
                         if (Math.random() < 0.0005 && opacityValue > 0.2) {
                             signalsArray.push(new Signal(particlesArray[a].x, particlesArray[a].y, particlesArray[b].x, particlesArray[b].y));
                         }
@@ -999,12 +1050,10 @@
         function animate() {
             requestAnimationFrame(animate);
             ctx.clearRect(0, 0, innerWidth, innerHeight);
-
             for (let i = 0; i < particlesArray.length; i++) {
                 particlesArray[i].update();
             }
             connect();
-
             for (let i = signalsArray.length - 1; i >= 0; i--) {
                 signalsArray[i].update();
                 signalsArray[i].draw();
@@ -1015,6 +1064,7 @@
         init();
         animate();
 
+        // Auth state
         const currentUserRaw = localStorage.getItem('currentUser');
         let currentUser = null;
         try {
@@ -1028,11 +1078,13 @@
                 el.setAttribute('href', 'dashboard.html');
             });
             const navAuthLink = document.getElementById('navAuthLink');
-            if (navAuthLink) navAuthLink.innerHTML = '<i class="fas fa-table-columns"></i> Ir al Dashboard';
+            if (navAuthLink) navAuthLink.innerHTML = '<i class="fas fa-table-columns"></i> Dashboard';
             const navStartLink = document.getElementById('navStartLink');
-            if (navStartLink) navStartLink.textContent = 'Continuar';
+            if (navStartLink) navStartLink.textContent = 'Go to Dashboard';
             const heroCtaLink = document.getElementById('heroCtaLink');
-            if (heroCtaLink) heroCtaLink.textContent = 'Continuar mi Proyecto';
+            if (heroCtaLink) heroCtaLink.textContent = 'Continue my Project';
+            const mobileAuthLink = document.getElementById('mobileAuthLink');
+            if (mobileAuthLink) mobileAuthLink.textContent = 'Go to Dashboard';
         }
     </script>
 </body>
