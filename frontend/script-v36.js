@@ -3590,9 +3590,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Expose gate globally so inline onclick handlers can reach it
     window.showValidateGate = showValidateGate;
 
-    // ── BUSINESS MODEL STREAMING GENERATOR ───────────────────────────────────
+    // ── BUSINESS MODEL GENERATOR ─────────────────────────────────────────────
     async function generateBusinessModelStream(projectInfo) {
-        // 1. Show neural network overlay
         const overlay    = document.getElementById('bmNeuralOverlay');
         const canvas     = document.getElementById('bmNeuralCanvas');
         const labelEl    = document.getElementById('bmNeuralLabel');
@@ -3601,45 +3600,49 @@ document.addEventListener('DOMContentLoaded', () => {
         const titleEl    = document.getElementById('bmTitle');
         const subtitleEl = document.getElementById('bmSubtitle');
 
-        if (idlePlh)   idlePlh.style.display   = 'none';
-        if (cardsArea) { cardsArea.style.display = 'flex'; }
-        if (overlay)   overlay.style.display    = 'flex';
-        if (titleEl)   titleEl.textContent      = `Analyzing ${projectInfo.project_name}...`;
-        if (subtitleEl) subtitleEl.textContent  = 'Anmar Supra AI is building your personalized business model';
+        // Prepare UI
+        if (idlePlh)    idlePlh.style.display    = 'none';
+        if (cardsArea)  cardsArea.style.display   = 'flex';
+        if (titleEl)    titleEl.textContent       = `Analyzing ${projectInfo.project_name}...`;
+        if (subtitleEl) subtitleEl.textContent    = 'Anmar Supra AI is building your personalized business model';
 
-        // 2. Animate neural network canvas
-        const bmCtx = canvas ? canvas.getContext('2d') : null;
+        // Show overlay FIRST, then resize canvas on next frame so dimensions are correct
+        if (overlay) overlay.style.display = 'flex';
+
+        // Wait one frame so the overlay is rendered and has real dimensions
+        await new Promise(r => requestAnimationFrame(r));
+        await new Promise(r => setTimeout(r, 20));
+
+        // ── Neural network canvas animation ──────────────────────────────────
         let bmAnimId = null;
         const bmParticles = [];
+        let labelInterval = null;
 
-        function resizeBmCanvas() {
-            if (!canvas) return;
-            canvas.width  = canvas.offsetWidth;
-            canvas.height = canvas.offsetHeight;
-        }
-        resizeBmCanvas();
+        if (canvas) {
+            canvas.width  = canvas.offsetWidth  || overlay.offsetWidth  || 800;
+            canvas.height = canvas.offsetHeight || overlay.offsetHeight || 600;
+            const bmCtx = canvas.getContext('2d');
 
-        if (bmCtx) {
-            const N = Math.floor((canvas.width * canvas.height) / 7000);
+            const N = Math.max(60, Math.floor((canvas.width * canvas.height) / 7000));
             for (let i = 0; i < N; i++) {
                 bmParticles.push({
-                    x: Math.random() * canvas.width,
-                    y: Math.random() * canvas.height,
+                    x:  Math.random() * canvas.width,
+                    y:  Math.random() * canvas.height,
                     vx: (Math.random() - 0.5) * 0.5,
                     vy: (Math.random() - 0.5) * 0.5,
-                    r: Math.random() * 1.8 + 0.5
+                    r:  Math.random() * 1.8 + 0.5
                 });
             }
 
             const labels = [
                 'Analyzing your market...',
-                'Identifying competitors...',
+                'Identifying real competitors...',
                 'Calculating your advantage...',
-                'Evaluating risks...',
+                'Evaluating key risks...',
                 'Building your roadmap...'
             ];
             let labelIdx = 0;
-            const labelInterval = setInterval(() => {
+            labelInterval = setInterval(() => {
                 labelIdx = (labelIdx + 1) % labels.length;
                 if (labelEl) labelEl.textContent = labels[labelIdx];
             }, 1800);
@@ -3648,7 +3651,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 bmAnimId = requestAnimationFrame(bmAnimate);
                 bmCtx.clearRect(0, 0, canvas.width, canvas.height);
                 const maxD = canvas.width * 0.2;
-                bmParticles.forEach(p => {
+                for (const p of bmParticles) {
                     p.x += p.vx; p.y += p.vy;
                     p.vx *= 0.998; p.vy *= 0.998;
                     if (p.x < 0) p.x = canvas.width;
@@ -3656,18 +3659,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (p.y < 0) p.y = canvas.height;
                     if (p.y > canvas.height) p.y = 0;
                     bmCtx.beginPath();
-                    bmCtx.arc(p.x, p.y, p.r, 0, Math.PI*2);
-                    bmCtx.fillStyle = 'rgba(16,185,129,0.8)';
+                    bmCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                    bmCtx.fillStyle = 'rgba(16,185,129,0.85)';
                     bmCtx.fill();
-                });
+                }
                 for (let a = 0; a < bmParticles.length; a++) {
-                    for (let b = a+1; b < bmParticles.length; b++) {
+                    for (let b = a + 1; b < bmParticles.length; b++) {
                         const dx = bmParticles[a].x - bmParticles[b].x;
                         const dy = bmParticles[a].y - bmParticles[b].y;
-                        const d  = Math.sqrt(dx*dx + dy*dy);
+                        const d  = Math.sqrt(dx * dx + dy * dy);
                         if (d < maxD) {
-                            const op = (1 - d/maxD) * 0.22;
-                            bmCtx.strokeStyle = `rgba(16,185,129,${op})`;
+                            bmCtx.strokeStyle = `rgba(16,185,129,${(1 - d / maxD) * 0.25})`;
                             bmCtx.lineWidth = 0.7;
                             bmCtx.beginPath();
                             bmCtx.moveTo(bmParticles[a].x, bmParticles[a].y);
@@ -3678,65 +3680,74 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             bmAnimate();
-
-            // Stop animation and hide overlay when done
-            window._stopBmNeural = () => {
-                clearInterval(labelInterval);
-                if (bmAnimId) cancelAnimationFrame(bmAnimId);
-                if (overlay) {
-                    overlay.style.transition = 'opacity 0.6s ease';
-                    overlay.style.opacity = '0';
-                    setTimeout(() => { overlay.style.display = 'none'; overlay.style.opacity = ''; }, 650);
-                }
-            };
         }
 
-        // 3. Call backend SSE endpoint
+        function stopNeural() {
+            if (labelInterval) clearInterval(labelInterval);
+            if (bmAnimId) cancelAnimationFrame(bmAnimId);
+            if (overlay) {
+                overlay.style.transition = 'opacity 0.7s ease';
+                overlay.style.opacity = '0';
+                setTimeout(() => {
+                    overlay.style.display = 'none';
+                    overlay.style.opacity = '';
+                    overlay.style.transition = '';
+                }, 750);
+            }
+        }
+
+        // ── Fetch full JSON from backend ──────────────────────────────────────
         try {
-            const res = await fetch('/api/generate-business-model', {
+            const res  = await fetch('/api/generate-business-model', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(projectInfo)
             });
+            const json = await res.json();
 
-            const reader = res.body.getReader();
-            const decoder = new TextDecoder();
-            let buffer = '';
-
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                buffer += decoder.decode(value, { stream: true });
-                const lines = buffer.split('\n');
-                buffer = lines.pop(); // keep incomplete line
-
-                for (const line of lines) {
-                    if (!line.startsWith('data: ')) continue;
-                    const raw = line.slice(6).trim();
-                    if (raw === '[DONE]') {
-                        _renderBmDone();
-                        if (window._stopBmNeural) window._stopBmNeural();
-                        if (titleEl)    titleEl.textContent    = `${projectInfo.project_name} — Business Model`;
-                        if (subtitleEl) subtitleEl.textContent = 'Your personalized analysis is ready.';
-                        break;
-                    }
-                    if (raw === 'ERROR') {
-                        if (window._stopBmNeural) window._stopBmNeural();
-                        break;
-                    }
-                    try {
-                        const msg = JSON.parse(raw);
-                        if (msg.section === 'nextStep') {
-                            const el = document.getElementById('bmNextStepText');
-                            if (el) el.textContent = typeof msg.data === 'string' ? msg.data : '';
-                        } else {
-                            _renderBmSection(msg.section, msg.data);
-                        }
-                    } catch(_) {}
-                }
+            if (!res.ok || !json.ok) {
+                stopNeural();
+                if (subtitleEl) subtitleEl.textContent = 'Error generating analysis. Try again later.';
+                return;
             }
-        } catch(e) {
-            if (window._stopBmNeural) window._stopBmNeural();
+
+            const d = json.data;
+
+            // Reveal cards one by one with delays for the "streaming" feel
+            const sections = [
+                { key: 'market',      data: d.market      },
+                { key: 'competitors', data: d.competitors },
+                { key: 'advantage',   data: d.advantage   },
+                { key: 'risk',        data: d.risk        },
+            ];
+
+            // Set nextStep text early
+            const nextStepEl = document.getElementById('bmNextStepText');
+            if (nextStepEl && d.nextStep) nextStepEl.textContent = d.nextStep;
+
+            // Stop neural after a beat
+            stopNeural();
+            await new Promise(r => setTimeout(r, 800));
+
+            if (titleEl)    titleEl.textContent    = `${projectInfo.project_name} — Business Model`;
+            if (subtitleEl) subtitleEl.textContent = 'Your personalized analysis is ready.';
+
+            for (const sec of sections) {
+                _renderBmSection(sec.key, sec.data);
+                await new Promise(r => setTimeout(r, 700));
+            }
+
+            // Show done card
+            const doneCard = document.getElementById('bmCard-done');
+            if (doneCard) doneCard.style.display = 'block';
+
+            // Scroll to bottom
+            const scrollArea = document.getElementById('bmScrollArea');
+            if (scrollArea) setTimeout(() => { scrollArea.scrollTo({ top: scrollArea.scrollHeight, behavior: 'smooth' }); }, 300);
+
+        } catch (e) {
+            stopNeural();
+            if (subtitleEl) subtitleEl.textContent = 'Connection error. Please try again.';
         }
     }
 
@@ -3747,59 +3758,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (section === 'market') {
             const m = data || {};
-            document.getElementById('bmMarketSize').textContent    = m.size    || '—';
-            document.getElementById('bmMarketGrowth').textContent  = m.growth  || '—';
-            document.getElementById('bmMarketInsight').textContent = m.insight || '—';
+            const sz = document.getElementById('bmMarketSize');
+            const gr = document.getElementById('bmMarketGrowth');
+            const ins = document.getElementById('bmMarketInsight');
+            if (sz)  sz.textContent  = m.size    || '—';
+            if (gr)  gr.textContent  = m.growth  || '—';
+            if (ins) ins.textContent = m.insight  || '—';
         }
         if (section === 'competitors') {
             const list = Array.isArray(data) ? data : [];
             const el = document.getElementById('bmCompetitorsList');
             if (el) el.innerHTML = list.map(c => `
-                <div style="display:flex; align-items:flex-start; gap:12px; background:rgba(255,255,255,0.03); border-radius:9px; padding:13px 14px;">
-                    <div style="min-width:6px; height:6px; border-radius:50%; background:#f59e0b; margin-top:6px; flex-shrink:0;"></div>
+                <div style="display:flex;align-items:flex-start;gap:12px;background:rgba(255,255,255,0.03);border-radius:9px;padding:13px 14px;">
+                    <div style="min-width:6px;height:6px;border-radius:50%;background:#f59e0b;margin-top:6px;flex-shrink:0;"></div>
                     <div>
-                        <div style="font-weight:600; font-size:0.88rem; color:#fff; margin-bottom:3px;">${escapeHtml(c.name||'')}</div>
-                        <div style="font-size:0.82rem; color:rgba(255,255,255,0.45); line-height:1.55;">${escapeHtml(c.weakness||'')}</div>
+                        <div style="font-weight:600;font-size:0.88rem;color:#fff;margin-bottom:3px;">${escapeHtml(c.name||'')}</div>
+                        <div style="font-size:0.82rem;color:rgba(255,255,255,0.45);line-height:1.55;">${escapeHtml(c.weakness||'')}</div>
                     </div>
-                </div>
-            `).join('');
+                </div>`).join('');
         }
         if (section === 'advantage') {
             const a = data || {};
-            document.getElementById('bmAdvantageMain').textContent = a.main || '—';
-            document.getElementById('bmAdvantageMoat').textContent = a.moat || '—';
+            const main = document.getElementById('bmAdvantageMain');
+            const moat = document.getElementById('bmAdvantageMoat');
+            if (main) main.textContent = a.main || '—';
+            if (moat) moat.textContent = a.moat || '—';
         }
         if (section === 'risk') {
             const r = data || {};
-            document.getElementById('bmRiskDesc').textContent = r.description || '—';
-            document.getElementById('bmRiskMit').textContent  = r.mitigation  || '—';
+            const desc = document.getElementById('bmRiskDesc');
+            const mit  = document.getElementById('bmRiskMit');
+            if (desc) desc.textContent = r.description || '—';
+            if (mit)  mit.textContent  = r.mitigation  || '—';
         }
     }
-
-    function _renderBmDone() {
-        const nextStepCard = document.getElementById('bmCard-done');
-        const nextStepText = document.getElementById('bmNextStepText');
-        if (nextStepCard) nextStepCard.style.display = 'block';
-        // nextStep text was already stored in last SSE event — try to get it if rendered
-        // Scroll to bottom of business section
-        const scrollArea = document.getElementById('bmScrollArea');
-        if (scrollArea) setTimeout(() => { scrollArea.scrollTop = scrollArea.scrollHeight; }, 400);
-    }
-
-    // Override _renderBmSection to also capture nextStep text
-    const _origRenderBmSection = _renderBmSection;
-    window._bmNextStep = '';
-    function _renderBmSectionFull(section, data) {
-        if (section === 'nextStep') {
-            const el = document.getElementById('bmNextStepText');
-            if (el) el.textContent = typeof data === 'string' ? data : '';
-            return;
-        }
-        _origRenderBmSection(section, data);
-    }
-    // Patch the SSE consumer to use the full renderer
-    // (done inline above — the fetch loop calls _renderBmSection which we'll alias)
-    window._renderBmSectionFull = _renderBmSectionFull;
 
     // --- UI MODE SWITCHER ---
     // --- TAB SWITCHER ---

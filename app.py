@@ -1169,8 +1169,7 @@ def logout():
 # ── BUSINESS MODEL GENERATOR ──────────────────────────────────────────────────
 @app.route('/api/generate-business-model', methods=['POST'])
 def generate_business_model():
-    """Generate a personalized business model analysis using Gemini, streamed section by section."""
-    import time as _t
+    """Generate a personalized business model analysis using Gemini. Returns full JSON."""
     data = request.json or {}
     project_name    = data.get('project_name', 'tu proyecto')
     description     = data.get('description', '')
@@ -1214,49 +1213,26 @@ Responde ÚNICAMENTE con un objeto JSON válido con esta estructura exacta (sin 
   "nextStep": "La acción más importante y específica que debe tomar ahora mismo para validar y avanzar"
 }}"""
 
-    def stream_sections():
-        try:
-            result, err = _safe_model_generate(prompt, timeout_seconds=25)
-            if err or not result:
-                yield f"data: ERROR\n\n"
-                return
+    try:
+        result, err = _safe_model_generate(prompt, timeout_seconds=28)
+        if err or not result:
+            return jsonify({'error': err or 'AI timeout'}), 503
 
-            raw = result.text.strip()
-            # Strip markdown code fences if present
-            if raw.startswith("```"):
-                raw = raw.split("```")[1]
-                if raw.startswith("json"):
-                    raw = raw[4:]
-            raw = raw.strip()
+        raw = result.text.strip()
+        # Strip markdown code fences if present
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"):
+                raw = raw[4:]
+        raw = raw.strip()
 
-            parsed = json.loads(raw)
+        parsed = json.loads(raw)
+        return jsonify({'ok': True, 'data': parsed})
 
-            # Stream each section with a short pause for dramatic effect
-            sections_order = [
-                ("market",      parsed.get("market", {})),
-                ("competitors", parsed.get("competitors", [])),
-                ("advantage",   parsed.get("advantage", {})),
-                ("risk",        parsed.get("risk", {})),
-                ("nextStep",    parsed.get("nextStep", "")),
-            ]
-            for key, value in sections_order:
-                payload = json.dumps({"section": key, "data": value})
-                yield f"data: {payload}\n\n"
-                _t.sleep(0.9)
-
-            yield "data: [DONE]\n\n"
-
-        except Exception as e:
-            yield f"data: ERROR\n\n"
-
-    return Response(
-        stream_with_context(stream_sections()),
-        mimetype='text/event-stream',
-        headers={
-            'Cache-Control': 'no-cache',
-            'X-Accel-Buffering': 'no'
-        }
-    )
+    except json.JSONDecodeError:
+        return jsonify({'error': 'Invalid AI response', 'raw': raw[:300]}), 500
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 def _normalize_project_name(project_name):
     return str(project_name or "").strip().lower()
