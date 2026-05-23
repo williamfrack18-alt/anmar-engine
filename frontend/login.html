@@ -28,9 +28,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0 4vw;
-            height: 64px;
-            background: rgba(7,14,11,0.95);
+            padding: 1.4rem 4vw;
+            background: rgba(0,0,0,0.3);
             border-bottom: 1px solid rgba(255,255,255,0.06);
             backdrop-filter: blur(14px);
         }
@@ -329,19 +328,20 @@
         .right-content {
             position: absolute; inset: 0; z-index: 3;
             display: flex; flex-direction: column;
-            align-items: flex-start; justify-content: flex-end;
-            padding: 60px 56px;
+            align-items: flex-start; justify-content: center;
+            padding: 0 8vw;
         }
 
         .right-headline {
             font-family: 'Inter', sans-serif;
-            font-size: clamp(2.4rem, 5.5vw, 4.2rem);
+            font-size: clamp(2.6rem, 6vw, 4.8rem);
             font-weight: 500;
             color: #fff;
-            line-height: 1.08;
-            letter-spacing: -1.5px;
+            line-height: 1.07;
+            letter-spacing: -2px;
+            max-width: 860px;
         }
-        .right-headline .hl-green { color: #10b981; }
+        .right-headline .hl-muted { color: rgba(255,255,255,0.65); }
 
         /* Mobile */
         @media (max-width: 768px) {
@@ -387,9 +387,6 @@
     <!-- LEFT: FORM -->
     <div class="split-left">
         <div class="form-wrap">
-
-            <!-- Brand mark -->
-            <div class="brand-mark">A</div>
 
             <!-- Headline -->
             <div class="form-title">Welcome back.</div>
@@ -483,8 +480,7 @@
         <div class="right-content">
             <div class="right-headline">
                 Your idea.<br>
-                <span class="hl-green">Built.</span> Launched.<br>
-                Funded.
+                <span class="hl-muted">Built. Launched. Funded.</span>
             </div>
         </div>
     </div>
