@@ -2041,7 +2041,7 @@
             padding-top: 0 !important;
         }
 
-        /* === BUILD SECTION: full-width cinema-style layout === */
+        /* === BUILD SECTION: cinema-style transparent layout === */
         #section-build.section-view.active {
             display: flex !important;
             flex-direction: column !important;
@@ -2049,9 +2049,10 @@
             height: calc(100vh - var(--header-height)) !important;
             box-sizing: border-box;
             position: relative;
+            background: transparent !important;
         }
 
-        /* Left pane becomes full-width flex column */
+        /* Left pane: full-width, transparent */
         #section-build .left-pane {
             width: 100% !important;
             min-width: 0 !important;
@@ -2064,7 +2065,7 @@
             flex: 1 1 auto;
         }
 
-        /* Preview panel: overlays on top when visible */
+        /* Preview panel: overlay when visible */
         #section-build .preview-panel {
             position: absolute !important;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -2074,89 +2075,95 @@
             height: 100% !important;
         }
 
-        .preview-hidden {
-            display: none !important;
-        }
+        .preview-hidden { display: none !important; }
 
-        .expand-chat {
-            /* no longer needed for grid, kept for compat */
-        }
-
-        /* Claude chat fills full height */
+        /* Strip ALL backgrounds/borders from the chat panel */
+        #section-build .ai-console,
         #section-build .claude-chat {
             flex: 1 1 auto;
             min-height: 0;
             height: 100%;
             background: transparent !important;
+            backdrop-filter: none !important;
             border: none !important;
             border-radius: 0 !important;
+            box-shadow: none !important;
             display: flex;
             flex-direction: column;
         }
 
-        /* Hide the console header bar */
-        #section-build .console-header {
-            display: none !important;
-        }
+        /* Remove aura blobs */
+        #section-build .welcome-auras { display: none !important; }
 
-        /* Messages area: scrollable, fills all space above input */
+        /* Hide console header */
+        #section-build .console-header { display: none !important; }
+
+        /* Messages: scrollable, fills space above input */
         #section-build .terminal-wrapper {
             flex: 1 1 auto;
             min-height: 0;
             overflow-y: auto;
             padding: 2rem 0 1rem !important;
+            background: transparent !important;
             font-size: 0.92rem;
             line-height: 1.55;
-            display: flex;
-            flex-direction: column;
         }
 
-        /* Constrain messages to a readable width, centered */
+        /* Center messages in readable column */
         #section-build #humanLog,
         #section-build #terminalLog {
-            max-width: 760px;
+            max-width: 720px;
             width: 100%;
             margin: 0 auto;
             padding: 0 1.5rem;
         }
 
-        /* Input area: pinned to bottom, centered, wider */
+        /* Input: pinned bottom, transparent bg, centered */
         #section-build .chat-input-area {
             flex-shrink: 0;
-            padding: 0 0 1.4rem !important;
+            padding: 0 0 1.6rem !important;
             background: transparent !important;
             border-top: none !important;
         }
 
-        /* Input glass container centered */
         #section-build .input-glass {
-            max-width: 760px;
+            max-width: 720px;
             width: 100%;
             margin: 0 auto;
             padding: 0 1.5rem;
+            background: transparent !important;
         }
 
-        #section-build .chat-helper {
-            display: none !important;
-        }
+        /* Hide helper text above input */
+        #section-build .chat-helper { display: none !important; }
 
+        /* Input wrap: subtle glass, no heavy background */
         #section-build .chat-input-wrap {
-            background: rgba(255,255,255,0.06) !important;
-            border: 1px solid rgba(255,255,255,0.14) !important;
+            background: rgba(0, 0, 0, 0.45) !important;
+            backdrop-filter: blur(18px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
             border-radius: 16px !important;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4) !important;
         }
 
-        #section-build .chat-input-wrap:focus-within {
-            border-color: rgba(16,185,129,0.5) !important;
-            box-shadow: 0 0 0 3px rgba(16,185,129,0.1), 0 16px 40px rgba(0,0,0,0.4) !important;
+        #section-build .chat-input-wrap:focus-within,
+        #section-build .chat-input-wrap.typing {
+            border-color: rgba(16, 185, 129, 0.45) !important;
+            box-shadow: 0 0 0 3px rgba(16,185,129,0.1), 0 12px 36px rgba(0,0,0,0.5) !important;
         }
 
         #section-build textarea {
             height: var(--textarea-height);
             font-size: 0.95rem;
+            background: transparent !important;
         }
 
-        /* Welcome card: perfectly centered in messages area */
+        /* Chat meta row transparent */
+        #section-build .chat-meta {
+            background: transparent !important;
+        }
+
+        /* Welcome card centered */
         #section-build #humanChatWelcome {
             position: absolute;
             inset: 0;
@@ -2164,9 +2171,7 @@
             height: fit-content;
         }
 
-        .ai-console {
-            min-height: 0;
-        }
+        .ai-console { min-height: 0; }
 
         .tab-btn {
             font-size: var(--tab-font);
@@ -2240,7 +2245,7 @@
             }
 
             #section-build.section-view.active {
-                grid-template-columns: 1fr !important;
+                flex-direction: column !important;
             }
 
             .preview-panel {
@@ -2729,7 +2734,7 @@
         <div style="flex-grow:1; position:relative; width:100%;">
 
             <!-- SECTION 1: BUILD (Build) -->
-            <div id="section-build" class="section-view expand-chat" style="padding:20px; height:100%; box-sizing:border-box;">
+            <div id="section-build" class="section-view expand-chat">
 
                 <!-- LEFT: AI CHAT (full-width cinema layout) -->
                 <div class="left-pane" style="margin-bottom:0;">
