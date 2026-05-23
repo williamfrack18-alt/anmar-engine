@@ -2145,16 +2145,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!text && !pendingImageDataUrl) return;
         if (isProcessing) return;
 
-        // If no project yet, force onboarding
-        if (!currentProjectName) {
-            window.openWelcomeNewProject();
+        // --- VALIDATE GATE: check subscription before allowing chat ---
+        const hasAccess = await requireSubscription();
+        if (!hasAccess) {
             window.__sendDebounce = false;
             return;
         }
 
-        // --- VALIDATE GATE: check subscription before allowing chat ---
-        const hasAccess = await requireSubscription();
-        if (!hasAccess) {
+        // If no project yet after subscription check, force onboarding
+        if (!currentProjectName) {
+            window.openWelcomeNewProject();
             window.__sendDebounce = false;
             return;
         }
