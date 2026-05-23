@@ -8,7 +8,7 @@ import base64
 import requests
 import stripe
 import google.generativeai as genai
-from flask import Flask, request, jsonify, send_from_directory, session
+from flask import Flask, request, jsonify, send_from_directory, session, Response, stream_with_context
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_cors import CORS
 from dotenv import load_dotenv
@@ -1164,6 +1164,99 @@ def logout():
     """Clear user session."""
     session.pop('user_email', None)
     return jsonify({"status": "ok"})
+
+
+# ── BUSINESS MODEL GENERATOR ──────────────────────────────────────────────────
+@app.route('/api/generate-business-model', methods=['POST'])
+def generate_business_model():
+    """Generate a personalized business model analysis using Gemini, streamed section by section."""
+    import time as _t
+    data = request.json or {}
+    project_name    = data.get('project_name', 'tu proyecto')
+    description     = data.get('description', '')
+    project_type    = data.get('project_type', '')
+    biz_model_type  = data.get('business_model', '')
+    stage           = data.get('stage', '')
+
+    if not model:
+        return jsonify({'error': 'AI not available'}), 503
+
+    prompt = f"""Eres un analista de negocios de clase mundial con acceso a datos de mercado reales.
+Un emprendedor acaba de describir su idea. Genera un análisis de negocio personalizado, específico y con números reales.
+
+DATOS DEL PROYECTO:
+- Nombre: {project_name}
+- Descripción: {description}
+- Tipo: {project_type}
+- Modelo de negocio: {biz_model_type}
+- Etapa actual: {stage}
+
+Responde ÚNICAMENTE con un objeto JSON válido con esta estructura exacta (sin markdown, sin texto extra):
+{{
+  "market": {{
+    "size": "Tamaño del mercado global con cifra real en USD (ej: $4.2B)",
+    "growth": "Tasa de crecimiento anual CAGR (ej: 18.3% CAGR 2024-2030)",
+    "insight": "Una observación específica y poderosa sobre por qué este es el momento ideal para entrar a este mercado"
+  }},
+  "competitors": [
+    {{"name": "Nombre real de competidor", "weakness": "Su debilidad específica que {project_name} puede explotar"}},
+    {{"name": "Nombre real de competidor 2", "weakness": "Su debilidad específica"}},
+    {{"name": "Nombre real de competidor 3", "weakness": "Su debilidad específica"}}
+  ],
+  "advantage": {{
+    "main": "La ventaja competitiva principal y específica de esta idea",
+    "moat": "Qué hace difícil o casi imposible que alguien más replique esto exactamente"
+  }},
+  "risk": {{
+    "description": "El riesgo más concreto y real para este negocio específico",
+    "mitigation": "Cómo mitigarlo con acciones concretas"
+  }},
+  "nextStep": "La acción más importante y específica que debe tomar ahora mismo para validar y avanzar"
+}}"""
+
+    def stream_sections():
+        try:
+            result, err = _safe_model_generate(prompt, timeout_seconds=25)
+            if err or not result:
+                yield f"data: ERROR\n\n"
+                return
+
+            raw = result.text.strip()
+            # Strip markdown code fences if present
+            if raw.startswith("```"):
+                raw = raw.split("```")[1]
+                if raw.startswith("json"):
+                    raw = raw[4:]
+            raw = raw.strip()
+
+            parsed = json.loads(raw)
+
+            # Stream each section with a short pause for dramatic effect
+            sections_order = [
+                ("market",      parsed.get("market", {})),
+                ("competitors", parsed.get("competitors", [])),
+                ("advantage",   parsed.get("advantage", {})),
+                ("risk",        parsed.get("risk", {})),
+                ("nextStep",    parsed.get("nextStep", "")),
+            ]
+            for key, value in sections_order:
+                payload = json.dumps({"section": key, "data": value})
+                yield f"data: {payload}\n\n"
+                _t.sleep(0.9)
+
+            yield "data: [DONE]\n\n"
+
+        except Exception as e:
+            yield f"data: ERROR\n\n"
+
+    return Response(
+        stream_with_context(stream_sections()),
+        mimetype='text/event-stream',
+        headers={
+            'Cache-Control': 'no-cache',
+            'X-Accel-Buffering': 'no'
+        }
+    )
 
 def _normalize_project_name(project_name):
     return str(project_name or "").strip().lower()

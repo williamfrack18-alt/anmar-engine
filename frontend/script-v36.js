@@ -1368,73 +1368,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     forceWelcome = false;
                     markWelcomeDone();
 
-                    // Show success step — llevar primero a Projects para que el cliente
-                    // vea su proyecto, y desde ahí puede entrar al chat
-                    if (welcomeConsultingStep) welcomeConsultingStep.style.display = 'none';
-                    const wizTypeHeading2 = document.getElementById('welcomeType');
-                    if (wizTypeHeading2) wizTypeHeading2.textContent = "You're all set!";
-                    const successStep = document.createElement('div');
-                    successStep.id = 'welcomeSuccessStep';
-                    successStep.style.cssText = 'text-align:center; animation: fadeIn 0.4s ease;';
-                    successStep.innerHTML = `
-                        <div style="margin-bottom:18px;">
-                            <div style="width:64px; height:64px; margin:0 auto 14px; border-radius:50%; background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.4); display:flex; align-items:center; justify-content:center; box-shadow:0 0 24px rgba(16,185,129,0.2);">
-                                <i class="fas fa-check" style="font-size:26px; color:#10b981;"></i>
-                            </div>
-                            <div style="font-size:1.25rem; font-weight:700; color:#fff; margin-bottom:6px;">Your project is ready!</div>
-                            <div style="color:#94a3b8; font-size:0.9rem; line-height:1.5;">
-                                <strong style="color:#e2e8f0;">${escapeHtml(name)}</strong> was created successfully.<br>
-                                Our engineering team has been notified.
-                            </div>
-                        </div>
-                        <div style="background:rgba(16,185,129,0.06); border:1px solid rgba(16,185,129,0.18); border-left:3px solid #10b981; border-radius:12px; padding:16px; margin-bottom:20px; text-align:left;">
-                            <div style="font-size:0.85rem; color:#34d399; font-weight:600; margin-bottom:8px;">
-                                <i class="fas fa-arrow-right" style="margin-right:6px;"></i> Next step
-                            </div>
-                            <div style="color:rgba(255,255,255,0.55); font-size:0.88rem; line-height:1.5;">
-                                Your project is now listed under <strong style="color:#fff;">My Projects</strong>. From there you can start chatting with our team.
-                            </div>
-                        </div>
-                        <button id="onboardingGoToProjects" style="width:100%; padding:14px 24px; border:1px solid rgba(16,185,129,0.45); border-radius:12px; background:rgba(16,185,129,0.18); color:#fff; font-size:1rem; font-weight:600; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:10px; backdrop-filter:blur(8px); box-shadow:0 2px 16px rgba(16,185,129,0.15);">
-                            <i class="fas fa-folder-open"></i> View my project
-                        </button>
-                        <button id="onboardingGoToBuild" style="width:100%; padding:11px 24px; border:1px solid rgba(255,255,255,0.1); border-radius:12px; background:transparent; color:rgba(255,255,255,0.5); font-size:0.9rem; font-weight:600; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:8px;">
-                            <i class="fas fa-comments"></i> Go straight to chat
-                        </button>
-                    `;
-                    const welcomeCard = welcomeScreen?.querySelector('.welcome-card');
-                    if (welcomeCard) welcomeCard.appendChild(successStep);
+                    // ── NEW FLOW: close wizard → switch to Business Model tab → stream AI analysis ──
+                    if (welcomeScreen) welcomeScreen.classList.add('fade-out');
+                    setTimeout(async () => {
+                        setWelcomeVisible(false);
 
-                    // Botón principal: ir a Projects
-                    const goProjectsBtn = document.getElementById('onboardingGoToProjects');
-                    if (goProjectsBtn) {
-                        goProjectsBtn.addEventListener('click', () => {
-                            if (welcomeScreen) welcomeScreen.classList.add('fade-out');
-                            setTimeout(() => {
-                                setWelcomeVisible(false);
-                                if (successStep.parentNode) successStep.parentNode.removeChild(successStep);
-                                switchTab('projects');
-                            }, 300);
-                        });
-                        goProjectsBtn.addEventListener('mouseenter', () => { goProjectsBtn.style.transform = 'translateY(-1px)'; goProjectsBtn.style.boxShadow = '0 4px 20px rgba(16,185,129,0.4)'; });
-                        goProjectsBtn.addEventListener('mouseleave', () => { goProjectsBtn.style.transform = 'none'; goProjectsBtn.style.boxShadow = 'none'; });
-                    }
+                        // Switch to Business Model tab
+                        switchTab('business');
 
-                    // Botón secundario: ir directo al chat (Build)
-                    const goBtn = document.getElementById('onboardingGoToBuild');
-                    if (goBtn) {
-                        goBtn.addEventListener('click', () => {
-                            if (welcomeScreen) welcomeScreen.classList.add('fade-out');
-                            setTimeout(() => {
-                                setWelcomeVisible(false);
-                                if (successStep.parentNode) successStep.parentNode.removeChild(successStep);
-                                injectOnboardingChatMessage(name);
-                                switchTab('build');
-                            }, 300);
-                        });
-                        goBtn.addEventListener('mouseenter', () => { goBtn.style.transform = 'translateY(-1px)'; });
-                        goBtn.addEventListener('mouseleave', () => { goBtn.style.transform = 'none'; });
-                    }
+                        // Collect wizard data for the AI
+                        const projectInfo = {
+                            project_name: name,
+                            description: desc || '',
+                            project_type: wizData.project_type || '',
+                            business_model: wizData.business_model || '',
+                            stage: wizData.stage || ''
+                        };
+
+                        await generateBusinessModelStream(projectInfo);
+                    }, 350);
                 } else {
                     // Error — go back to wizard step 1 showing the real error
                     if (welcomeFormStep) welcomeFormStep.style.display = 'block';
@@ -3635,6 +3587,220 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- MARKETING MODULE ---
+    // Expose gate globally so inline onclick handlers can reach it
+    window.showValidateGate = showValidateGate;
+
+    // ── BUSINESS MODEL STREAMING GENERATOR ───────────────────────────────────
+    async function generateBusinessModelStream(projectInfo) {
+        // 1. Show neural network overlay
+        const overlay    = document.getElementById('bmNeuralOverlay');
+        const canvas     = document.getElementById('bmNeuralCanvas');
+        const labelEl    = document.getElementById('bmNeuralLabel');
+        const idlePlh    = document.getElementById('bmIdlePlaceholder');
+        const cardsArea  = document.getElementById('bmCardsArea');
+        const titleEl    = document.getElementById('bmTitle');
+        const subtitleEl = document.getElementById('bmSubtitle');
+
+        if (idlePlh)   idlePlh.style.display   = 'none';
+        if (cardsArea) { cardsArea.style.display = 'flex'; }
+        if (overlay)   overlay.style.display    = 'flex';
+        if (titleEl)   titleEl.textContent      = `Analyzing ${projectInfo.project_name}...`;
+        if (subtitleEl) subtitleEl.textContent  = 'Anmar Supra AI is building your personalized business model';
+
+        // 2. Animate neural network canvas
+        const bmCtx = canvas ? canvas.getContext('2d') : null;
+        let bmAnimId = null;
+        const bmParticles = [];
+
+        function resizeBmCanvas() {
+            if (!canvas) return;
+            canvas.width  = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+        }
+        resizeBmCanvas();
+
+        if (bmCtx) {
+            const N = Math.floor((canvas.width * canvas.height) / 7000);
+            for (let i = 0; i < N; i++) {
+                bmParticles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    vx: (Math.random() - 0.5) * 0.5,
+                    vy: (Math.random() - 0.5) * 0.5,
+                    r: Math.random() * 1.8 + 0.5
+                });
+            }
+
+            const labels = [
+                'Analyzing your market...',
+                'Identifying competitors...',
+                'Calculating your advantage...',
+                'Evaluating risks...',
+                'Building your roadmap...'
+            ];
+            let labelIdx = 0;
+            const labelInterval = setInterval(() => {
+                labelIdx = (labelIdx + 1) % labels.length;
+                if (labelEl) labelEl.textContent = labels[labelIdx];
+            }, 1800);
+
+            function bmAnimate() {
+                bmAnimId = requestAnimationFrame(bmAnimate);
+                bmCtx.clearRect(0, 0, canvas.width, canvas.height);
+                const maxD = canvas.width * 0.2;
+                bmParticles.forEach(p => {
+                    p.x += p.vx; p.y += p.vy;
+                    p.vx *= 0.998; p.vy *= 0.998;
+                    if (p.x < 0) p.x = canvas.width;
+                    if (p.x > canvas.width)  p.x = 0;
+                    if (p.y < 0) p.y = canvas.height;
+                    if (p.y > canvas.height) p.y = 0;
+                    bmCtx.beginPath();
+                    bmCtx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+                    bmCtx.fillStyle = 'rgba(16,185,129,0.8)';
+                    bmCtx.fill();
+                });
+                for (let a = 0; a < bmParticles.length; a++) {
+                    for (let b = a+1; b < bmParticles.length; b++) {
+                        const dx = bmParticles[a].x - bmParticles[b].x;
+                        const dy = bmParticles[a].y - bmParticles[b].y;
+                        const d  = Math.sqrt(dx*dx + dy*dy);
+                        if (d < maxD) {
+                            const op = (1 - d/maxD) * 0.22;
+                            bmCtx.strokeStyle = `rgba(16,185,129,${op})`;
+                            bmCtx.lineWidth = 0.7;
+                            bmCtx.beginPath();
+                            bmCtx.moveTo(bmParticles[a].x, bmParticles[a].y);
+                            bmCtx.lineTo(bmParticles[b].x, bmParticles[b].y);
+                            bmCtx.stroke();
+                        }
+                    }
+                }
+            }
+            bmAnimate();
+
+            // Stop animation and hide overlay when done
+            window._stopBmNeural = () => {
+                clearInterval(labelInterval);
+                if (bmAnimId) cancelAnimationFrame(bmAnimId);
+                if (overlay) {
+                    overlay.style.transition = 'opacity 0.6s ease';
+                    overlay.style.opacity = '0';
+                    setTimeout(() => { overlay.style.display = 'none'; overlay.style.opacity = ''; }, 650);
+                }
+            };
+        }
+
+        // 3. Call backend SSE endpoint
+        try {
+            const res = await fetch('/api/generate-business-model', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(projectInfo)
+            });
+
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop(); // keep incomplete line
+
+                for (const line of lines) {
+                    if (!line.startsWith('data: ')) continue;
+                    const raw = line.slice(6).trim();
+                    if (raw === '[DONE]') {
+                        _renderBmDone();
+                        if (window._stopBmNeural) window._stopBmNeural();
+                        if (titleEl)    titleEl.textContent    = `${projectInfo.project_name} — Business Model`;
+                        if (subtitleEl) subtitleEl.textContent = 'Your personalized analysis is ready.';
+                        break;
+                    }
+                    if (raw === 'ERROR') {
+                        if (window._stopBmNeural) window._stopBmNeural();
+                        break;
+                    }
+                    try {
+                        const msg = JSON.parse(raw);
+                        if (msg.section === 'nextStep') {
+                            const el = document.getElementById('bmNextStepText');
+                            if (el) el.textContent = typeof msg.data === 'string' ? msg.data : '';
+                        } else {
+                            _renderBmSection(msg.section, msg.data);
+                        }
+                    } catch(_) {}
+                }
+            }
+        } catch(e) {
+            if (window._stopBmNeural) window._stopBmNeural();
+        }
+    }
+
+    function _renderBmSection(section, data) {
+        const cardEl = document.getElementById(`bmCard-${section}`);
+        if (!cardEl) return;
+        cardEl.style.display = 'block';
+
+        if (section === 'market') {
+            const m = data || {};
+            document.getElementById('bmMarketSize').textContent    = m.size    || '—';
+            document.getElementById('bmMarketGrowth').textContent  = m.growth  || '—';
+            document.getElementById('bmMarketInsight').textContent = m.insight || '—';
+        }
+        if (section === 'competitors') {
+            const list = Array.isArray(data) ? data : [];
+            const el = document.getElementById('bmCompetitorsList');
+            if (el) el.innerHTML = list.map(c => `
+                <div style="display:flex; align-items:flex-start; gap:12px; background:rgba(255,255,255,0.03); border-radius:9px; padding:13px 14px;">
+                    <div style="min-width:6px; height:6px; border-radius:50%; background:#f59e0b; margin-top:6px; flex-shrink:0;"></div>
+                    <div>
+                        <div style="font-weight:600; font-size:0.88rem; color:#fff; margin-bottom:3px;">${escapeHtml(c.name||'')}</div>
+                        <div style="font-size:0.82rem; color:rgba(255,255,255,0.45); line-height:1.55;">${escapeHtml(c.weakness||'')}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        if (section === 'advantage') {
+            const a = data || {};
+            document.getElementById('bmAdvantageMain').textContent = a.main || '—';
+            document.getElementById('bmAdvantageMoat').textContent = a.moat || '—';
+        }
+        if (section === 'risk') {
+            const r = data || {};
+            document.getElementById('bmRiskDesc').textContent = r.description || '—';
+            document.getElementById('bmRiskMit').textContent  = r.mitigation  || '—';
+        }
+    }
+
+    function _renderBmDone() {
+        const nextStepCard = document.getElementById('bmCard-done');
+        const nextStepText = document.getElementById('bmNextStepText');
+        if (nextStepCard) nextStepCard.style.display = 'block';
+        // nextStep text was already stored in last SSE event — try to get it if rendered
+        // Scroll to bottom of business section
+        const scrollArea = document.getElementById('bmScrollArea');
+        if (scrollArea) setTimeout(() => { scrollArea.scrollTop = scrollArea.scrollHeight; }, 400);
+    }
+
+    // Override _renderBmSection to also capture nextStep text
+    const _origRenderBmSection = _renderBmSection;
+    window._bmNextStep = '';
+    function _renderBmSectionFull(section, data) {
+        if (section === 'nextStep') {
+            const el = document.getElementById('bmNextStepText');
+            if (el) el.textContent = typeof data === 'string' ? data : '';
+            return;
+        }
+        _origRenderBmSection(section, data);
+    }
+    // Patch the SSE consumer to use the full renderer
+    // (done inline above — the fetch loop calls _renderBmSection which we'll alias)
+    window._renderBmSectionFull = _renderBmSectionFull;
+
     // --- UI MODE SWITCHER ---
     // --- TAB SWITCHER ---
     // --- TAB SWITCHER ---

@@ -904,6 +904,13 @@
             }
         }
 
+        @keyframes bmFadeIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        #bmNeuralOverlay { display: flex; }
+        #bmChatCTA:hover { background: rgba(16,185,129,0.28) !important; transform: translateY(-1px); box-shadow: 0 4px 20px rgba(16,185,129,0.25); }
+
         @keyframes fadeIn {
             from {
                 opacity: 0;
@@ -3044,39 +3051,105 @@
 
             <!-- SECTION: BUSINESS MODEL -->
             <div id="section-business" class="section-view"
-                style="padding:40px; color:#fff; flex-direction:column; align-items:center; justify-content:flex-start; height:100%; overflow-y:auto;">
-                <div style="width:min(860px,92vw); text-align:left; padding-top:20px;">
-                    <div style="margin-bottom:32px;">
-                        <h2 style="font-size:1.5rem; font-weight:700; color:#fff; margin:0 0 6px 0; letter-spacing:-0.02em;">Business Model</h2>
-                        <p style="color:rgba(255,255,255,0.45); font-size:0.88rem; margin:0;">Your business blueprint — revenue model, target market, and key assumptions.</p>
-                    </div>
+                style="padding:0; color:#fff; flex-direction:column; align-items:stretch; justify-content:flex-start; height:100%; overflow:hidden; position:relative;">
 
-                    <!-- Placeholder cards -->
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px;">
-                        <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:14px; padding:24px;">
-                            <div style="font-size:0.72rem; text-transform:uppercase; letter-spacing:0.5px; color:rgba(255,255,255,0.35); margin-bottom:10px;">Value Proposition</div>
-                            <div style="color:rgba(255,255,255,0.55); font-size:0.88rem; line-height:1.6;">Define what makes your product uniquely valuable to your target customer.</div>
-                        </div>
-                        <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:14px; padding:24px;">
-                            <div style="font-size:0.72rem; text-transform:uppercase; letter-spacing:0.5px; color:rgba(255,255,255,0.35); margin-bottom:10px;">Revenue Model</div>
-                            <div style="color:rgba(255,255,255,0.55); font-size:0.88rem; line-height:1.6;">How will the business make money? Subscriptions, one-time, marketplace, ads?</div>
-                        </div>
-                        <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:14px; padding:24px;">
-                            <div style="font-size:0.72rem; text-transform:uppercase; letter-spacing:0.5px; color:rgba(255,255,255,0.35); margin-bottom:10px;">Target Market</div>
-                            <div style="color:rgba(255,255,255,0.55); font-size:0.88rem; line-height:1.6;">Who are your customers? Demographics, behaviors, pain points, market size.</div>
-                        </div>
-                        <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:14px; padding:24px;">
-                            <div style="font-size:0.72rem; text-transform:uppercase; letter-spacing:0.5px; color:rgba(255,255,255,0.35); margin-bottom:10px;">Key Metrics</div>
-                            <div style="color:rgba(255,255,255,0.55); font-size:0.88rem; line-height:1.6;">CAC, LTV, churn, MRR — the numbers that tell you if the model works.</div>
-                        </div>
-                    </div>
-
-                    <div style="background:rgba(16,185,129,0.06); border:1px solid rgba(16,185,129,0.2); border-radius:14px; padding:24px; text-align:center;">
-                        <i class="fas fa-brain" style="color:#10b981; font-size:1.4rem; margin-bottom:12px; display:block;"></i>
-                        <div style="font-weight:600; font-size:0.9rem; color:rgba(255,255,255,0.8); margin-bottom:6px;">Your business model is being built</div>
-                        <div style="font-size:0.82rem; color:rgba(255,255,255,0.35); line-height:1.55;">Complete your onboarding and our team will populate this section with your validated business model canvas.</div>
+                <!-- Neural network loading overlay -->
+                <div id="bmNeuralOverlay" style="display:none; position:absolute; inset:0; z-index:10; background:#000; flex-direction:column; align-items:center; justify-content:center;">
+                    <canvas id="bmNeuralCanvas" style="position:absolute; inset:0; width:100%; height:100%;"></canvas>
+                    <div style="position:relative; z-index:2; text-align:center;">
+                        <div id="bmNeuralLabel" style="font-size:1.1rem; font-weight:500; color:rgba(255,255,255,0.85); letter-spacing:-0.3px; margin-bottom:8px;">Analyzing your market...</div>
+                        <div style="font-size:0.82rem; color:rgba(255,255,255,0.35);">Anmar Supra AI is building your business model</div>
                     </div>
                 </div>
+
+                <!-- Scrollable content -->
+                <div id="bmScrollArea" style="flex:1; overflow-y:auto; padding:40px; display:flex; flex-direction:column; align-items:center;">
+                    <div style="width:min(820px,94vw);">
+
+                        <!-- Header -->
+                        <div style="margin-bottom:28px;">
+                            <h2 id="bmTitle" style="font-size:1.5rem; font-weight:700; color:#fff; margin:0 0 6px 0; letter-spacing:-0.03em;">Business Model</h2>
+                            <p id="bmSubtitle" style="color:rgba(255,255,255,0.4); font-size:0.88rem; margin:0; line-height:1.55;">Complete the onboarding to generate your personalized business analysis.</p>
+                        </div>
+
+                        <!-- Idle placeholder (shown before generation) -->
+                        <div id="bmIdlePlaceholder" style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:64px 0; gap:16px;">
+                            <div style="width:72px; height:72px; border-radius:50%; background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.2); display:flex; align-items:center; justify-content:center;">
+                                <i class="fas fa-brain" style="font-size:1.8rem; color:rgba(16,185,129,0.6);"></i>
+                            </div>
+                            <div style="font-size:0.9rem; color:rgba(255,255,255,0.35); text-align:center; max-width:320px; line-height:1.6;">
+                                Complete the onboarding wizard and your personalized business model will appear here.
+                            </div>
+                        </div>
+
+                        <!-- Generated cards area (hidden until generation) -->
+                        <div id="bmCardsArea" style="display:none; flex-direction:column; gap:14px;">
+
+                            <!-- Market card -->
+                            <div id="bmCard-market" class="bm-card" style="display:none; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:24px; animation:bmFadeIn 0.5s ease;">
+                                <div class="bm-card-label" style="font-size:0.7rem; text-transform:uppercase; letter-spacing:0.8px; color:#10b981; margin-bottom:14px; display:flex; align-items:center; gap:8px;">
+                                    <i class="fas fa-globe" style="font-size:0.75rem;"></i> Market Opportunity
+                                </div>
+                                <div class="bm-card-body" style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+                                    <div style="background:rgba(16,185,129,0.06); border-radius:10px; padding:16px;">
+                                        <div style="font-size:0.72rem; color:rgba(255,255,255,0.35); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.5px;">Market Size</div>
+                                        <div id="bmMarketSize" style="font-size:1.4rem; font-weight:700; color:#fff; letter-spacing:-0.5px;">—</div>
+                                    </div>
+                                    <div style="background:rgba(16,185,129,0.06); border-radius:10px; padding:16px;">
+                                        <div style="font-size:0.72rem; color:rgba(255,255,255,0.35); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.5px;">Growth Rate</div>
+                                        <div id="bmMarketGrowth" style="font-size:1.4rem; font-weight:700; color:#10b981; letter-spacing:-0.5px;">—</div>
+                                    </div>
+                                </div>
+                                <div id="bmMarketInsight" style="margin-top:14px; font-size:0.88rem; color:rgba(255,255,255,0.6); line-height:1.65; border-left:2px solid rgba(16,185,129,0.4); padding-left:14px;">—</div>
+                            </div>
+
+                            <!-- Competitors card -->
+                            <div id="bmCard-competitors" class="bm-card" style="display:none; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:24px; animation:bmFadeIn 0.5s ease;">
+                                <div class="bm-card-label" style="font-size:0.7rem; text-transform:uppercase; letter-spacing:0.8px; color:#f59e0b; margin-bottom:14px; display:flex; align-items:center; gap:8px;">
+                                    <i class="fas fa-chess" style="font-size:0.75rem;"></i> Competitive Landscape
+                                </div>
+                                <div id="bmCompetitorsList" style="display:flex; flex-direction:column; gap:10px;"></div>
+                            </div>
+
+                            <!-- Advantage card -->
+                            <div id="bmCard-advantage" class="bm-card" style="display:none; background:rgba(16,185,129,0.05); border:1px solid rgba(16,185,129,0.18); border-radius:14px; padding:24px; animation:bmFadeIn 0.5s ease;">
+                                <div class="bm-card-label" style="font-size:0.7rem; text-transform:uppercase; letter-spacing:0.8px; color:#10b981; margin-bottom:14px; display:flex; align-items:center; gap:8px;">
+                                    <i class="fas fa-bolt" style="font-size:0.75rem;"></i> Your Competitive Advantage
+                                </div>
+                                <div id="bmAdvantageMain" style="font-size:0.95rem; font-weight:600; color:#fff; margin-bottom:10px; line-height:1.5;">—</div>
+                                <div style="font-size:0.72rem; text-transform:uppercase; letter-spacing:0.5px; color:rgba(255,255,255,0.3); margin-bottom:6px;">Defensibility (moat)</div>
+                                <div id="bmAdvantageMoat" style="font-size:0.88rem; color:rgba(255,255,255,0.55); line-height:1.6;">—</div>
+                            </div>
+
+                            <!-- Risk card -->
+                            <div id="bmCard-risk" class="bm-card" style="display:none; background:rgba(239,68,68,0.04); border:1px solid rgba(239,68,68,0.12); border-radius:14px; padding:24px; animation:bmFadeIn 0.5s ease;">
+                                <div class="bm-card-label" style="font-size:0.7rem; text-transform:uppercase; letter-spacing:0.8px; color:#f87171; margin-bottom:14px; display:flex; align-items:center; gap:8px;">
+                                    <i class="fas fa-triangle-exclamation" style="font-size:0.75rem;"></i> Main Risk
+                                </div>
+                                <div id="bmRiskDesc" style="font-size:0.88rem; color:rgba(255,255,255,0.7); margin-bottom:10px; line-height:1.65;">—</div>
+                                <div style="font-size:0.72rem; text-transform:uppercase; letter-spacing:0.5px; color:rgba(255,255,255,0.3); margin-bottom:6px;">How to mitigate it</div>
+                                <div id="bmRiskMit" style="font-size:0.88rem; color:rgba(255,255,255,0.5); line-height:1.6;">—</div>
+                            </div>
+
+                            <!-- Next step / CTA card (shown on DONE) -->
+                            <div id="bmCard-done" style="display:none; background:rgba(16,185,129,0.07); border:1px solid rgba(16,185,129,0.25); border-radius:14px; padding:28px; animation:bmFadeIn 0.5s ease; text-align:center;">
+                                <div style="font-size:1.3rem; margin-bottom:10px;">🚀</div>
+                                <div style="font-weight:700; font-size:1rem; color:#fff; margin-bottom:6px;">Tu Business Model está listo</div>
+                                <div id="bmNextStepText" style="font-size:0.88rem; color:rgba(255,255,255,0.55); line-height:1.65; margin-bottom:22px;"></div>
+                                <div style="font-size:0.85rem; color:rgba(255,255,255,0.45); margin-bottom:16px;">
+                                    El siguiente paso es hablar con nuestro equipo para validarlo y definir tu plan.
+                                </div>
+                                <button id="bmChatCTA" onclick="showValidateGate()" style="display:inline-flex; align-items:center; gap:9px; background:rgba(16,185,129,0.18); border:1px solid rgba(16,185,129,0.4); border-radius:10px; padding:13px 26px; color:#fff; font-size:0.92rem; font-weight:600; cursor:pointer; transition:all 0.2s; letter-spacing:-0.1px;">
+                                    <i class="fas fa-comments"></i> Hablar con el equipo
+                                </button>
+                            </div>
+
+                        </div><!-- /bmCardsArea -->
+
+                        <div style="height:40px;"></div>
+                    </div>
+                </div><!-- /bmScrollArea -->
+
             </div>
 
             <!-- SECTION 3: MARKETING (Placeholder) -->
