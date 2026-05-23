@@ -3696,59 +3696,72 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // ── Fetch full JSON from backend ──────────────────────────────────────
+        // ── Fetch + minimum animation time in parallel ───────────────────────
+        let fetchResult = null;
+        let fetchError  = null;
+
         try {
-            const res  = await fetch('/api/generate-business-model', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(projectInfo)
-            });
+            // Run fetch AND a minimum 4-second wait in parallel.
+            // The neural network always plays at least 4s no matter how fast the API responds.
+            const [res] = await Promise.all([
+                fetch('/api/generate-business-model', {
+                    method:  'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body:    JSON.stringify(projectInfo)
+                }),
+                new Promise(r => setTimeout(r, 4000))
+            ]);
+
             const json = await res.json();
 
             if (!res.ok || !json.ok) {
-                stopNeural();
-                if (subtitleEl) subtitleEl.textContent = 'Error generating analysis. Try again later.';
-                return;
+                fetchError = json.error || `HTTP ${res.status}`;
+            } else {
+                fetchResult = json.data;
             }
-
-            const d = json.data;
-
-            // Reveal cards one by one with delays for the "streaming" feel
-            const sections = [
-                { key: 'market',      data: d.market      },
-                { key: 'competitors', data: d.competitors },
-                { key: 'advantage',   data: d.advantage   },
-                { key: 'risk',        data: d.risk        },
-            ];
-
-            // Set nextStep text early
-            const nextStepEl = document.getElementById('bmNextStepText');
-            if (nextStepEl && d.nextStep) nextStepEl.textContent = d.nextStep;
-
-            // Stop neural after a beat
-            stopNeural();
-            await new Promise(r => setTimeout(r, 800));
-
-            if (titleEl)    titleEl.textContent    = `${projectInfo.project_name} — Business Model`;
-            if (subtitleEl) subtitleEl.textContent = 'Your personalized analysis is ready.';
-
-            for (const sec of sections) {
-                _renderBmSection(sec.key, sec.data);
-                await new Promise(r => setTimeout(r, 700));
-            }
-
-            // Show done card
-            const doneCard = document.getElementById('bmCard-done');
-            if (doneCard) doneCard.style.display = 'block';
-
-            // Scroll to bottom
-            const scrollArea = document.getElementById('bmScrollArea');
-            if (scrollArea) setTimeout(() => { scrollArea.scrollTo({ top: scrollArea.scrollHeight, behavior: 'smooth' }); }, 300);
-
         } catch (e) {
-            stopNeural();
-            if (subtitleEl) subtitleEl.textContent = 'Connection error. Please try again.';
+            fetchError = e.message || 'Network error';
         }
+
+        // Stop neural network (fades out over 0.7s)
+        stopNeural();
+        await new Promise(r => setTimeout(r, 800));
+
+        if (fetchError || !fetchResult) {
+            if (titleEl)    titleEl.textContent    = 'Analysis unavailable';
+            if (subtitleEl) subtitleEl.textContent = `Error: ${fetchError || 'No data received'}. Please try again.`;
+            return;
+        }
+
+        const d = fetchResult;
+
+        if (titleEl)    titleEl.textContent    = `${projectInfo.project_name} — Business Model`;
+        if (subtitleEl) subtitleEl.textContent = 'Your personalized analysis is ready.';
+
+        // Set nextStep text
+        const nextStepEl = document.getElementById('bmNextStepText');
+        if (nextStepEl && d.nextStep) nextStepEl.textContent = d.nextStep;
+
+        // Reveal cards one by one — "streaming" feel
+        const sections = [
+            { key: 'market',      data: d.market      },
+            { key: 'competitors', data: d.competitors },
+            { key: 'advantage',   data: d.advantage   },
+            { key: 'risk',        data: d.risk        },
+        ];
+
+        for (const sec of sections) {
+            _renderBmSection(sec.key, sec.data);
+            await new Promise(r => setTimeout(r, 700));
+        }
+
+        // Show done / CTA card
+        const doneCard = document.getElementById('bmCard-done');
+        if (doneCard) doneCard.style.display = 'block';
+
+        // Scroll to bottom smoothly
+        const scrollArea = document.getElementById('bmScrollArea');
+        if (scrollArea) setTimeout(() => { scrollArea.scrollTo({ top: scrollArea.scrollHeight, behavior: 'smooth' }); }, 300);
     }
 
     function _renderBmSection(section, data) {
