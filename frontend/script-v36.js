@@ -1020,6 +1020,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     let forceWelcome = true;
+    let _wizGoToStep = null;   // exposed so openWelcomeNewProject can reach it
+    let _wizClearData = null;  // exposed to clear wizard state from outside
 
     function initWelcomeScreen() {
         if (!welcomeScreen) return;
@@ -1041,6 +1043,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // ===================== WIZARD STATE =====================
         let wizCurrentStep = 1;
         const wizData = {};
+        _wizClearData = () => { Object.keys(wizData).forEach(k => delete wizData[k]); };
 
         const wizTitles = [
             'Tell us about your project.',
@@ -1085,6 +1088,7 @@ document.addEventListener('DOMContentLoaded', () => {
             wizValidateStep(newStep);
             if (welcomeStatus) welcomeStatus.textContent = '';
         }
+        _wizGoToStep = wizGoToStep; // expose to outer scope
 
         function wizValidateStep(step) {
             if (!welcomeSubmitBtn) return;
@@ -1445,9 +1449,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (descInput) descInput.value = '';
         // Reset all wizard card selections
         document.querySelectorAll('.wiz-card.selected').forEach(c => c.classList.remove('selected'));
+        // Clear wizard data collected in previous runs
+        if (_wizClearData) _wizClearData();
         // Go back to step 1 (resets dots, back btn, button label)
-        try { wizGoToStep(1); } catch(_) {
-            // fallback if wizard state not yet initialized
+        if (_wizGoToStep) {
+            _wizGoToStep(1);
+        } else {
             const submitBtn = document.getElementById('welcomeSubmitBtn');
             if (submitBtn) submitBtn.disabled = true;
         }
@@ -3439,6 +3446,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 nameSpan.onclick = async () => {
                     currentProjectName = project;
 
+                    // Load this project's cached Business Model (or reset to idle if none)
+                    restoreBmFromCache(project);
+
                     // Start polling human chat mapping
                     lastHumanChatCount = 0;
                     if (humanChatInterval) clearInterval(humanChatInterval);
@@ -3766,9 +3776,48 @@ document.addEventListener('DOMContentLoaded', () => {
         const doneCard = document.getElementById('bmCard-done');
         if (doneCard) doneCard.style.display = 'block';
 
+        // Cache result in localStorage so other projects don't show stale data
+        try { localStorage.setItem(`bm_data_${projectInfo.project_name}`, JSON.stringify(fetchResult)); } catch(_) {}
+
         // Scroll to bottom smoothly
         const scrollArea = document.getElementById('bmScrollArea');
         if (scrollArea) setTimeout(() => { scrollArea.scrollTo({ top: scrollArea.scrollHeight, behavior: 'smooth' }); }, 300);
+    }
+
+    // Restore a previously generated BM from cache (no animation)
+    function restoreBmFromCache(projectName) {
+        const raw = localStorage.getItem(`bm_data_${projectName}`);
+        if (!raw) {
+            // No cache — reset to idle placeholder
+            const idlePlh   = document.getElementById('bmIdlePlaceholder');
+            const cardsArea = document.getElementById('bmCardsArea');
+            const titleEl   = document.getElementById('bmTitle');
+            const subtitleEl= document.getElementById('bmSubtitle');
+            if (idlePlh)    { idlePlh.style.display = ''; }
+            if (cardsArea)  { cardsArea.style.display = 'none'; }
+            if (titleEl)    titleEl.textContent  = 'Business Model';
+            if (subtitleEl) subtitleEl.textContent = 'Complete the onboarding wizard to generate your personalized analysis.';
+            // Hide all cards
+            ['market','competitors','advantage','risk','done'].forEach(k => {
+                const c = document.getElementById(`bmCard-${k}`);
+                if (c) c.style.display = 'none';
+            });
+            return;
+        }
+        try {
+            const d = JSON.parse(raw);
+            const idlePlh   = document.getElementById('bmIdlePlaceholder');
+            const cardsArea = document.getElementById('bmCardsArea');
+            const titleEl   = document.getElementById('bmTitle');
+            const subtitleEl= document.getElementById('bmSubtitle');
+            if (idlePlh)    idlePlh.style.display    = 'none';
+            if (cardsArea)  cardsArea.style.display   = 'flex';
+            if (titleEl)    titleEl.textContent        = `${projectName} — Business Model`;
+            if (subtitleEl) subtitleEl.textContent     = 'Your personalized analysis.';
+            ['market','competitors','advantage','risk'].forEach(k => _renderBmSection(k, d[k]));
+            const doneCard = document.getElementById('bmCard-done');
+            if (doneCard) doneCard.style.display = 'block';
+        } catch(_) {}
     }
 
     function _renderBmSection(section, data) {

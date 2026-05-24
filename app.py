@@ -1180,37 +1180,39 @@ def generate_business_model():
     if not model:
         return jsonify({'error': 'AI not available'}), 503
 
-    prompt = f"""Eres un analista de negocios de clase mundial con acceso a datos de mercado reales.
-Un emprendedor acaba de describir su idea. Genera un análisis de negocio personalizado, específico y con números reales.
+    prompt = f"""You are a world-class business analyst with access to real market data.
+An entrepreneur has just described their idea. Generate a personalized, specific business analysis with real numbers.
 
-DATOS DEL PROYECTO:
-- Nombre: {project_name}
-- Descripción: {description}
-- Tipo: {project_type}
-- Modelo de negocio: {biz_model_type}
-- Etapa actual: {stage}
+IMPORTANT: RESPOND ENTIRELY IN ENGLISH. All fields must be in English regardless of the project language.
 
-Responde ÚNICAMENTE con un objeto JSON válido con esta estructura exacta (sin markdown, sin texto extra):
+PROJECT DATA:
+- Name: {project_name}
+- Description: {description}
+- Type: {project_type}
+- Business model: {biz_model_type}
+- Current stage: {stage}
+
+Respond ONLY with a valid JSON object with this exact structure (no markdown, no extra text):
 {{
   "market": {{
-    "size": "Tamaño del mercado global con cifra real en USD (ej: $4.2B)",
-    "growth": "Tasa de crecimiento anual CAGR (ej: 18.3% CAGR 2024-2030)",
-    "insight": "Una observación específica y poderosa sobre por qué este es el momento ideal para entrar a este mercado"
+    "size": "Global market size with a real USD figure (e.g. $4.2B)",
+    "growth": "Annual growth rate CAGR (e.g. 18.3% CAGR 2024-2030)",
+    "insight": "A specific, powerful observation about why now is the ideal moment to enter this market"
   }},
   "competitors": [
-    {{"name": "Nombre real de competidor", "weakness": "Su debilidad específica que {project_name} puede explotar"}},
-    {{"name": "Nombre real de competidor 2", "weakness": "Su debilidad específica"}},
-    {{"name": "Nombre real de competidor 3", "weakness": "Su debilidad específica"}}
+    {{"name": "Real competitor name", "weakness": "Their specific weakness that {project_name} can exploit"}},
+    {{"name": "Real competitor name 2", "weakness": "Their specific weakness"}},
+    {{"name": "Real competitor name 3", "weakness": "Their specific weakness"}}
   ],
   "advantage": {{
-    "main": "La ventaja competitiva principal y específica de esta idea",
-    "moat": "Qué hace difícil o casi imposible que alguien más replique esto exactamente"
+    "main": "The primary and specific competitive advantage of this idea",
+    "moat": "What makes it difficult or nearly impossible for anyone else to replicate this exactly"
   }},
   "risk": {{
-    "description": "El riesgo más concreto y real para este negocio específico",
-    "mitigation": "Cómo mitigarlo con acciones concretas"
+    "description": "The most concrete and real risk for this specific business",
+    "mitigation": "How to mitigate it with concrete actions"
   }},
-  "nextStep": "La acción más importante y específica que debe tomar ahora mismo para validar y avanzar"
+  "nextStep": "The most important and specific action to take right now to validate and move forward"
 }}"""
 
     try:
