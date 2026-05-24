@@ -1553,6 +1553,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function appendUserMessageFromMemory(text) {
+        if (!terminalContent) return;
         const msgRow = document.createElement('div');
         msgRow.className = 'msg-row user';
         const bubble = document.createElement('div');
@@ -1563,6 +1564,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function appendAiMessageFromMemory(text) {
+        if (!terminalContent) return;
         const msgRow = document.createElement('div');
         msgRow.className = 'msg-row ai';
         const bubble = document.createElement('div');
@@ -1670,15 +1672,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function addLog(text, type = 'info') {
+        if (!terminalContent) return; // guard: terminal not in DOM yet
         const msgRow = document.createElement('div');
         msgRow.className = 'msg-row ai';
 
         let color = '#ccc'; // default
         let prefix = '>';
 
-        if (type === 'design') { color = '#d946ef'; prefix = '[George // DESIGN]'; } // Fuchsia for Design
-        if (type === 'eng') { color = '#3b82f6'; prefix = '[Julian // DEV]'; }    // Blue for Dev
-        if (type === 'system') { color = '#10b981'; prefix = '[ANMAR // CORE]'; } // Green for System
+        if (type === 'design') { color = '#d946ef'; prefix = '[George // DESIGN]'; }
+        if (type === 'eng') { color = '#3b82f6'; prefix = '[Julian // DEV]'; }
+        if (type === 'system') { color = '#10b981'; prefix = '[ANMAR // CORE]'; }
         if (type === 'success') { color = '#22c55e'; prefix = '[OK]'; }
         if (type === 'warning') { color = '#f59e0b'; prefix = '[WARN]'; }
         if (type === 'error') { color = '#ef4444'; prefix = '[ERROR]'; }
@@ -1687,12 +1690,13 @@ document.addEventListener('DOMContentLoaded', () => {
             <span style="opacity:0.6; margin-right:8px;">${prefix}</span> ${text}
         </div>`;
 
-        terminalContent.insertBefore(msgRow, resultSection);
+        terminalContent.insertBefore(msgRow, resultSection || null);
         terminalContent.scrollTop = terminalContent.scrollHeight;
     }
     window.addLog = addLog; // Expose globally
 
     async function addSystemMessage(htmlContent) {
+        if (!terminalContent) return; // guard: terminal not in DOM yet
         const msgRow = document.createElement('div');
         msgRow.className = 'msg-row ai';
 
@@ -1702,7 +1706,7 @@ document.addEventListener('DOMContentLoaded', () => {
         contentDiv.style.whiteSpace = 'pre-wrap';
         msgRow.appendChild(contentDiv);
 
-        terminalContent.insertBefore(msgRow, resultSection);
+        terminalContent.insertBefore(msgRow, resultSection || null);
 
         // COMPLEX HTML (Cards, lists, buttons) -> Render instant with fade
         if (htmlContent.includes('<div') || htmlContent.includes('<ul') || htmlContent.includes('<button')) {
@@ -1741,10 +1745,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function addUserMessage(text) {
+        if (!terminalContent) return;
         const msgRow = document.createElement('div');
         msgRow.className = 'msg-row user';
         msgRow.innerHTML = `<div class="user-msg">${text}</div>`;
-        terminalContent.insertBefore(msgRow, resultSection);
+        terminalContent.insertBefore(msgRow, resultSection || null);
         terminalContent.scrollTop = terminalContent.scrollHeight;
     }
 
@@ -2263,11 +2268,12 @@ document.addEventListener('DOMContentLoaded', () => {
     let loadDiv = null;
 
     function showThinking(text) {
+        if (!terminalContent) return;
         if (loadDiv) loadDiv.remove();
         loadDiv = document.createElement('div');
         loadDiv.className = 'msg-row ai';
         loadDiv.innerHTML = `<div class="ai-msg" style="opacity:0.7;"><i class="fas fa-circle-notch fa-spin"></i> ${text}</div>`;
-        terminalContent.insertBefore(loadDiv, resultSection);
+        terminalContent.insertBefore(loadDiv, resultSection || null);
         terminalContent.scrollTop = terminalContent.scrollHeight;
     }
     window.showThinking = showThinking; // Expose globally
@@ -2382,7 +2388,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         ${summaryMsg}
                     </div>
                 `;
-                terminalContent.insertBefore(intro, resultSection);
+                if (terminalContent) terminalContent.insertBefore(intro, resultSection || null);
             }
             if (isMarketingChannel()) {
                 const brief = memory.marketing_brief || {};
@@ -2441,6 +2447,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function resetChatView() {
+        if (!terminalContent) return;
         const messages = terminalContent.querySelectorAll('.msg-row');
         messages.forEach((node) => {
             if (!resultSection.contains(node)) node.remove();
@@ -2455,7 +2462,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     : 'Starting fresh. Describe your new idea and we\'ll structure it together.'}
             </div>
         `;
-        terminalContent.insertBefore(intro, resultSection);
+        if (terminalContent) terminalContent.insertBefore(intro, resultSection || null);
     }
 
     async function resetContext(clearProject = false) {
