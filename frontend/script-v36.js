@@ -3777,16 +3777,21 @@ document.addEventListener('DOMContentLoaded', () => {
         if (doneCard) doneCard.style.display = 'block';
 
         // Cache result in localStorage so other projects don't show stale data
-        try { localStorage.setItem(`bm_data_${projectInfo.project_name}`, JSON.stringify(fetchResult)); } catch(_) {}
+        const _bmKey = (projectInfo.project_name || '').toLowerCase().trim();
+        try { localStorage.setItem(`bm_data_${_bmKey}`, JSON.stringify(fetchResult)); } catch(_) {}
 
         // Scroll to bottom smoothly
         const scrollArea = document.getElementById('bmScrollArea');
         if (scrollArea) setTimeout(() => { scrollArea.scrollTo({ top: scrollArea.scrollHeight, behavior: 'smooth' }); }, 300);
     }
 
+    // Called every time the Business Model tab is activated (tab click or project switch)
+    window.__onBmTab = () => restoreBmFromCache(currentProjectName);
+
     // Restore a previously generated BM from cache (no animation)
     function restoreBmFromCache(projectName) {
-        const raw = localStorage.getItem(`bm_data_${projectName}`);
+        const _key = (projectName || '').toLowerCase().trim();
+        const raw = localStorage.getItem(`bm_data_${_key}`);
         if (!raw) {
             // No cache — reset to idle placeholder
             const idlePlh   = document.getElementById('bmIdlePlaceholder');

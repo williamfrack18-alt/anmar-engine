@@ -2471,7 +2471,7 @@
             <button onclick="switchTab('projects')" class="tab-btn active" id="tab-projects">
                 <i class="fas fa-folder-tree"></i> PROJECTS
             </button>
-            <button onclick="switchTab('business')" class="tab-btn" id="tab-business">
+            <button onclick="switchTab('business'); if(window.__onBmTab) window.__onBmTab();" class="tab-btn" id="tab-business">
                 <i class="fas fa-brain"></i> BUSINESS MODEL
             </button>
             <button onclick="switchTab('build')" class="tab-btn" id="tab-build">
