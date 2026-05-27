@@ -1180,10 +1180,10 @@ def generate_business_model():
     if not model:
         return jsonify({'error': 'AI not available'}), 503
 
-    prompt = f"""You are a world-class business analyst with access to real market data.
-An entrepreneur has just described their idea. Generate a personalized, specific business analysis with real numbers.
+    prompt = f"""You are a world-class business analyst and venture strategist with access to real market data.
+An entrepreneur just described their idea. Generate a DEEP, SPECIFIC, IMPRESSIVE business analysis using real numbers and real company names.
 
-IMPORTANT: RESPOND ENTIRELY IN ENGLISH. All fields must be in English regardless of the project language.
+CRITICAL: RESPOND ENTIRELY IN ENGLISH. Every single field must be in English.
 
 PROJECT DATA:
 - Name: {project_name}
@@ -1192,27 +1192,45 @@ PROJECT DATA:
 - Business model: {biz_model_type}
 - Current stage: {stage}
 
-Respond ONLY with a valid JSON object with this exact structure (no markdown, no extra text):
+Respond ONLY with a valid JSON object. No markdown, no code fences, no extra text. Use this EXACT structure:
 {{
   "market": {{
-    "size": "Global market size with a real USD figure (e.g. $4.2B)",
-    "growth": "Annual growth rate CAGR (e.g. 18.3% CAGR 2024-2030)",
-    "insight": "A specific, powerful observation about why now is the ideal moment to enter this market"
+    "size": "Total Addressable Market with real USD figure (e.g. '$18.4B TAM')",
+    "sam": "Serviceable Addressable Market — realistic capture for this product (e.g. '$1.2B SAM')",
+    "growth": "CAGR with specific years (e.g. '27.3% CAGR 2024–2031')",
+    "insight": "One sharp, non-obvious observation about WHY this specific moment is ideal to enter — cite a recent shift, regulation, or behavior change",
+    "trends": [
+      "Specific macro trend driving this market right now",
+      "Behavioral or technological shift creating the opening",
+      "Regulatory or economic factor accelerating adoption"
+    ]
   }},
   "competitors": [
-    {{"name": "Real competitor name", "weakness": "Their specific weakness that {project_name} can exploit"}},
-    {{"name": "Real competitor name 2", "weakness": "Their specific weakness"}},
-    {{"name": "Real competitor name 3", "weakness": "Their specific weakness"}}
+    {{"name": "Real company name", "share": "~XX% market share", "weakness": "Their biggest gap that {project_name} can exploit", "strength": "What they genuinely do best"}},
+    {{"name": "Real company name 2", "share": "~XX% market share", "weakness": "Their biggest gap", "strength": "Their strongest trait"}},
+    {{"name": "Real company name 3", "share": "~XX% market share", "weakness": "Their biggest gap", "strength": "Their strongest trait"}}
   ],
   "advantage": {{
-    "main": "The primary and specific competitive advantage of this idea",
-    "moat": "What makes it difficult or nearly impossible for anyone else to replicate this exactly"
+    "main": "The single strongest and most specific competitive advantage of {project_name} — be concrete, not generic",
+    "moat": "What makes this defensible and hard to replicate in 12–18 months",
+    "differentiation": "In one sentence: exactly how this differs from existing solutions in terms a customer would notice"
   }},
   "risk": {{
-    "description": "The most concrete and real risk for this specific business",
-    "mitigation": "How to mitigate it with concrete actions"
+    "description": "The most critical, specific risk for this exact business at this stage",
+    "mitigation": "2–3 concrete actions to reduce this risk starting now",
+    "probability": "Low"
   }},
-  "nextStep": "The most important and specific action to take right now to validate and move forward"
+  "persona": {{
+    "name": "Full description of ideal first customer (e.g. 'Marcus, 38, VP of Operations at a 50-person logistics startup')",
+    "painPoint": "The exact painful problem they face today that {project_name} eliminates — be specific",
+    "willingness": "Why they would pay and estimated amount (e.g. 'Would pay $X/mo — saves 12 hrs/week and replaces a $X/yr tool')"
+  }},
+  "channels": [
+    {{"name": "Channel name", "reason": "Why this specific channel works for this exact product and audience"}},
+    {{"name": "Channel name", "reason": "Why this specific channel works for this exact product and audience"}},
+    {{"name": "Channel name", "reason": "Why this specific channel works for this exact product and audience"}}
+  ],
+  "nextStep": "The single most important action in the next 7 days to validate this and build real momentum"
 }}"""
 
     try:

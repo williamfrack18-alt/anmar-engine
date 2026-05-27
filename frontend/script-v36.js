@@ -3753,76 +3753,219 @@ document.addEventListener('DOMContentLoaded', () => {
         const d = fetchResult;
 
         if (titleEl)    titleEl.textContent    = `${projectInfo.project_name} — Business Model`;
-        if (subtitleEl) subtitleEl.textContent = 'Your personalized analysis is ready.';
+        if (subtitleEl) subtitleEl.textContent = 'Anmar Supra AI has finished your analysis.';
 
-        // Set nextStep text
-        const nextStepEl = document.getElementById('bmNextStepText');
-        if (nextStepEl && d.nextStep) nextStepEl.textContent = d.nextStep;
-
-        // Reveal cards one by one — "streaming" feel
-        const sections = [
-            { key: 'market',      data: d.market      },
-            { key: 'competitors', data: d.competitors },
-            { key: 'advantage',   data: d.advantage   },
-            { key: 'risk',        data: d.risk        },
-        ];
-
-        for (const sec of sections) {
-            _renderBmSection(sec.key, sec.data);
-            await new Promise(r => setTimeout(r, 700));
-        }
-
-        // Show done / CTA card
-        const doneCard = document.getElementById('bmCard-done');
-        if (doneCard) doneCard.style.display = 'block';
-
-        // Cache result in localStorage so other projects don't show stale data
+        // Cache result keyed by project name
         const _bmKey = (projectInfo.project_name || '').toLowerCase().trim();
         try { localStorage.setItem(`bm_data_${_bmKey}`, JSON.stringify(fetchResult)); } catch(_) {}
 
-        // Scroll to bottom smoothly
-        const scrollArea = document.getElementById('bmScrollArea');
-        if (scrollArea) setTimeout(() => { scrollArea.scrollTo({ top: scrollArea.scrollHeight, behavior: 'smooth' }); }, 300);
+        // Render mind map with typewriter effect
+        await renderBmMindMap(d, projectInfo.project_name, projectInfo.project_type || '', 10);
     }
 
     // Called every time the Business Model tab is activated (tab click or project switch)
     window.__onBmTab = () => restoreBmFromCache(currentProjectName);
 
-    // Restore a previously generated BM from cache (no animation)
+    // ── Typewriter utility ────────────────────────────────────────────────────
+    async function typeWriter(el, text, speed = 12) {
+        if (!el) return;
+        if (!speed || speed <= 0) { el.textContent = text; return; }
+        el.textContent = '';
+        for (const char of String(text || '')) {
+            el.textContent += char;
+            await new Promise(r => setTimeout(r, speed));
+        }
+    }
+
+    // ── Reset mind map to idle state ──────────────────────────────────────────
+    function resetBmToIdle(projectName) {
+        const idlePlh  = document.getElementById('bmIdlePlaceholder');
+        const mindMap  = document.getElementById('bmMindMap');
+        const titleEl  = document.getElementById('bmTitle');
+        const subEl    = document.getElementById('bmSubtitle');
+        if (idlePlh)  idlePlh.style.display = '';
+        if (mindMap)  mindMap.style.display  = 'none';
+        if (titleEl)  titleEl.textContent    = 'Business Model';
+        if (subEl)    subEl.textContent      = 'Complete the onboarding wizard to generate your personalized analysis.';
+        document.querySelectorAll('.bm-branch').forEach(b => { b.style.display = 'none'; b.style.opacity = '0'; });
+        const chList   = document.getElementById('bmChannelsList');
+        const compList = document.getElementById('bmCompetitorsList');
+        const trends   = document.getElementById('bmMarketTrends');
+        if (chList)   chList.innerHTML   = '';
+        if (compList) compList.innerHTML = '';
+        if (trends)   trends.innerHTML   = '';
+        const done = document.getElementById('bmCard-done');
+        if (done) done.style.display = 'none';
+    }
+
+    // ── Restore BM from localStorage cache ───────────────────────────────────
     function restoreBmFromCache(projectName) {
         const _key = (projectName || '').toLowerCase().trim();
-        const raw = localStorage.getItem(`bm_data_${_key}`);
-        if (!raw) {
-            // No cache — reset to idle placeholder
-            const idlePlh   = document.getElementById('bmIdlePlaceholder');
-            const cardsArea = document.getElementById('bmCardsArea');
-            const titleEl   = document.getElementById('bmTitle');
-            const subtitleEl= document.getElementById('bmSubtitle');
-            if (idlePlh)    { idlePlh.style.display = ''; }
-            if (cardsArea)  { cardsArea.style.display = 'none'; }
-            if (titleEl)    titleEl.textContent  = 'Business Model';
-            if (subtitleEl) subtitleEl.textContent = 'Complete the onboarding wizard to generate your personalized analysis.';
-            // Hide all cards
-            ['market','competitors','advantage','risk','done'].forEach(k => {
-                const c = document.getElementById(`bmCard-${k}`);
-                if (c) c.style.display = 'none';
-            });
-            return;
-        }
+        const raw  = localStorage.getItem(`bm_data_${_key}`);
+        if (!raw) { resetBmToIdle(projectName); return; }
         try {
             const d = JSON.parse(raw);
-            const idlePlh   = document.getElementById('bmIdlePlaceholder');
-            const cardsArea = document.getElementById('bmCardsArea');
-            const titleEl   = document.getElementById('bmTitle');
-            const subtitleEl= document.getElementById('bmSubtitle');
-            if (idlePlh)    idlePlh.style.display    = 'none';
-            if (cardsArea)  cardsArea.style.display   = 'flex';
-            if (titleEl)    titleEl.textContent        = `${projectName} — Business Model`;
-            if (subtitleEl) subtitleEl.textContent     = 'Your personalized analysis.';
-            ['market','competitors','advantage','risk'].forEach(k => _renderBmSection(k, d[k]));
-            const doneCard = document.getElementById('bmCard-done');
-            if (doneCard) doneCard.style.display = 'block';
-        } catch(_) {}
+            const titleEl = document.getElementById('bmTitle');
+            const subEl   = document.getElementById('bmSubtitle');
+            if (titleEl) titleEl.textContent = `${projectName} — Business Model`;
+            if (subEl)   subEl.textContent   = 'Your personalized analysis.';
+            // Reset lists before re-filling
+            const chList   = document.getElementById('bmChannelsList');
+            const compList = document.getElementById('bmCompetitorsList');
+            const trends   = document.getElementById('bmMarketTrends');
+            if (chList)   chList.innerHTML   = '';
+            if (compList) compList.innerHTML = '';
+            if (trends)   trends.innerHTML   = '';
+            renderBmMindMap(d, projectName, d._projectType || '', 0);
+        } catch(_) { resetBmToIdle(projectName); }
+    }
+
+    // ── Render mind map with optional typewriter effect ───────────────────────
+    async function renderBmMindMap(data, projectName, projectType, speed = 10) {
+        const mindMap  = document.getElementById('bmMindMap');
+        const idlePlh  = document.getElementById('bmIdlePlaceholder');
+        if (!mindMap) return;
+
+        // Store project type for cache restore
+        data._projectType = projectType;
+
+        if (idlePlh) idlePlh.style.display = 'none';
+        mindMap.style.display = 'block';
+
+        // Center node
+        await typeWriter(document.getElementById('bmCenterName'), projectName, speed * 1.6);
+        const ctEl = document.getElementById('bmCenterType');
+        if (ctEl) ctEl.textContent = projectType || '';
+
+        await new Promise(r => setTimeout(r, speed ? 280 : 0));
+
+        // ── Market ──
+        const bMkt = document.getElementById('bmBranch-market');
+        if (bMkt && data.market) {
+            const m = data.market;
+            bMkt.style.display = 'flex'; bMkt.style.flexDirection = 'column';
+            await new Promise(r => requestAnimationFrame(r));
+            await new Promise(r => setTimeout(r, speed ? 20 : 0));
+            bMkt.style.opacity = '1';
+            await typeWriter(document.getElementById('bmMarketSize'),    m.size    || '—', speed * 0.7);
+            await typeWriter(document.getElementById('bmMarketSam'),     m.sam     || '—', speed * 0.7);
+            await typeWriter(document.getElementById('bmMarketGrowth'),  m.growth  || '—', speed * 0.7);
+            await typeWriter(document.getElementById('bmMarketInsight'), m.insight || '—', speed * 0.55);
+            const trendsEl = document.getElementById('bmMarketTrends');
+            if (trendsEl && Array.isArray(m.trends)) {
+                for (const t of m.trends) {
+                    const row = document.createElement('div');
+                    row.style.cssText = 'display:flex;align-items:flex-start;gap:7px;font-size:0.76rem;color:rgba(255,255,255,0.38);line-height:1.5;';
+                    row.innerHTML = '<span style="color:#10b981;flex-shrink:0;margin-top:2px;">→</span><span></span>';
+                    trendsEl.appendChild(row);
+                    await typeWriter(row.querySelector('span:last-child'), t, speed * 0.45);
+                }
+            }
+        }
+        await new Promise(r => setTimeout(r, speed ? 350 : 0));
+
+        // ── Competitors ──
+        const bCmp = document.getElementById('bmBranch-competitors');
+        if (bCmp && data.competitors) {
+            bCmp.style.display = 'flex'; bCmp.style.flexDirection = 'column';
+            await new Promise(r => requestAnimationFrame(r));
+            await new Promise(r => setTimeout(r, speed ? 20 : 0));
+            bCmp.style.opacity = '1';
+            const listEl = document.getElementById('bmCompetitorsList');
+            if (listEl && Array.isArray(data.competitors)) {
+                for (const c of data.competitors) {
+                    const item = document.createElement('div');
+                    item.style.cssText = 'background:rgba(255,255,255,0.03);border-radius:10px;padding:11px 13px;';
+                    item.innerHTML = `
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;">
+                            <div class="c-name" style="font-weight:600;font-size:0.84rem;color:#fff;"></div>
+                            <div style="font-size:0.62rem;color:rgba(255,255,255,0.32);background:rgba(255,255,255,0.05);padding:2px 7px;border-radius:5px;flex-shrink:0;margin-left:10px;">${escapeHtml(c.share||'')}</div>
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                            <div><div style="font-size:0.58rem;text-transform:uppercase;color:rgba(255,255,255,0.22);margin-bottom:3px;">Weakness</div><div class="c-weak" style="font-size:0.77rem;color:#f87171;line-height:1.5;"></div></div>
+                            <div><div style="font-size:0.58rem;text-transform:uppercase;color:rgba(255,255,255,0.22);margin-bottom:3px;">Strength</div><div class="c-str" style="font-size:0.77rem;color:rgba(255,255,255,0.42);line-height:1.5;"></div></div>
+                        </div>`;
+                    listEl.appendChild(item);
+                    await typeWriter(item.querySelector('.c-name'), c.name     || '—', speed * 0.9);
+                    await typeWriter(item.querySelector('.c-weak'), c.weakness || '—', speed * 0.42);
+                    await typeWriter(item.querySelector('.c-str'),  c.strength || '—', speed * 0.42);
+                }
+            }
+        }
+        await new Promise(r => setTimeout(r, speed ? 350 : 0));
+
+        // ── Advantage ──
+        const bAdv = document.getElementById('bmBranch-advantage');
+        if (bAdv && data.advantage) {
+            const a = data.advantage;
+            bAdv.style.display = 'flex'; bAdv.style.flexDirection = 'column';
+            await new Promise(r => requestAnimationFrame(r));
+            await new Promise(r => setTimeout(r, speed ? 20 : 0));
+            bAdv.style.opacity = '1';
+            await typeWriter(document.getElementById('bmAdvantageMain'),  a.main           || '—', speed * 0.62);
+            await typeWriter(document.getElementById('bmAdvantageMoat'),  a.moat           || '—', speed * 0.5);
+            await typeWriter(document.getElementById('bmAdvantageDiff'),  a.differentiation|| '—', speed * 0.5);
+        }
+        await new Promise(r => setTimeout(r, speed ? 350 : 0));
+
+        // ── Risk ──
+        const bRsk = document.getElementById('bmBranch-risk');
+        if (bRsk && data.risk) {
+            const r = data.risk;
+            bRsk.style.display = 'flex'; bRsk.style.flexDirection = 'column';
+            await new Promise(r2 => requestAnimationFrame(r2));
+            await new Promise(r2 => setTimeout(r2, speed ? 20 : 0));
+            bRsk.style.opacity = '1';
+            const badge = document.getElementById('bmRiskBadge');
+            if (badge) badge.textContent = r.probability || 'Medium';
+            await typeWriter(document.getElementById('bmRiskDesc'), r.description || '—', speed * 0.58);
+            await typeWriter(document.getElementById('bmRiskMit'),  r.mitigation  || '—', speed * 0.48);
+        }
+        await new Promise(r => setTimeout(r, speed ? 350 : 0));
+
+        // ── Persona ──
+        const bPer = document.getElementById('bmBranch-persona');
+        if (bPer && data.persona) {
+            const p = data.persona;
+            bPer.style.display = 'flex'; bPer.style.flexDirection = 'column';
+            await new Promise(r => requestAnimationFrame(r));
+            await new Promise(r => setTimeout(r, speed ? 20 : 0));
+            bPer.style.opacity = '1';
+            await typeWriter(document.getElementById('bmPersonaName'), p.name        || '—', speed * 0.7);
+            await typeWriter(document.getElementById('bmPersonaPain'), p.painPoint   || '—', speed * 0.5);
+            await typeWriter(document.getElementById('bmPersonaPay'),  p.willingness || '—', speed * 0.6);
+        }
+        await new Promise(r => setTimeout(r, speed ? 350 : 0));
+
+        // ── Channels ──
+        const bCh = document.getElementById('bmBranch-channels');
+        if (bCh && data.channels) {
+            bCh.style.display = 'flex'; bCh.style.flexDirection = 'column';
+            await new Promise(r => requestAnimationFrame(r));
+            await new Promise(r => setTimeout(r, speed ? 20 : 0));
+            bCh.style.opacity = '1';
+            const chList = document.getElementById('bmChannelsList');
+            if (chList && Array.isArray(data.channels)) {
+                for (const ch of data.channels) {
+                    const item = document.createElement('div');
+                    item.style.cssText = 'display:flex;align-items:flex-start;gap:10px;';
+                    item.innerHTML = '<div style="width:5px;height:5px;border-radius:50%;background:#60a5fa;margin-top:5px;flex-shrink:0;"></div><div><div class="ch-name" style="font-weight:600;font-size:0.83rem;color:#fff;margin-bottom:3px;"></div><div class="ch-why" style="font-size:0.77rem;color:rgba(255,255,255,0.42);line-height:1.55;"></div></div>';
+                    chList.appendChild(item);
+                    await typeWriter(item.querySelector('.ch-name'), ch.name   || '—', speed * 0.85);
+                    await typeWriter(item.querySelector('.ch-why'),  ch.reason || '—', speed * 0.42);
+                }
+            }
+        }
+        await new Promise(r => setTimeout(r, speed ? 350 : 0));
+
+        // ── CTA ──
+        const done = document.getElementById('bmCard-done');
+        if (done) done.style.display = 'block';
+        await typeWriter(document.getElementById('bmNextStepText'), data.nextStep || '', speed * 0.6);
+
+        // Scroll
+        const scrollArea = document.getElementById('bmScrollArea');
+        if (scrollArea) setTimeout(() => scrollArea.scrollTo({ top: scrollArea.scrollHeight, behavior: 'smooth' }), 300);
     }
 
     function _renderBmSection(section, data) {
