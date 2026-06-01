@@ -2286,6 +2286,33 @@
                 justify-content: center;
             }
 
+            /* Fix projects section on mobile */
+            #section-projects {
+                padding: 20px 16px !important;
+                justify-content: flex-start !important;
+                align-items: stretch !important;
+                overflow-y: auto !important;
+            }
+
+            #section-projects .projects-panel {
+                width: 100% !important;
+            }
+
+            /* Fix business model section on mobile */
+            #bmScrollArea {
+                padding: 20px 16px !important;
+            }
+
+            /* Fix section-business on mobile */
+            #section-business {
+                overflow-y: auto !important;
+            }
+
+            /* Projects grid: 1 column on small screens */
+            #projectsFolderGrid {
+                grid-template-columns: 1fr !important;
+            }
+
         }
 
         @media (max-width: 520px) {

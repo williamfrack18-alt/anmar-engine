@@ -3550,8 +3550,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             </div>
                             <div style="color:rgba(255,255,255,0.45); font-size:0.8rem; line-height:1.5; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">${descText}</div>
                         </div>
-                        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:14px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.07);">
-                            <span style="font-size:0.75rem; color:rgba(255,255,255,0.3);"><i class="fas fa-phone" style="margin-right:4px; font-size:0.65rem;"></i>${escapeHtml(phoneLabel || '—')}</span>
+                        <div style="display:flex; align-items:center; justify-content:flex-end; margin-top:14px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.07);">
                             <span style="font-size:0.75rem; color:rgba(255,255,255,0.4); font-weight:600; letter-spacing:0.3px;">Open →</span>
                         </div>
                     `;
