@@ -22,12 +22,24 @@
             margin: 0;
             padding: 0;
             overflow: hidden;
-            /* App feel */
+            /* App feel — use dvh so iOS keyboard doesn't shift the layout */
             height: 100vh;
+            height: 100dvh;
             width: 100vw;
             font-family: 'Inter', sans-serif;
             color: #fff;
             zoom: 1;
+            /* Prevent horizontal scroll that causes particle drift */
+            overscroll-behavior: none;
+            touch-action: pan-y;
+        }
+
+        /* Prevent the whole page from scrolling/bouncing on iOS */
+        html {
+            overflow: hidden;
+            height: 100%;
+            height: 100dvh;
+            overscroll-behavior: none;
         }
 
         :root {
@@ -2385,14 +2397,15 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 5px;
-            padding: 8px 10px 6px;
+            gap: 4px;
+            padding: 8px 6px 6px;
             cursor: pointer;
             border: none;
             background: none;
             color: rgba(255, 255, 255, 0.32);
             transition: color 0.25s ease, transform 0.18s ease;
-            min-width: 52px;
+            min-width: 40px;
+            flex: 1;
             position: relative;
             -webkit-tap-highlight-color: transparent;
             outline: none;
@@ -2405,10 +2418,10 @@
         }
 
         .mobile-bottom-nav .nav-item span {
-            font-size: 0.58rem;
+            font-size: 0.52rem;
             font-family: 'Inter', sans-serif;
             font-weight: 600;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.3px;
             text-transform: uppercase;
             line-height: 1;
             opacity: 0.9;
@@ -3453,11 +3466,23 @@
     const canvas = document.getElementById('gravityCanvas');
     const ctx = canvas.getContext('2d');
     let particlesArray;
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    function _canvasW() { return document.documentElement.clientWidth || window.innerWidth; }
+    function _canvasH() { return document.documentElement.clientHeight || window.innerHeight; }
+    canvas.width = _canvasW();
+    canvas.height = _canvasH();
     let mouse = { x: null, y: null, radius: (canvas.height / 80) * (canvas.width / 80) }
     window.addEventListener('mousemove', function (event) { mouse.x = event.x; mouse.y = event.y; });
-    window.addEventListener('resize', () => { canvas.width = innerWidth; canvas.height = innerHeight; mouse.radius = ((canvas.height / 80) * (canvas.height / 80)); init(); });
+    // Debounced resize — prevents thrashing on iOS keyboard show/hide
+    let _resizeTimer;
+    window.addEventListener('resize', () => {
+        clearTimeout(_resizeTimer);
+        _resizeTimer = setTimeout(() => {
+            canvas.width = _canvasW();
+            canvas.height = _canvasH();
+            mouse.radius = (canvas.height / 80) * (canvas.height / 80);
+            init();
+        }, 150);
+    });
     class Particle {
         constructor(x, y, directionX, directionY, size, color) {
             this.x = x; this.y = y; this.directionX = directionX; this.directionY = directionY; this.size = size; this.color = color;
@@ -3741,6 +3766,10 @@
             <button class="nav-item active" id="nav-projects" onclick="switchTab('projects')">
                 <i class="fas fa-house"></i>
                 <span>Home</span>
+            </button>
+            <button class="nav-item" id="nav-business" onclick="switchTab('business'); if(window.__onBmTab) window.__onBmTab();">
+                <i class="fas fa-brain"></i>
+                <span>BM</span>
             </button>
             <button class="nav-item" id="nav-build" onclick="switchTab('build')">
                 <i class="fas fa-code"></i>
