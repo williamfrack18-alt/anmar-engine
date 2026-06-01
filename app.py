@@ -1169,7 +1169,7 @@ def logout():
 # ── BUSINESS MODEL GENERATOR ──────────────────────────────────────────────────
 @app.route('/api/generate-business-model', methods=['POST'])
 def generate_business_model():
-    """Generate a personalized business model analysis using Gemini. Returns full JSON."""
+    """Generate a personalized business model analysis using Anthropic. Returns full JSON."""
     data = request.json or {}
     project_name    = data.get('project_name', 'tu proyecto')
     description     = data.get('description', '')
@@ -1177,7 +1177,7 @@ def generate_business_model():
     biz_model_type  = data.get('business_model', '')
     stage           = data.get('stage', '')
 
-    if not model:
+    if not ANTHROPIC_API_KEY:
         return jsonify({'error': 'AI not available'}), 503
 
     prompt = f"""You are a world-class business analyst and venture strategist with access to real market data.
@@ -1256,12 +1256,12 @@ Respond ONLY with a valid JSON object. No markdown, no code fences, no extra tex
 }}"""
 
     try:
-        result, err = _safe_model_generate(prompt, timeout_seconds=35)
-        if err or not result:
-            return jsonify({'error': err or 'AI timeout'}), 503
+        raw = call_anthropic_text(prompt, system_prompt="You are a business analyst. Respond only with valid JSON, no markdown, no extra text.", timeout_seconds=45, max_tokens_override=2048)
+        if not raw:
+            return jsonify({'error': 'AI timeout or unavailable'}), 503
 
-        raw = result.text.strip()
         # Strip markdown code fences if present
+        raw = raw.strip()
         if raw.startswith("```"):
             raw = raw.split("```")[1]
             if raw.startswith("json"):
