@@ -3267,20 +3267,23 @@
                         <div id="bmChatPanel" style="display:none;margin-top:28px;width:100%;">
                             <div style="border-top:1px solid rgba(255,255,255,0.07);padding-top:24px;margin-bottom:18px;display:flex;align-items:center;gap:10px;">
                                 <div style="width:8px;height:8px;border-radius:50%;background:#10b981;animation:bmPulse 1.8s infinite;flex-shrink:0;"></div>
-                                <span style="font-size:0.82rem;font-weight:600;color:rgba(255,255,255,0.6);letter-spacing:0.2px;text-transform:uppercase;letter-spacing:0.8px;">Chat with your Strategy Team</span>
+                                <span style="font-size:0.82rem;font-weight:600;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.8px;">Chat with your Strategy Team</span>
                             </div>
                             <div id="bmChatMessages" style="min-height:60px;max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;margin-bottom:14px;padding-right:4px;"></div>
-                            <div style="display:flex;gap:10px;align-items:flex-end;">
-                                <textarea id="bmChatInput" rows="1"
-                                    placeholder="Ask about your business model, strategy, next steps..."
-                                    style="flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:12px 14px;color:#fff;font-size:0.88rem;font-family:inherit;resize:none;outline:none;line-height:1.5;max-height:120px;transition:border-color 0.2s;cursor:pointer;"
-                                    onfocus="this.blur(); showValidateGate();"
-                                    onclick="showValidateGate();"
-                                    readonly
-                                ></textarea>
-                                <button onclick="showValidateGate();" style="flex-shrink:0;width:42px;height:42px;border-radius:10px;background:rgba(16,185,129,0.2);border:1px solid rgba(16,185,129,0.4);color:#10b981;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;" onmouseover="this.style.background='rgba(16,185,129,0.35)'" onmouseout="this.style.background='rgba(16,185,129,0.2)'">
-                                    <i class="fas fa-paper-plane" style="font-size:0.85rem;"></i>
-                                </button>
+                            <div class="chat-input-area" onclick="showValidateGate();" style="cursor:pointer;">
+                                <div class="input-glass">
+                                    <div class="chat-input-wrap">
+                                        <textarea id="bmChatInput" rows="1"
+                                            placeholder="Ask about your business model, strategy, next steps..."
+                                            readonly
+                                            onfocus="this.blur(); showValidateGate();"
+                                            onclick="showValidateGate();"
+                                        ></textarea>
+                                        <button onclick="showValidateGate();" class="chat-send-btn">
+                                            <i class="fas fa-arrow-up"></i>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
