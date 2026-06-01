@@ -392,17 +392,27 @@
             <div class="form-title">Welcome back.</div>
             <div class="form-sub">Sign in to continue building your future</div>
 
+            <!-- T&C (moved above Google button) -->
+            <div class="terms-row" id="termsGroup" style="margin-top:0; margin-bottom:16px;">
+                <input type="checkbox" id="termsAccepted">
+                <label for="termsAccepted">
+                    I agree to the <a href="terms.html" target="_blank" rel="noopener">Terms & Conditions</a> of Anmar Enterprises.
+                </label>
+            </div>
+
             <!-- Google GIS -->
             <div id="g_id_onload"
                 data-client_id="676077959478-uo9f6h70osjmaeklm17ktithkualc4p3.apps.googleusercontent.com"
                 data-context="signin" data-ux_mode="popup"
                 data-callback="handleGoogleLogin" data-auto_prompt="false">
             </div>
-            <div style="width:100%; display:flex; justify-content:center; margin-bottom:16px;">
+            <div style="width:100%; display:flex; justify-content:center; margin-bottom:16px; position:relative;">
                 <div class="g_id_signin" data-type="standard" data-shape="rectangular"
                     data-theme="filled_black" data-text="continue_with"
                     data-size="large" data-logo_alignment="center" data-width="360">
                 </div>
+                <!-- Blocker overlay when terms not accepted -->
+                <div id="googleBlocker" onclick="handleGoogleBlockerClick()" style="position:absolute;inset:0;cursor:pointer;z-index:10;"></div>
             </div>
 
             <div class="divider">or</div>
@@ -446,14 +456,6 @@
                         <button type="button" class="link-btn" id="changeEmailBtn">Change email</button>
                     </div>
                 </form>
-            </div>
-
-            <!-- T&C -->
-            <div class="terms-row" id="termsGroup">
-                <input type="checkbox" id="termsAccepted">
-                <label for="termsAccepted">
-                    I agree to the <a href="terms.html" target="_blank" rel="noopener">Terms & Conditions</a> of Anmar Enterprises.
-                </label>
             </div>
 
             <div id="statusMsg" class="error-msg"></div>
@@ -652,6 +654,21 @@
 
     function handleGoogleLogin(response) {
         processSocialLogin('Google', null, null, response.credential);
+    }
+
+    // Google blocker: hide overlay only when terms accepted
+    const termsCheckbox = document.getElementById('termsAccepted');
+    const googleBlocker = document.getElementById('googleBlocker');
+    function updateGoogleBlocker() {
+        if (googleBlocker) googleBlocker.style.display = termsCheckbox?.checked ? 'none' : 'block';
+    }
+    if (termsCheckbox) termsCheckbox.addEventListener('change', updateGoogleBlocker);
+    updateGoogleBlocker();
+
+    function handleGoogleBlockerClick() {
+        showStatus('Please accept the Terms & Conditions first.', 'error');
+        document.getElementById('termsAccepted').style.outline = '2px solid rgba(251,146,60,0.7)';
+        setTimeout(() => { document.getElementById('termsAccepted').style.outline = ''; }, 2000);
     }
 
     if (continueBtn) continueBtn.addEventListener('click', checkEmail);

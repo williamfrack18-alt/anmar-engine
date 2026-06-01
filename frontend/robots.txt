@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /internal/
+Disallow: /backend/
+
+Sitemap: https://anmarenterprices.com/frontend/sitemap.xml

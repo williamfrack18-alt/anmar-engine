@@ -1230,11 +1230,33 @@ Respond ONLY with a valid JSON object. No markdown, no code fences, no extra tex
     {{"name": "Channel name", "reason": "Why this specific channel works for this exact product and audience"}},
     {{"name": "Channel name", "reason": "Why this specific channel works for this exact product and audience"}}
   ],
+  "score": {{
+    "overall": <integer 0-100 reflecting genuine strength of this idea based on market, timing, advantage and risk>,
+    "grade": "<A+|A|A-|B+|B|B-|C+|C — matching the overall score>",
+    "breakdown": {{
+      "market": <0-100 — how large and accessible the market is>,
+      "timing": <0-100 — how good the timing is right now>,
+      "advantage": <0-100 — how strong and defensible the competitive advantage is>,
+      "risk": <0-100 — how manageable the risks are, higher = less risky>
+    }},
+    "verdict": "One compelling sentence summarizing why this idea is or isn't ready for investment"
+  }},
+  "revenue": {{
+    "year1": "Realistic Year 1 revenue (e.g. '$120K')",
+    "year2": "Year 2 projection (e.g. '$680K')",
+    "year3": "Year 3 projection (e.g. '$2.4M')",
+    "assumption": "Key assumption driving these projections (e.g. '2% SAM penetration by Y3 at $X/mo ACV')"
+  }},
+  "analogy": {{
+    "company": "Name of a real successful company with similar positioning or model",
+    "raised": "How much they raised or their current valuation (e.g. 'Raised $275M' or '$4.2B valuation')",
+    "insight": "One sentence on why {project_name} has a similar opportunity right now"
+  }},
   "nextStep": "The single most important action in the next 7 days to validate this and build real momentum"
 }}"""
 
     try:
-        result, err = _safe_model_generate(prompt, timeout_seconds=28)
+        result, err = _safe_model_generate(prompt, timeout_seconds=35)
         if err or not result:
             return jsonify({'error': err or 'AI timeout'}), 503
 

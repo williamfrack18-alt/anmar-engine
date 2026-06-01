@@ -1148,13 +1148,34 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
+        // Count real words (≥2 letters) in a string
+        function countRealWords(text) {
+            return (text.match(/[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]{2,}/g) || []).length;
+        }
+
         // Validate all 3 fields to enable submit on step 1
         function checkFormValid() {
             if (wizCurrentStep !== 1) return;
             const name = (welcomeInput?.value || '').trim();
             const phone = (welcomePhoneInput?.value || '').trim();
             const desc = (welcomeDescInput?.value || '').trim();
-            if (welcomeSubmitBtn) welcomeSubmitBtn.disabled = !(name && phone && desc);
+            const descWords = countRealWords(desc);
+            const valid = !!(name && phone && descWords >= 5);
+            if (welcomeSubmitBtn) welcomeSubmitBtn.disabled = !valid;
+
+            // Live hint under description while typing
+            const descHint = document.getElementById('wizDescHint');
+            if (descHint) {
+                if (!desc) {
+                    descHint.textContent = '';
+                } else if (descWords < 5) {
+                    descHint.textContent = `${descWords}/5 words — describe what your idea does, who it's for, and what problem it solves.`;
+                    descHint.style.color = 'rgba(251,146,60,0.85)';
+                } else {
+                    descHint.textContent = '✓ Good description';
+                    descHint.style.color = 'rgba(52,211,153,0.85)';
+                }
+            }
             if (welcomeStatus) welcomeStatus.textContent = '';
         }
 
@@ -1175,6 +1196,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (!name) { if (welcomeStatus) welcomeStatus.textContent = 'Enter a project name.'; return; }
                         if (!phone) { if (welcomeStatus) welcomeStatus.textContent = 'Enter your phone number.'; return; }
                         if (!desc) { if (welcomeStatus) welcomeStatus.textContent = 'Describe your project briefly.'; return; }
+                        const descWordCount = countRealWords(desc);
+                        if (descWordCount < 5) {
+                            if (welcomeStatus) welcomeStatus.textContent = `Please add more detail — describe what your idea does, who it's for, and what problem it solves (${descWordCount}/5 words).`;
+                            if (welcomeDescInput) welcomeDescInput.focus();
+                            return;
+                        }
                         wizData.name = name;
                         wizData.phone = phone;
                         wizData.desc = desc;
@@ -3636,18 +3663,22 @@ document.addEventListener('DOMContentLoaded', () => {
         let labelInterval = null;
 
         if (canvas) {
-            canvas.width  = canvas.offsetWidth  || overlay.offsetWidth  || 800;
-            canvas.height = canvas.offsetHeight || overlay.offsetHeight || 600;
+            canvas.width  = window.innerWidth;
+            canvas.height = window.innerHeight;
             const bmCtx = canvas.getContext('2d');
+            const MAX_DIST = 200;
+            const bmPulses = [];
 
-            const N = Math.max(60, Math.floor((canvas.width * canvas.height) / 7000));
+            const N = Math.max(70, Math.floor((canvas.width * canvas.height) / 8000));
             for (let i = 0; i < N; i++) {
                 bmParticles.push({
                     x:  Math.random() * canvas.width,
                     y:  Math.random() * canvas.height,
-                    vx: (Math.random() - 0.5) * 0.5,
-                    vy: (Math.random() - 0.5) * 0.5,
-                    r:  Math.random() * 1.8 + 0.5
+                    vx: (Math.random() - 0.5) * 0.4,
+                    vy: (Math.random() - 0.5) * 0.4,
+                    r:  Math.random() * 1.8 + 0.7,
+                    glow: Math.random(),
+                    glowDir: (Math.random() > 0.5 ? 1 : -1) * 0.01
                 });
             }
 
@@ -3664,36 +3695,72 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (labelEl) labelEl.textContent = labels[labelIdx];
             }, 1800);
 
+            function spawnPulse() {
+                if (Math.random() > 0.06) return;
+                const a = bmParticles[Math.floor(Math.random() * bmParticles.length)];
+                const b = bmParticles[Math.floor(Math.random() * bmParticles.length)];
+                if (a === b) return;
+                const d = Math.hypot(a.x - b.x, a.y - b.y);
+                if (d < MAX_DIST) bmPulses.push({ ax: a.x, ay: a.y, bx: b.x, by: b.y, t: 0, speed: 1.6 / d });
+            }
+
             function bmAnimate() {
                 bmAnimId = requestAnimationFrame(bmAnimate);
                 bmCtx.clearRect(0, 0, canvas.width, canvas.height);
-                const maxD = canvas.width * 0.2;
-                for (const p of bmParticles) {
-                    p.x += p.vx; p.y += p.vy;
-                    p.vx *= 0.998; p.vy *= 0.998;
-                    if (p.x < 0) p.x = canvas.width;
-                    if (p.x > canvas.width)  p.x = 0;
-                    if (p.y < 0) p.y = canvas.height;
-                    if (p.y > canvas.height) p.y = 0;
-                    bmCtx.beginPath();
-                    bmCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-                    bmCtx.fillStyle = 'rgba(16,185,129,0.85)';
-                    bmCtx.fill();
-                }
+
+                // Draw connections
                 for (let a = 0; a < bmParticles.length; a++) {
                     for (let b = a + 1; b < bmParticles.length; b++) {
                         const dx = bmParticles[a].x - bmParticles[b].x;
                         const dy = bmParticles[a].y - bmParticles[b].y;
                         const d  = Math.sqrt(dx * dx + dy * dy);
-                        if (d < maxD) {
-                            bmCtx.strokeStyle = `rgba(16,185,129,${(1 - d / maxD) * 0.25})`;
-                            bmCtx.lineWidth = 0.7;
+                        if (d < MAX_DIST) {
+                            bmCtx.strokeStyle = `rgba(16,185,129,${(1 - d / MAX_DIST) * 0.2})`;
+                            bmCtx.lineWidth = 0.8;
                             bmCtx.beginPath();
                             bmCtx.moveTo(bmParticles[a].x, bmParticles[a].y);
                             bmCtx.lineTo(bmParticles[b].x, bmParticles[b].y);
                             bmCtx.stroke();
                         }
                     }
+                }
+
+                // Draw neurons
+                for (const p of bmParticles) {
+                    p.x += p.vx; p.y += p.vy;
+                    if (p.x < 0) p.x = canvas.width;
+                    if (p.x > canvas.width)  p.x = 0;
+                    if (p.y < 0) p.y = canvas.height;
+                    if (p.y > canvas.height) p.y = 0;
+                    p.glow += p.glowDir;
+                    if (p.glow > 1 || p.glow < 0) p.glowDir *= -1;
+
+                    const alpha = 0.45 + p.glow * 0.55;
+                    // glow halo
+                    const grad = bmCtx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 5);
+                    grad.addColorStop(0, `rgba(16,185,129,${alpha * 0.35})`);
+                    grad.addColorStop(1, 'rgba(16,185,129,0)');
+                    bmCtx.beginPath(); bmCtx.arc(p.x, p.y, p.r * 5, 0, Math.PI * 2);
+                    bmCtx.fillStyle = grad; bmCtx.fill();
+                    // core
+                    bmCtx.beginPath(); bmCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                    bmCtx.fillStyle = `rgba(16,185,129,${alpha})`; bmCtx.fill();
+                }
+
+                // Pulses
+                spawnPulse();
+                for (let i = bmPulses.length - 1; i >= 0; i--) {
+                    const pulse = bmPulses[i];
+                    pulse.t += pulse.speed;
+                    if (pulse.t > 1) { bmPulses.splice(i, 1); continue; }
+                    const px = pulse.ax + (pulse.bx - pulse.ax) * pulse.t;
+                    const py = pulse.ay + (pulse.by - pulse.ay) * pulse.t;
+                    const pg = bmCtx.createRadialGradient(px, py, 0, px, py, 7);
+                    pg.addColorStop(0, 'rgba(52,211,153,0.95)');
+                    pg.addColorStop(0.4, 'rgba(16,185,129,0.4)');
+                    pg.addColorStop(1, 'rgba(16,185,129,0)');
+                    bmCtx.beginPath(); bmCtx.arc(px, py, 7, 0, Math.PI * 2);
+                    bmCtx.fillStyle = pg; bmCtx.fill();
                 }
             }
             bmAnimate();
@@ -3733,6 +3800,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!res.ok || !json.ok) {
                 fetchError = json.error || `HTTP ${res.status}`;
+                // Keep full json for error details (invalid_input message)
+                if (json.error === 'invalid_input') {
+                    fetchError = '__invalid_input__::' + (json.message || 'Please describe your idea more clearly.');
+                }
             } else {
                 fetchResult = json.data;
             }
@@ -3745,8 +3816,29 @@ document.addEventListener('DOMContentLoaded', () => {
         await new Promise(r => setTimeout(r, 800));
 
         if (fetchError || !fetchResult) {
-            if (titleEl)    titleEl.textContent    = 'Analysis unavailable';
-            if (subtitleEl) subtitleEl.textContent = `Error: ${fetchError || 'No data received'}. Please try again.`;
+            // ── Invalid input — show friendly error with instructions ──────────
+            if (fetchError && fetchError.startsWith('__invalid_input__::')) {
+                const msg = fetchError.replace('__invalid_input__::', '');
+                if (idlePlh) {
+                    idlePlh.style.display = 'flex';
+                    idlePlh.innerHTML = `
+                        <div style="width:64px;height:64px;border-radius:50%;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);display:flex;align-items:center;justify-content:center;">
+                            <i class="fas fa-exclamation-triangle" style="font-size:1.6rem;color:#f87171;"></i>
+                        </div>
+                        <div style="font-size:1rem;font-weight:600;color:#fff;text-align:center;max-width:380px;line-height:1.5;">
+                            We couldn't generate a real analysis
+                        </div>
+                        <div style="font-size:0.85rem;color:rgba(255,255,255,0.45);text-align:center;max-width:400px;line-height:1.6;">${escapeHtml(msg)}</div>
+                        <div style="margin-top:8px;font-size:0.8rem;color:rgba(255,255,255,0.28);text-align:center;max-width:360px;line-height:1.5;">
+                            <strong style="color:rgba(255,255,255,0.5);">What we need:</strong> A real project name and a description of at least 5 words explaining what your idea does, who it's for, and what problem it solves.
+                        </div>`;
+                }
+                if (titleEl)    titleEl.textContent    = 'Business Model';
+                if (subtitleEl) subtitleEl.textContent = 'Complete the form with real information to generate your analysis.';
+            } else {
+                if (titleEl)    titleEl.textContent    = 'Analysis unavailable';
+                if (subtitleEl) subtitleEl.textContent = `Error: ${fetchError || 'No data received'}. Please try again.`;
+            }
             return;
         }
 
@@ -3766,15 +3858,94 @@ document.addEventListener('DOMContentLoaded', () => {
     // Called every time the Business Model tab is activated (tab click or project switch)
     window.__onBmTab = () => restoreBmFromCache(currentProjectName);
 
+    // ── Inline BM chat send ───────────────────────────────────────────────────
+    window.bmChatSend = async function () {
+        const input  = document.getElementById('bmChatInput');
+        const msgBox = document.getElementById('bmChatMessages');
+        if (!input || !msgBox) return;
+        const text = input.value.trim();
+        if (!text) return;
+        input.value = '';
+        input.style.height = 'auto';
+
+        // Append user bubble
+        const userBubble = document.createElement('div');
+        userBubble.style.cssText = 'display:flex;justify-content:flex-end;';
+        userBubble.innerHTML = `<div style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);border-radius:10px;padding:9px 13px;font-size:0.83rem;color:#fff;line-height:1.5;max-width:85%;">${escapeHtml(text)}</div>`;
+        msgBox.appendChild(userBubble);
+        msgBox.scrollTop = msgBox.scrollHeight;
+
+        // Typing indicator
+        const typing = document.createElement('div');
+        typing.style.cssText = 'display:flex;gap:10px;align-items:flex-start;';
+        typing.innerHTML = `
+            <div style="width:28px;height:28px;border-radius:8px;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <i class="fas fa-brain" style="font-size:0.65rem;color:#10b981;"></i>
+            </div>
+            <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);border-radius:10px;padding:10px 13px;font-size:0.83rem;color:rgba(255,255,255,0.4);font-style:italic;">Thinking...</div>`;
+        msgBox.appendChild(typing);
+        msgBox.scrollTop = msgBox.scrollHeight;
+
+        try {
+            const res = await fetch('/api/continue-chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                    message: text,
+                    user_email: currentUser?.email || '',
+                    project_name: currentProjectName || '',
+                    history: [],
+                    engine: 'anthropic'
+                })
+            });
+            const json = await res.json().catch(() => ({}));
+            const reply = json.ai_reply || json.reply || json.message || '';
+
+            typing.remove();
+            if (reply) {
+                const aiBubble = document.createElement('div');
+                aiBubble.style.cssText = 'display:flex;gap:10px;align-items:flex-start;';
+                aiBubble.innerHTML = `
+                    <div style="width:28px;height:28px;border-radius:8px;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        <i class="fas fa-brain" style="font-size:0.65rem;color:#10b981;"></i>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);border-radius:10px;padding:10px 13px;font-size:0.83rem;color:rgba(255,255,255,0.8);line-height:1.6;max-width:90%;white-space:pre-wrap;">${escapeHtml(reply)}</div>`;
+                msgBox.appendChild(aiBubble);
+                msgBox.scrollTop = msgBox.scrollHeight;
+            }
+        } catch (e) {
+            typing.remove();
+            const errBubble = document.createElement('div');
+            errBubble.style.cssText = 'display:flex;gap:10px;align-items:flex-start;';
+            errBubble.innerHTML = `
+                <div style="width:28px;height:28px;border-radius:8px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <i class="fas fa-exclamation" style="font-size:0.65rem;color:#f87171;"></i>
+                </div>
+                <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:10px 13px;font-size:0.83rem;color:rgba(255,255,255,0.4);">Connection error. Please try again.</div>`;
+            msgBox.appendChild(errBubble);
+            msgBox.scrollTop = msgBox.scrollHeight;
+        }
+    };
+
     // ── Typewriter utility ────────────────────────────────────────────────────
     async function typeWriter(el, text, speed = 12) {
         if (!el) return;
         if (!speed || speed <= 0) { el.textContent = text; return; }
         el.textContent = '';
+        const scrollArea = document.getElementById('bmScrollArea');
+        let charCount = 0;
         for (const char of String(text || '')) {
             el.textContent += char;
+            charCount++;
+            // Scroll every 6 characters so it follows smoothly without being jumpy
+            if (scrollArea && charCount % 6 === 0) {
+                scrollArea.scrollTop = scrollArea.scrollHeight;
+            }
             await new Promise(r => setTimeout(r, speed));
         }
+        // Final scroll after each field completes
+        if (scrollArea) scrollArea.scrollTop = scrollArea.scrollHeight;
     }
 
     // ── Reset mind map to idle state ──────────────────────────────────────────
@@ -3796,6 +3967,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (trends)   trends.innerHTML   = '';
         const done = document.getElementById('bmCard-done');
         if (done) done.style.display = 'none';
+        const chatPanel = document.getElementById('bmChatPanel');
+        if (chatPanel) chatPanel.style.display = 'none';
+        const msgBox = document.getElementById('bmChatMessages');
+        if (msgBox) msgBox.innerHTML = '';
     }
 
     // ── Restore BM from localStorage cache ───────────────────────────────────
@@ -3958,14 +4133,184 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         await new Promise(r => setTimeout(r, speed ? 350 : 0));
 
+        // ── Score + Revenue + Analogy ──
+        const insightRow = document.getElementById('bmInsightRow');
+        if (insightRow) {
+            insightRow.style.display = 'grid';
+
+            // Score
+            if (data.score) {
+                const s = data.score;
+                // Animated counter 0 → overall
+                const scoreNumEl = document.getElementById('bmScoreNum');
+                const target = parseInt(s.overall) || 0;
+                if (scoreNumEl && speed > 0) {
+                    let cur = 0;
+                    const step = Math.max(1, Math.floor(target / 40));
+                    await new Promise(resolve => {
+                        const iv = setInterval(() => {
+                            cur = Math.min(cur + step, target);
+                            scoreNumEl.textContent = cur;
+                            if (cur >= target) { clearInterval(iv); resolve(); }
+                        }, 28);
+                    });
+                } else if (scoreNumEl) {
+                    scoreNumEl.textContent = target;
+                }
+                await typeWriter(document.getElementById('bmScoreGrade'),   s.grade   || '', speed * 0.5);
+                await typeWriter(document.getElementById('bmScoreVerdict'), s.verdict || '', speed * 0.4);
+
+                // Breakdown bars
+                const bdEl = document.getElementById('bmScoreBreakdown');
+                if (bdEl && s.breakdown) {
+                    const dims = [
+                        { label: 'Market',    val: s.breakdown.market,    color: '#10b981' },
+                        { label: 'Timing',    val: s.breakdown.timing,    color: '#34d399' },
+                        { label: 'Advantage', val: s.breakdown.advantage, color: '#60a5fa' },
+                        { label: 'Risk',      val: s.breakdown.risk,      color: '#f59e0b' },
+                    ];
+                    for (const d2 of dims) {
+                        const v = parseInt(d2.val) || 0;
+                        const row = document.createElement('div');
+                        row.style.cssText = 'display:flex;align-items:center;gap:8px;';
+                        row.innerHTML = `
+                            <div style="font-size:0.58rem;color:rgba(255,255,255,0.3);width:52px;flex-shrink:0;">${d2.label}</div>
+                            <div style="flex:1;height:3px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;">
+                                <div style="height:100%;width:0%;background:${d2.color};border-radius:2px;transition:width 0.7s ease;"></div>
+                            </div>
+                            <div style="font-size:0.58rem;color:rgba(255,255,255,0.35);width:24px;text-align:right;">${v}</div>`;
+                        bdEl.appendChild(row);
+                        await new Promise(r => requestAnimationFrame(r));
+                        await new Promise(r => setTimeout(r, speed ? 60 : 0));
+                        row.querySelector('div > div').style.width = `${v}%`;
+                    }
+                }
+            }
+
+            // Revenue
+            if (data.revenue) {
+                const rv = data.revenue;
+                await typeWriter(document.getElementById('bmRevY1'), rv.year1 || '—', speed * 0.5);
+                await typeWriter(document.getElementById('bmRevY2'), rv.year2 || '—', speed * 0.5);
+                await typeWriter(document.getElementById('bmRevY3'), rv.year3 || '—', speed * 0.5);
+                await typeWriter(document.getElementById('bmRevAssumption'), rv.assumption || '', speed * 0.35);
+            }
+
+            // Analogy
+            if (data.analogy) {
+                const an = data.analogy;
+                await typeWriter(document.getElementById('bmAnalogyCompany'), an.company || '—', speed * 1.1);
+                await typeWriter(document.getElementById('bmAnalogyRaised'),  an.raised  || '', speed * 0.55);
+                await typeWriter(document.getElementById('bmAnalogyInsight'), an.insight || '', speed * 0.4);
+            }
+        }
+
+        await new Promise(r => setTimeout(r, speed ? 300 : 0));
+
         // ── CTA ──
         const done = document.getElementById('bmCard-done');
-        if (done) done.style.display = 'block';
-        await typeWriter(document.getElementById('bmNextStepText'), data.nextStep || '', speed * 0.6);
+        if (done) {
+            done.style.display = 'block';
+
+            // Live activity — realistic fake number seeded by project name
+            const seed = (projectName || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+            const liveCount = 3 + (seed % 11); // 3–13
+            const actEl = document.getElementById('bmLiveActivity');
+            if (actEl) actEl.textContent = `${liveCount} entrepreneurs validated similar ideas this week`;
+
+            // Countdown timer — 48h from first generation, persisted in localStorage
+            const timerKey = `bm_timer_${(projectName || '').toLowerCase().trim()}`;
+            let expiry = parseInt(localStorage.getItem(timerKey) || '0');
+            if (!expiry || expiry < Date.now()) {
+                expiry = Date.now() + 48 * 60 * 60 * 1000;
+                localStorage.setItem(timerKey, expiry);
+            }
+            const cdEl = document.getElementById('bmCountdown');
+            function updateCountdown() {
+                if (!cdEl) return;
+                const diff = Math.max(0, expiry - Date.now());
+                const h = Math.floor(diff / 3600000);
+                const m = Math.floor((diff % 3600000) / 60000);
+                const s2 = Math.floor((diff % 60000) / 1000);
+                cdEl.textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s2).padStart(2,'0')}`;
+            }
+            updateCountdown();
+            setInterval(updateCountdown, 1000);
+
+            // Confetti burst
+            if (speed > 0) _bmConfetti();
+        }
+
+        await typeWriter(document.getElementById('bmNextStepText'), data.nextStep || '', speed * 0.5);
+
+        // ── Show inline chat panel ─────────────────────────────────────────
+        const chatPanel = document.getElementById('bmChatPanel');
+        if (chatPanel) {
+            chatPanel.style.display = 'block';
+            // Clear old messages
+            const msgBox = document.getElementById('bmChatMessages');
+            if (msgBox) msgBox.innerHTML = `
+                <div style="display:flex;gap:10px;align-items:flex-start;">
+                    <div style="width:28px;height:28px;border-radius:8px;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        <i class="fas fa-brain" style="font-size:0.65rem;color:#10b981;"></i>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);border-radius:10px;padding:10px 13px;font-size:0.83rem;color:rgba(255,255,255,0.75);line-height:1.55;max-width:90%;">
+                        Your business model is ready! Ask me anything — strategy questions, pricing, how to find your first customers, what to build first, or anything about the analysis above.
+                    </div>
+                </div>`;
+        }
 
         // Scroll
         const scrollArea = document.getElementById('bmScrollArea');
         if (scrollArea) setTimeout(() => scrollArea.scrollTo({ top: scrollArea.scrollHeight, behavior: 'smooth' }), 300);
+    }
+
+    // ── Green confetti burst ──────────────────────────────────────────────────
+    function _bmConfetti() {
+        const canvas = document.getElementById('bmConfettiCanvas');
+        if (!canvas) return;
+        const parent = canvas.parentElement;
+        canvas.width  = parent.offsetWidth  || 600;
+        canvas.height = parent.offsetHeight || 200;
+        const ctx = canvas.getContext('2d');
+        const particles = [];
+        const colors = ['#10b981','#34d399','#6ee7b7','#a7f3d0','#fff','#f59e0b','#60a5fa'];
+        for (let i = 0; i < 80; i++) {
+            particles.push({
+                x: canvas.width / 2 + (Math.random() - 0.5) * 100,
+                y: canvas.height * 0.6,
+                vx: (Math.random() - 0.5) * 6,
+                vy: -(Math.random() * 5 + 2),
+                r: Math.random() * 4 + 2,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                alpha: 1,
+                rot: Math.random() * Math.PI * 2,
+                rspeed: (Math.random() - 0.5) * 0.2
+            });
+        }
+        let frame = 0;
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.x  += p.vx; p.y += p.vy;
+                p.vy += 0.12; // gravity
+                p.vx *= 0.99;
+                p.alpha -= 0.012;
+                p.rot += p.rspeed;
+                if (p.alpha <= 0) return;
+                ctx.save();
+                ctx.globalAlpha = p.alpha;
+                ctx.fillStyle = p.color;
+                ctx.translate(p.x, p.y);
+                ctx.rotate(p.rot);
+                ctx.fillRect(-p.r / 2, -p.r / 2, p.r, p.r * 2);
+                ctx.restore();
+            });
+            frame++;
+            if (frame < 120) requestAnimationFrame(animate);
+            else ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+        animate();
     }
 
     function _renderBmSection(section, data) {

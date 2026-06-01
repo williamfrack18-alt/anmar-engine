@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Terms & Conditions | Anmar Enterprises</title>
-    <meta name="description" content="Terms and conditions of use for Anmar Enterprises. Read our policies before using the platform.">
+    <title>Política de Privacidad | Anmar Enterprises</title>
+    <meta name="description" content="Política de privacidad de Anmar Enterprises. Conoce cómo recopilamos, usamos y protegemos tu información personal.">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <meta name="theme-color" content="#0a0a0a">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -132,7 +132,7 @@
         .toc ol li a:hover { color: var(--text); }
 
         /* Sections */
-        .terms-section {
+        .privacy-section {
             margin-bottom: 48px; scroll-margin-top: 80px;
         }
         .section-header {
@@ -148,19 +148,19 @@
         .section-header h2 {
             font-size: 1.15rem; font-weight: 600;
         }
-        .terms-section p {
+        .privacy-section p {
             color: var(--text-dim); font-size: 0.9rem; margin-bottom: 14px;
         }
-        .terms-section p:last-child { margin-bottom: 0; }
-        .terms-section ul {
+        .privacy-section p:last-child { margin-bottom: 0; }
+        .privacy-section ul {
             list-style: none; display: flex; flex-direction: column; gap: 8px;
             margin-bottom: 14px;
         }
-        .terms-section ul li {
+        .privacy-section ul li {
             display: flex; align-items: flex-start; gap: 10px;
             color: var(--text-dim); font-size: 0.88rem;
         }
-        .terms-section ul li::before {
+        .privacy-section ul li::before {
             content: '';
             width: 6px; height: 6px; border-radius: 50%;
             background: rgba(255,255,255,0.3); flex-shrink: 0; margin-top: 7px;
@@ -175,6 +175,15 @@
         }
         .info-box i { color: rgba(255,255,255,0.5); margin-top: 2px; flex-shrink: 0; }
         .info-box p { color: var(--text-dim); font-size: 0.86rem; margin: 0; }
+
+        .warn-box {
+            background: rgba(245,158,11,0.05); border: 1px solid rgba(245,158,11,0.15);
+            border-radius: var(--radius); padding: 18px 20px;
+            display: flex; gap: 14px; align-items: flex-start;
+            margin: 20px 0;
+        }
+        .warn-box i { color: rgba(245,158,11,0.7); margin-top: 2px; flex-shrink: 0; }
+        .warn-box p { color: var(--text-dim); font-size: 0.86rem; margin: 0; }
 
         /* Contact card */
         .contact-card {
@@ -226,179 +235,195 @@
             <div class="nav-logo-mark">A</div>
             <span>Anmar Enterprises <span style="display:block; font-size:0.7rem; font-weight:400; color:rgba(255,255,255,0.4); letter-spacing:0.5px; margin-top:2px;">by Anmar Group</span></span>
         </a>
-        <a class="nav-back" href="index.html"><i class="fas fa-arrow-left"></i> Back to home</a>
+        <a class="nav-back" href="index.html"><i class="fas fa-arrow-left"></i> Volver al inicio</a>
     </nav>
 
     <main>
         <!-- Hero -->
         <div class="page-hero">
-            <div class="page-badge"><i class="fas fa-file-contract"></i> Legal</div>
-            <h1>Terms & Conditions</h1>
-            <p>These terms govern the use of the Anmar Enterprises platform and the services we offer. By using the platform, you accept these conditions.</p>
-            <div class="last-updated"><i class="fas fa-calendar-check"></i> Last updated: May 2026</div>
+            <div class="page-badge"><i class="fas fa-shield-halved"></i> Legal</div>
+            <h1>Política de Privacidad</h1>
+            <p>En Anmar Enterprises nos tomamos en serio la privacidad de nuestros usuarios. Esta política explica qué información recopilamos, cómo la usamos y cuáles son tus derechos.</p>
+            <div class="last-updated"><i class="fas fa-calendar-check"></i> Última actualización: abril 2026</div>
         </div>
 
         <!-- Table of contents -->
         <div class="toc">
-            <div class="toc-title">Contents</div>
+            <div class="toc-title">Contenido</div>
             <ol>
-                <li><a href="#s1">Acceptance of terms</a></li>
-                <li><a href="#s2">Description of services</a></li>
-                <li><a href="#s3">Plans and billing</a></li>
-                <li><a href="#s4">Intellectual property</a></li>
-                <li><a href="#s5">Client responsibilities</a></li>
-                <li><a href="#s6">Limitation of liability</a></li>
-                <li><a href="#s7">Confidentiality and privacy</a></li>
-                <li><a href="#s8">Funding conditions</a></li>
-                <li><a href="#s9">Changes to terms</a></li>
-                <li><a href="#s10">Governing law and jurisdiction</a></li>
-                <li><a href="#s11">Contact</a></li>
+                <li><a href="#s1">Información que recopilamos</a></li>
+                <li><a href="#s2">Cómo usamos tu información</a></li>
+                <li><a href="#s3">Compartir información con terceros</a></li>
+                <li><a href="#s4">Cookies y tecnologías de rastreo</a></li>
+                <li><a href="#s5">Almacenamiento y seguridad de datos</a></li>
+                <li><a href="#s6">Tus derechos y opciones</a></li>
+                <li><a href="#s7">Retención de datos</a></li>
+                <li><a href="#s8">Menores de edad</a></li>
+                <li><a href="#s9">Cambios a esta política</a></li>
+                <li><a href="#s10">Contacto</a></li>
             </ol>
         </div>
 
         <!-- Section 1 -->
-        <div class="terms-section" id="s1">
+        <div class="privacy-section" id="s1">
             <div class="section-header">
                 <div class="section-num">01</div>
-                <h2>Acceptance of terms</h2>
+                <h2>Información que recopilamos</h2>
             </div>
-            <p>By accessing or using the services of Anmar Enterprises (hereinafter "Anmar", "we" or "the Platform") through the website anmarenterprices.com, you agree to be bound by these Terms and Conditions of Use.</p>
-            <p>If you do not agree with any of the provisions contained herein, you must refrain from using the Platform and its associated services.</p>
+            <p>Recopilamos información para poder prestarte nuestros servicios de manera efectiva. Esta información puede ser:</p>
+            <ul>
+                <li><strong>Información que tú nos proporcionas:</strong> nombre completo, dirección de correo electrónico, nombre de empresa, descripción de proyecto y cualquier otro dato que incluyas al crear una cuenta o enviar una solicitud.</li>
+                <li><strong>Información de autenticación:</strong> si usas Google Sign-In, recibimos tu nombre y correo de Google. No almacenamos contraseñas de terceros.</li>
+                <li><strong>Información de uso:</strong> páginas visitadas, acciones realizadas dentro de la plataforma, tipo de dispositivo, navegador y dirección IP.</li>
+                <li><strong>Información de proyecto:</strong> los blueprints, briefings y materiales que nos compartes para ejecutar tu proyecto.</li>
+                <li><strong>Información de pago:</strong> procesamos pagos a través de Stripe. No almacenamos números de tarjeta; Stripe maneja todos los datos financieros sensibles bajo su propia política de seguridad (PCI-DSS).</li>
+            </ul>
+            <div class="info-box">
+                <i class="fas fa-circle-info"></i>
+                <p>Nunca vendemos tu información personal a terceros ni la usamos para mostrarte publicidad de otras empresas.</p>
+            </div>
         </div>
 
         <!-- Section 2 -->
-        <div class="terms-section" id="s2">
+        <div class="privacy-section" id="s2">
             <div class="section-header">
                 <div class="section-num">02</div>
-                <h2>Description of services</h2>
+                <h2>Cómo usamos tu información</h2>
             </div>
-            <p>Anmar Enterprises is a platform that combines specialized human talent with technology to offer product development, marketing and capital access services. Services are organized into three areas:</p>
+            <p>Utilizamos la información recopilada exclusivamente para:</p>
             <ul>
-                <li><strong>Build:</strong> Development of digital products (websites, apps, custom software, e-commerce). Our team creates the technical plan and a team of engineers executes it. The client approves each iteration via chat.</li>
-                <li><strong>Marketing:</strong> Digital marketing strategy, ad content creation, social media management and customer acquisition strategies.</li>
-                <li><strong>Capital:</strong> Business traction evaluation and connection with funding sources. Subject to evaluation and not guaranteed.</li>
+                <li>Crear y gestionar tu cuenta en la plataforma.</li>
+                <li>Ejecutar y entregar los servicios que has contratado (construcción, marketing, capital).</li>
+                <li>Comunicarnos contigo sobre el estado de tu proyecto, actualizaciones de servicio y respuestas a tus solicitudes.</li>
+                <li>Procesar pagos y emitir facturas o recibos.</li>
+                <li>Mejorar la plataforma y personalizar tu experiencia de usuario.</li>
+                <li>Cumplir con obligaciones legales o responder a requerimientos de autoridades competentes.</li>
+                <li>Detectar y prevenir fraudes o usos indebidos de la plataforma.</li>
             </ul>
         </div>
 
         <!-- Section 3 -->
-        <div class="terms-section" id="s3">
+        <div class="privacy-section" id="s3">
             <div class="section-header">
                 <div class="section-num">03</div>
-                <h2>Plans and billing</h2>
+                <h2>Compartir información con terceros</h2>
             </div>
-            <p>The platform offers the following service plans:</p>
+            <p>No compartimos tu información personal con terceros salvo en los siguientes casos:</p>
             <ul>
-                <li><strong>Validate ($147 USD one-time):</strong> Idea validation with a dedicated team. Includes a structured action plan, feasibility assessment and initial strategy session. One-time payment, no recurring charges.</li>
-                <li><strong>MVP (Custom quote):</strong> Full product development with a dedicated engineering team. Scope, timeline and pricing are custom-quoted based on project requirements.</li>
-                <li><strong>Growth (Custom quote):</strong> Ongoing development, marketing and scaling support with a senior team. Scope and pricing are custom-quoted based on project needs.</li>
+                <li><strong>Proveedores de servicios:</strong> compartimos datos necesarios con Stripe (pagos), Google (autenticación), y los servicios de IA que utilizamos internamente para ejecutar tus proyectos. Estos proveedores están sujetos a sus propias políticas de privacidad.</li>
+                <li><strong>Requerimiento legal:</strong> si una autoridad competente lo exige mediante orden judicial o proceso legal válido.</li>
+                <li><strong>Protección de derechos:</strong> cuando sea necesario para proteger los derechos, propiedad o seguridad de Anmar Enterprises, nuestros clientes o terceros.</li>
+                <li><strong>Con tu consentimiento expreso:</strong> en cualquier otro caso en que nos des autorización explícita.</li>
             </ul>
-            <p>The Validate plan is a one-time payment. MVP and Growth plans are quoted individually based on the scope of the project. All prices are expressed in USD. Anmar reserves the right to modify pricing with a minimum of 30 days advance notice.</p>
-            <p>The client may cancel at any time from their dashboard. No refunds are issued for the Validate plan once the service has been delivered. For MVP and Growth plans, cancellation terms are defined in the individual project agreement.</p>
-            <div class="info-box">
-                <i class="fas fa-circle-info"></i>
-                <p>For enterprise or custom requirements, contact us directly for a tailored proposal.</p>
+            <div class="warn-box">
+                <i class="fas fa-triangle-exclamation"></i>
+                <p>Los proyectos y blueprints que nos compartes son tratados como información confidencial. Nunca los compartimos con otros clientes ni los usamos fuera del contexto de tu proyecto.</p>
             </div>
         </div>
 
         <!-- Section 4 -->
-        <div class="terms-section" id="s4">
+        <div class="privacy-section" id="s4">
             <div class="section-header">
                 <div class="section-num">04</div>
-                <h2>Intellectual property</h2>
+                <h2>Cookies y tecnologías de rastreo</h2>
             </div>
-            <p>All products, code, designs, applications or digital assets built for the client are the exclusive property of the client from the moment of delivery.</p>
-            <p>Anmar does not claim equity participation or rights over the client's product, unless a separate written agreement exists. The client warrants that they hold the necessary licenses for any material provided to Anmar for use in the project.</p>
+            <p>Utilizamos cookies y tecnologías similares para:</p>
+            <ul>
+                <li>Mantener tu sesión activa (cookies de sesión, estrictamente necesarias).</li>
+                <li>Recordar tus preferencias de navegación.</li>
+                <li>Analizar el uso general de la plataforma mediante herramientas de analítica (sin identificarte personalmente).</li>
+            </ul>
+            <p>Puedes controlar o deshabilitar las cookies desde la configuración de tu navegador. Ten en cuenta que deshabilitar cookies esenciales puede afectar el funcionamiento de la plataforma.</p>
         </div>
 
         <!-- Section 5 -->
-        <div class="terms-section" id="s5">
+        <div class="privacy-section" id="s5">
             <div class="section-header">
                 <div class="section-num">05</div>
-                <h2>Client responsibilities</h2>
+                <h2>Almacenamiento y seguridad de datos</h2>
             </div>
-            <p>By using the platform, the client agrees to:</p>
+            <p>Tu información se almacena en servidores seguros con acceso restringido. Aplicamos medidas técnicas y organizativas para proteger tus datos, incluyendo:</p>
             <ul>
-                <li>Provide truthful, complete and up-to-date information about their project and business.</li>
-                <li>Not use the platform for illegal, fraudulent purposes or purposes that infringe on third-party rights.</li>
-                <li>Respect the intellectual property rights of third parties in all material provided.</li>
-                <li>Maintain the confidentiality of their access credentials and notify any unauthorized use.</li>
+                <li>Comunicaciones cifradas mediante HTTPS/TLS.</li>
+                <li>Acceso a datos limitado solo al personal autorizado.</li>
+                <li>Contraseñas almacenadas mediante algoritmos de hash seguro (nunca en texto plano).</li>
+                <li>Revisiones periódicas de seguridad y accesos.</li>
             </ul>
+            <p>Aunque tomamos todas las medidas razonables para proteger tu información, ningún sistema es completamente infalible. En caso de una brecha de seguridad que afecte tus datos, te notificaremos conforme a la ley aplicable.</p>
         </div>
 
         <!-- Section 6 -->
-        <div class="terms-section" id="s6">
+        <div class="privacy-section" id="s6">
             <div class="section-header">
                 <div class="section-num">06</div>
-                <h2>Limitation of liability</h2>
+                <h2>Tus derechos y opciones</h2>
             </div>
-            <p>Anmar provides development, marketing and capital connection services, but does not guarantee specific business results, revenue or return on investment.</p>
-            <p>In no event shall Anmar be liable for indirect, incidental or consequential damages arising from the use of the platform. Anmar's maximum liability shall not exceed the total amount paid by the client in the last three (3) months of service.</p>
+            <p>Dependiendo de tu ubicación, puedes tener los siguientes derechos sobre tu información personal:</p>
+            <ul>
+                <li><strong>Acceso:</strong> solicitar una copia de los datos personales que tenemos sobre ti.</li>
+                <li><strong>Corrección:</strong> pedir que corrijamos datos incorrectos o incompletos.</li>
+                <li><strong>Eliminación:</strong> solicitar que eliminemos tu cuenta y datos asociados (sujeto a obligaciones legales de retención).</li>
+                <li><strong>Portabilidad:</strong> recibir tus datos en un formato estructurado y legible por máquina.</li>
+                <li><strong>Oposición:</strong> oponerte al procesamiento de tus datos en ciertas circunstancias.</li>
+                <li><strong>Retirar consentimiento:</strong> en cualquier momento, sin que ello afecte la legalidad del tratamiento anterior.</li>
+            </ul>
+            <p>Para ejercer cualquiera de estos derechos, contáctanos a través de los medios indicados al final de este documento.</p>
         </div>
 
         <!-- Section 7 -->
-        <div class="terms-section" id="s7">
+        <div class="privacy-section" id="s7">
             <div class="section-header">
                 <div class="section-num">07</div>
-                <h2>Confidentiality and privacy</h2>
+                <h2>Retención de datos</h2>
             </div>
-            <p>Anmar maintains the confidentiality of all projects, ideas and data shared by the client. We do not disclose sensitive client information without express consent, unless required by law or competent authority.</p>
-            <p>The processing of personal data is governed by our <a href="privacy.html" style="color:rgba(255,255,255,0.8); text-decoration:underline;">Privacy Policy</a>.</p>
+            <p>Conservamos tu información personal durante el tiempo necesario para cumplir con los fines descritos en esta política, incluyendo el periodo de vigencia de tu cuenta y el tiempo requerido por obligaciones legales, fiscales o contractuales.</p>
+            <p>Cuando ya no sea necesario conservar tus datos, los eliminamos o los anonimizamos de forma segura.</p>
         </div>
 
         <!-- Section 8 -->
-        <div class="terms-section" id="s8">
+        <div class="privacy-section" id="s8">
             <div class="section-header">
                 <div class="section-num">08</div>
-                <h2>Funding conditions</h2>
+                <h2>Menores de edad</h2>
             </div>
-            <p>Access to funding through the Capital module is subject to discretionary evaluation. The client's business traction does not guarantee funding approval.</p>
-            <p>Any investment agreement is formalized through a separate contract between the parties involved. Anmar does not act as a regulated financial advisor or financial intermediary.</p>
+            <p>Nuestros servicios están dirigidos a personas mayores de 18 años. No recopilamos intencionalmente información de menores de edad. Si tienes conocimiento de que un menor ha proporcionado datos personales en nuestra plataforma, contáctanos de inmediato para proceder a su eliminación.</p>
         </div>
 
         <!-- Section 9 -->
-        <div class="terms-section" id="s9">
+        <div class="privacy-section" id="s9">
             <div class="section-header">
                 <div class="section-num">09</div>
-                <h2>Changes to terms</h2>
+                <h2>Cambios a esta política</h2>
             </div>
-            <p>Anmar may modify these terms at any time. In the event of substantial changes, the client will be notified at least 15 days in advance via email or notice on the platform.</p>
-            <p>Continued use of the platform after the changes take effect implies acceptance of the updated terms.</p>
+            <p>Podemos actualizar esta política de privacidad periódicamente para reflejar cambios en nuestras prácticas o en la legislación aplicable. Cuando realicemos cambios materiales, te notificaremos por correo electrónico o mediante un aviso destacado en la plataforma antes de que los cambios entren en vigor.</p>
+            <p>Te recomendamos revisar esta página ocasionalmente. El uso continuado de la plataforma tras la publicación de cambios implica tu aceptación de la política actualizada.</p>
         </div>
 
-        <!-- Section 10 -->
-        <div class="terms-section" id="s10">
+        <!-- Section 10 / Contact -->
+        <div class="privacy-section" id="s10">
             <div class="section-header">
                 <div class="section-num">10</div>
-                <h2>Governing law and jurisdiction</h2>
+                <h2>Contacto</h2>
             </div>
-            <p>These terms are governed by the laws of the jurisdiction where Anmar Enterprises is legally incorporated. The parties agree to attempt to resolve any dispute amicably before resorting to judicial proceedings.</p>
-        </div>
-
-        <!-- Section 11 / Contact -->
-        <div class="terms-section" id="s11">
-            <div class="section-header">
-                <div class="section-num">11</div>
-                <h2>Contact</h2>
-            </div>
-            <p>For inquiries related to these terms and conditions, contact us:</p>
+            <p>Si tienes preguntas sobre esta política o deseas ejercer tus derechos, comunícate con nosotros:</p>
         </div>
 
         <div class="contact-card">
-            <h3><i class="fas fa-envelope" style="color:rgba(255,255,255,0.5);margin-right:8px;"></i>Legal team</h3>
-            <p><strong>Anmar Enterprises</strong><br>For questions about these terms, write to us directly.</p>
+            <h3><i class="fas fa-envelope" style="color:rgba(255,255,255,0.5);margin-right:8px;"></i>Responsable de privacidad</h3>
+            <p><strong>Anmar Enterprises</strong><br>Para solicitudes relacionadas con tus datos personales o esta política de privacidad, escríbenos directamente.</p>
             <a class="contact-link" href="mailto:Anmar@anmarenterprices.com">
                 <i class="fas fa-paper-plane"></i> Anmar@anmarenterprices.com
             </a>
-            <p style="font-size:0.78rem;color:var(--text-muted);margin-top:4px;">We respond within a maximum of 72 business hours.</p>
+            <p style="font-size:0.78rem;color:var(--text-muted);margin-top:4px;">Respondemos en un plazo máximo de 72 horas hábiles.</p>
         </div>
     </main>
 
     <footer>
-        <div>&copy; 2026 Anmar Enterprises. All rights reserved.</div>
+        <div>&copy; 2026 Anmar Enterprises. Todos los derechos reservados.</div>
         <div class="footer-links">
-            <a href="privacy.html">Privacy</a>
-            <a href="terms.html">Terms</a>
-            <a href="index.html">Home</a>
+            <a href="privacy.html">Privacidad</a>
+            <a href="terms.html">Términos</a>
+            <a href="index.html">Inicio</a>
         </div>
     </footer>
 </body>

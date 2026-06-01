@@ -6,7 +6,6 @@
     <title>Anmar Enterprises | Internal Access</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -97,24 +96,6 @@
             text-align: center; margin-top: 1.8rem;
             font-size: 0.68rem; color: rgba(255,255,255,0.25);
         }
-        .divider {
-            display: flex; align-items: center; gap: 10px;
-            margin: 1.4rem 0 1.2rem; color: rgba(255,255,255,0.25); font-size: 0.72rem;
-        }
-        .divider::before, .divider::after {
-            content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.08);
-        }
-        .google-btn {
-            width: 100%; padding: 12px; border-radius: 12px;
-            border: 1px solid rgba(255,255,255,0.12);
-            background: rgba(255,255,255,0.04); color: #fff;
-            font-size: 0.9rem; font-weight: 500; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; gap: 10px;
-            transition: all 0.25s; font-family: 'Inter', sans-serif;
-        }
-        .google-btn:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.22); }
-        .google-btn img { width: 18px; height: 18px; }
-        .google-wrap { display: flex; justify-content: center; }
     </style>
 </head>
 <body>
@@ -124,37 +105,14 @@
         <div class="badge"><i class="fas fa-shield-halved"></i> Acceso Interno</div>
         <div class="title">Anmar Enterprises</div>
         <div class="subtitle">Panel de operaciones del equipo.</div>
-        <!-- Google Sign-In (primary) -->
-        <div id="g_id_onload"
-            data-client_id="676077959478-uo9f6h70osjmaeklm17ktithkualc4p3.apps.googleusercontent.com"
-            data-context="signin"
-            data-ux_mode="popup"
-            data-callback="handleGoogleLogin"
-            data-auto_prompt="false">
-        </div>
-        <div class="google-wrap">
-            <div class="g_id_signin"
-                data-type="standard"
-                data-shape="rectangular"
-                data-theme="filled_black"
-                data-text="signin_with"
-                data-size="large"
-                data-logo_alignment="center"
-                data-width="340">
-            </div>
-        </div>
-
-        <div class="divider">o acceso con contraseña</div>
-
-        <!-- Password login (fallback) -->
         <form id="loginForm" onsubmit="handleLogin(event)">
             <div class="field">
                 <label>Usuario o Email</label>
-                <input type="text" id="identifier" placeholder="tu.usuario" autocomplete="username">
+                <input type="text" id="identifier" placeholder="tu.usuario" required autocomplete="username">
             </div>
             <div class="field">
                 <label>Contraseña</label>
-                <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+                <input type="password" id="password" placeholder="••••••••" required autocomplete="current-password">
             </div>
             <button type="submit" class="btn" id="loginBtn">
                 <i class="fas fa-arrow-right-to-bracket"></i> Ingresar
@@ -165,53 +123,12 @@
     </div>
     <script>
         const API = '/api';
-
-        // If already logged in, redirect
         (async () => {
             try {
                 const r = await fetch(API + '/internal/me', { credentials: 'include' });
                 if (r.ok) window.location.replace('panel.html');
             } catch (_) {}
         })();
-
-        // ── Google Login ──
-        async function handleGoogleLogin(response) {
-            const errEl = document.getElementById('errorMsg');
-            errEl.style.display = 'none';
-            showGoogleLoading(true);
-            try {
-                const res = await fetch(API + '/internal/google-login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                    body: JSON.stringify({ token: response.credential })
-                });
-                const data = await res.json();
-                if (res.ok) {
-                    localStorage.setItem('internalUser', JSON.stringify(data.user));
-                    showGoogleLoading(false, true);
-                    setTimeout(() => window.location.href = 'panel.html', 700);
-                } else {
-                    throw new Error(data.error || 'Acceso denegado');
-                }
-            } catch (err) {
-                errEl.textContent = err.message;
-                errEl.style.display = 'block';
-                showGoogleLoading(false, false);
-            }
-        }
-
-        function showGoogleLoading(loading, success) {
-            const wrap = document.querySelector('.google-wrap');
-            if (!wrap) return;
-            if (loading) {
-                wrap.innerHTML = '<div style="padding:12px; color:rgba(255,255,255,0.6); font-size:0.85rem; display:flex; align-items:center; gap:8px;"><i class="fas fa-circle-notch fa-spin" style="color:#10b981;"></i> Verificando con Google...</div>';
-            } else if (success) {
-                wrap.innerHTML = '<div style="padding:12px; color:#10b981; font-size:0.85rem; display:flex; align-items:center; gap:8px;"><i class="fas fa-check-circle"></i> Acceso concedido — redirigiendo...</div>';
-            }
-        }
-
-        // ── Password Login (fallback) ──
         async function handleLogin(e) {
             e.preventDefault();
             const btn = document.getElementById('loginBtn');
@@ -219,7 +136,6 @@
             errEl.style.display = 'none';
             const identifier = document.getElementById('identifier').value.trim();
             const password = document.getElementById('password').value;
-            if (!identifier || !password) return;
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Verificando...';
             try {

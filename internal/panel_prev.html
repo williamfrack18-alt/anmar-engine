@@ -1,0 +1,1295 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anmar | Ops Panel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #000; --surface: rgba(8,10,12,0.75); --border: rgba(255,255,255,0.08);
+            --border-hover: rgba(255,255,255,0.18); --text: #fff; --text-dim: rgba(255,255,255,0.55);
+            --text-muted: rgba(255,255,255,0.35); --accent: #10b981; --accent-dim: rgba(16,185,129,0.15);
+            --accent-glow: rgba(16,185,129,0.25); --blue: #3b82f6; --amber: #f59e0b;
+            --red: #ef4444; --purple: #a855f7; --sidebar-w: 64px; --header-h: 60px;
+            --radius: 14px; --radius-sm: 10px;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: var(--bg); font-family: 'Inter', sans-serif; color: var(--text);
+            min-height: 100vh; overflow: hidden;
+        }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+
+        /* ── BG ── */
+        .bg-grid {
+            position: fixed; inset: 0; z-index: 0; pointer-events: none;
+            background-image:
+                linear-gradient(rgba(16,185,129,0.025) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(16,185,129,0.025) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+
+        /* ── SIDEBAR ── */
+        .sidebar {
+            position: fixed; top: 0; left: 0; width: var(--sidebar-w); height: 100vh;
+            background: rgba(5,5,5,0.9); backdrop-filter: blur(14px);
+            border-right: 1px solid var(--border); z-index: 100;
+            display: flex; flex-direction: column; align-items: center; padding: 16px 0;
+        }
+        .sidebar .logo {
+            width: 36px; height: 36px; border-radius: 10px;
+            background: linear-gradient(135deg, var(--accent), #0ea5e9);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 0.85rem; color: #001a12;
+            margin-bottom: 2rem;
+        }
+        .sidebar-nav { display: flex; flex-direction: column; gap: 6px; width: 100%; padding: 0 8px; }
+        .sidebar-nav button {
+            width: 100%; aspect-ratio: 1; border-radius: var(--radius-sm); border: none;
+            background: transparent; color: var(--text-dim); font-size: 1.1rem;
+            cursor: pointer; transition: all 0.2s; display: flex; align-items: center;
+            justify-content: center; position: relative;
+        }
+        .sidebar-nav button:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+        .sidebar-nav button.active { background: var(--accent-dim); color: var(--accent); }
+        .sidebar-nav button .badge-dot {
+            position: absolute; top: 8px; right: 8px; width: 8px; height: 8px;
+            border-radius: 50%; background: var(--red); display: none;
+        }
+        .sidebar-bottom { margin-top: auto; padding: 0 8px; width: 100%; }
+        .sidebar-bottom button {
+            width: 100%; aspect-ratio: 1; border-radius: var(--radius-sm); border: none;
+            background: transparent; color: var(--text-muted); font-size: 1rem;
+            cursor: pointer; transition: all 0.2s; display: flex; align-items: center;
+            justify-content: center;
+        }
+        .sidebar-bottom button:hover { color: var(--red); background: rgba(239,68,68,0.08); }
+
+        /* ── HEADER ── */
+        .header {
+            position: fixed; top: 0; left: var(--sidebar-w); right: 0; height: var(--header-h);
+            background: rgba(5,5,5,0.85); backdrop-filter: blur(14px);
+            border-bottom: 1px solid var(--border); z-index: 90;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 28px;
+        }
+        .header-left { display: flex; align-items: center; gap: 14px; }
+        .header-title { font-size: 1.05rem; font-weight: 600; letter-spacing: -0.3px; }
+        .header-subtitle { font-size: 0.75rem; color: var(--text-dim); }
+        .header-right { display: flex; align-items: center; gap: 16px; }
+        .header-stat {
+            display: flex; align-items: center; gap: 6px;
+            font-size: 0.78rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace;
+        }
+        .header-stat .num { color: var(--accent); font-weight: 700; }
+        .user-pill {
+            display: flex; align-items: center; gap: 8px;
+            padding: 6px 14px 6px 10px; border-radius: 999px;
+            background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+            font-size: 0.8rem; font-weight: 500;
+        }
+        .user-pill .avatar {
+            width: 26px; height: 26px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), var(--blue));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.65rem; font-weight: 700; color: #001a12;
+        }
+
+        /* ── MAIN ── */
+        .main {
+            position: fixed; top: var(--header-h); left: var(--sidebar-w);
+            right: 0; bottom: 0; overflow: hidden;
+        }
+        .view { display: none; height: 100%; overflow-y: auto; padding: 24px 28px; }
+        .view.active { display: block; }
+
+        /* ── CARDS ── */
+        .glass-card {
+            background: var(--surface); backdrop-filter: blur(16px);
+            border: 1px solid var(--border); border-radius: var(--radius);
+            padding: 20px; transition: border-color 0.2s;
+        }
+        .glass-card:hover { border-color: var(--border-hover); }
+
+        /* ── QUEUE VIEW ── */
+        .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+        .stat-card {
+            padding: 18px; text-align: center;
+        }
+        .stat-card .stat-num { font-size: 2rem; font-weight: 700; letter-spacing: -1px; }
+        .stat-card .stat-label { font-size: 0.72rem; color: var(--text-dim); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .queue-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .queue-title { font-size: 1.1rem; font-weight: 600; }
+        .queue-filters { display: flex; gap: 8px; }
+        .filter-chip {
+            padding: 6px 14px; border-radius: 999px; border: 1px solid var(--border);
+            background: transparent; color: var(--text-dim); font-size: 0.76rem;
+            cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif;
+        }
+        .filter-chip:hover { border-color: var(--border-hover); color: var(--text); }
+        .filter-chip.active { background: var(--accent-dim); border-color: rgba(16,185,129,0.3); color: var(--accent); }
+
+        .ticket-list { display: flex; flex-direction: column; gap: 10px; }
+        .ticket-row {
+            display: grid; grid-template-columns: auto 1fr auto auto auto;
+            align-items: center; gap: 16px; padding: 16px 18px; cursor: pointer;
+        }
+        .ticket-priority {
+            width: 10px; height: 10px; border-radius: 50%;
+        }
+        .priority-high { background: var(--red); box-shadow: 0 0 8px rgba(239,68,68,0.4); }
+        .priority-medium { background: var(--amber); box-shadow: 0 0 8px rgba(245,158,11,0.3); }
+        .priority-low { background: var(--accent); }
+        .ticket-info h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 3px; }
+        .ticket-info p { font-size: 0.76rem; color: var(--text-dim); }
+        .ticket-meta {
+            font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+        .ticket-sla {
+            padding: 4px 10px; border-radius: 999px; font-size: 0.68rem;
+            font-family: 'JetBrains Mono', monospace; font-weight: 600;
+        }
+        .sla-ok { background: rgba(16,185,129,0.1); color: var(--accent); border: 1px solid rgba(16,185,129,0.2); }
+        .sla-warn { background: rgba(245,158,11,0.1); color: var(--amber); border: 1px solid rgba(245,158,11,0.2); }
+        .sla-overdue { background: rgba(239,68,68,0.1); color: var(--red); border: 1px solid rgba(239,68,68,0.2); }
+        .ticket-action-btn {
+            padding: 6px 14px; border-radius: 8px; border: none;
+            background: var(--accent); color: #001a12; font-weight: 700;
+            font-size: 0.76rem; cursor: pointer; transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .ticket-action-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px var(--accent-glow); }
+
+        /* ── DETAIL VIEW ── */
+        .detail-layout {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 18px; height: calc(100vh - var(--header-h) - 100px);
+        }
+        .detail-back {
+            display: inline-flex; align-items: center; gap: 8px;
+            color: var(--text-dim); font-size: 0.82rem; cursor: pointer;
+            background: none; border: none; margin-bottom: 16px; padding: 6px 0;
+            transition: color 0.2s;
+        }
+        .detail-back:hover { color: var(--text); }
+        .detail-panel { display: flex; flex-direction: column; overflow: hidden; }
+        .panel-tabs {
+            display: flex; gap: 2px; margin-bottom: 12px;
+            background: rgba(255,255,255,0.03); border-radius: var(--radius-sm); padding: 3px;
+        }
+        .panel-tab {
+            flex: 1; padding: 8px 12px; border: none; border-radius: 8px;
+            background: transparent; color: var(--text-dim); font-size: 0.78rem;
+            cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif;
+            font-weight: 500; text-align: center;
+        }
+        .panel-tab:hover { color: var(--text); }
+        .panel-tab.active { background: var(--accent-dim); color: var(--accent); }
+        .panel-content {
+            flex: 1; overflow-y: auto; border-radius: var(--radius);
+            background: var(--surface); border: 1px solid var(--border);
+        }
+        .tab-pane { display: none; padding: 18px; height: 100%; }
+        .tab-pane.active { display: flex; flex-direction: column; }
+
+        /* Blueprint display */
+        .blueprint-box {
+            background: rgba(0,0,0,0.4); border: 1px solid rgba(16,185,129,0.15);
+            border-radius: var(--radius-sm); padding: 18px;
+            font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;
+            line-height: 1.7; color: rgba(255,255,255,0.8);
+            white-space: pre-wrap; overflow-y: auto; flex: 1;
+        }
+
+        /* Client info */
+        .client-info-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;
+        }
+        .info-item label {
+            display: block; font-size: 0.65rem; color: var(--text-muted);
+            text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 3px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .info-item span { font-size: 0.88rem; }
+
+        /* Chat */
+        .chat-container {
+            display: flex; flex-direction: column; height: 100%;
+        }
+        .chat-messages {
+            flex: 1; overflow-y: auto; padding: 12px; display: flex;
+            flex-direction: column; gap: 10px;
+        }
+        .chat-msg {
+            max-width: 85%; padding: 10px 14px; border-radius: 14px;
+            font-size: 0.85rem; line-height: 1.5;
+        }
+        .chat-msg.client {
+            align-self: flex-start;
+            background: rgba(255,255,255,0.06); border: 1px solid var(--border);
+            color: var(--text);
+        }
+        .chat-msg.internal {
+            align-self: flex-end;
+            background: var(--accent-dim); border: 1px solid rgba(16,185,129,0.2);
+            color: var(--accent);
+        }
+        .chat-msg .msg-sender {
+            font-size: 0.68rem; font-weight: 600; margin-bottom: 4px;
+            opacity: 0.7;
+        }
+        .chat-msg .msg-time {
+            font-size: 0.6rem; color: var(--text-muted); margin-top: 4px;
+            text-align: right;
+        }
+        .chat-input-row {
+            display: flex; gap: 8px; padding: 12px;
+            border-top: 1px solid var(--border);
+        }
+        .chat-input {
+            flex: 1; background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border); border-radius: var(--radius-sm);
+            padding: 10px 14px; color: var(--text); font-size: 0.85rem;
+            font-family: 'Inter', sans-serif; outline: none; resize: none;
+        }
+        .chat-input:focus { border-color: rgba(16,185,129,0.5); }
+        .chat-send-btn {
+            width: 42px; height: 42px; border-radius: var(--radius-sm); border: none;
+            background: var(--accent); color: #001a12; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.9rem; transition: all 0.2s;
+        }
+        .chat-send-btn:hover { transform: scale(1.05); }
+
+        /* AI Assistant */
+        .ai-chat-container {
+            display: flex; flex-direction: column; height: 100%;
+        }
+        .ai-messages {
+            flex: 1; overflow-y: auto; padding: 12px; display: flex;
+            flex-direction: column; gap: 10px;
+        }
+        .ai-msg {
+            padding: 12px 16px; border-radius: 14px; font-size: 0.84rem; line-height: 1.6;
+        }
+        .ai-msg.user {
+            align-self: flex-end; max-width: 80%;
+            background: rgba(255,255,255,0.08); color: var(--text);
+        }
+        .ai-msg.assistant {
+            align-self: flex-start; max-width: 90%;
+            background: rgba(16,185,129,0.06); border: 1px solid rgba(16,185,129,0.12);
+            color: rgba(255,255,255,0.9);
+        }
+        .ai-input-row {
+            display: flex; gap: 8px; padding: 12px;
+            border-top: 1px solid var(--border);
+        }
+        .ai-quick-actions {
+            display: flex; gap: 6px; padding: 8px 12px; flex-wrap: wrap;
+        }
+        .quick-action {
+            padding: 5px 12px; border-radius: 999px;
+            border: 1px solid var(--border); background: transparent;
+            color: var(--text-dim); font-size: 0.72rem; cursor: pointer;
+            transition: all 0.2s; font-family: 'Inter', sans-serif;
+        }
+        .quick-action:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+
+        /* Delivery panel */
+        .delivery-section { padding: 18px; }
+        .delivery-section h3 { font-size: 0.95rem; margin-bottom: 12px; }
+        .deliverable-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 14px; border-radius: var(--radius-sm);
+            background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+            margin-bottom: 8px;
+        }
+        .deliverable-item .file-info { display: flex; align-items: center; gap: 10px; }
+        .deliverable-item .file-icon {
+            width: 32px; height: 32px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(59,130,246,0.1); color: var(--blue); font-size: 0.8rem;
+        }
+        .deliverable-item .file-name { font-size: 0.85rem; font-weight: 500; }
+        .deliverable-item .file-size { font-size: 0.68rem; color: var(--text-muted); }
+
+        .deliver-btn {
+            width: 100%; padding: 14px; border: none; border-radius: var(--radius);
+            background: linear-gradient(135deg, var(--accent), #0ea5e9);
+            color: #001a12; font-weight: 700; font-size: 0.95rem;
+            cursor: pointer; transition: all 0.25s; margin-top: 16px;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .deliver-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 30px var(--accent-glow); }
+        .deliver-btn:disabled { opacity: 0.4; pointer-events: none; }
+
+        /* Quality review */
+        .review-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 6px 14px; border-radius: 999px; font-size: 0.72rem;
+            font-weight: 600;
+        }
+        .review-pass { background: rgba(16,185,129,0.1); color: var(--accent); border: 1px solid rgba(16,185,129,0.2); }
+        .review-fail { background: rgba(239,68,68,0.1); color: var(--red); border: 1px solid rgba(239,68,68,0.2); }
+        .review-pending { background: rgba(245,158,11,0.1); color: var(--amber); border: 1px solid rgba(245,158,11,0.2); }
+
+        /* ── HISTORY VIEW ── */
+        .history-table {
+            width: 100%; border-collapse: collapse;
+        }
+        .history-table th {
+            text-align: left; padding: 10px 14px; font-size: 0.7rem;
+            color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;
+            font-family: 'JetBrains Mono', monospace;
+            border-bottom: 1px solid var(--border);
+        }
+        .history-table td {
+            padding: 12px 14px; font-size: 0.84rem;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+        }
+        .status-pill {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 4px 10px; border-radius: 999px; font-size: 0.7rem; font-weight: 600;
+        }
+        .status-completed { background: rgba(16,185,129,0.1); color: var(--accent); }
+        .status-developing { background: rgba(59,130,246,0.1); color: var(--blue); }
+        .status-accepted { background: rgba(168,85,247,0.1); color: var(--purple); }
+
+        /* ── EMPTY STATE ── */
+        .empty-state {
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: center; padding: 60px 20px; color: var(--text-dim);
+        }
+        .empty-state i { font-size: 2.5rem; margin-bottom: 16px; opacity: 0.3; }
+        .empty-state p { font-size: 0.9rem; }
+
+        /* ── LOADING ── */
+        .spinner { animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── SCROLLBAR ── */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+        /* ── MOBILE ── */
+        @media (max-width: 900px) {
+            .sidebar { width: 50px; }
+            :root { --sidebar-w: 50px; }
+            .header { padding: 0 16px; }
+            .view { padding: 16px; }
+            .stats-row { grid-template-columns: repeat(2, 1fr); }
+            .detail-layout { grid-template-columns: 1fr; height: auto; }
+            .ticket-row { grid-template-columns: auto 1fr auto; }
+            .ticket-meta, .ticket-sla { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="logo">A</div>
+        <div class="sidebar-nav">
+            <button onclick="switchView('queue')" id="nav-queue" class="active" title="Cola de peticiones">
+                <i class="fas fa-inbox"></i>
+                <span class="badge-dot" id="queueBadge"></span>
+            </button>
+            <button onclick="switchView('mytasks')" id="nav-mytasks" title="Mis tareas">
+                <i class="fas fa-clipboard-check"></i>
+            </button>
+            <button onclick="switchView('history')" id="nav-history" title="Historial">
+                <i class="fas fa-clock-rotate-left"></i>
+            </button>
+        </div>
+        <div class="sidebar-bottom">
+            <button onclick="handleLogout()" title="Cerrar sesion">
+                <i class="fas fa-arrow-right-from-bracket"></i>
+            </button>
+        </div>
+    </aside>
+
+    <!-- HEADER -->
+    <header class="header">
+        <div class="header-left">
+            <div>
+                <div class="header-title">Ops Panel</div>
+                <div class="header-subtitle">Anmar Enterprises · Operaciones Internas</div>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="header-stat">
+                <i class="fas fa-inbox" style="color:var(--accent)"></i>
+                <span>Pendientes: </span><span class="num" id="statPending">0</span>
+            </div>
+            <div class="header-stat">
+                <i class="fas fa-bolt" style="color:var(--amber)"></i>
+                <span>SLA Urgente: </span><span class="num" id="statUrgent" style="color:var(--amber)">0</span>
+            </div>
+            <div class="user-pill">
+                <div class="avatar" id="userAvatar">?</div>
+                <span id="userName">Cargando...</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main class="main">
+
+        <!-- ══ QUEUE VIEW ══ -->
+        <div class="view active" id="view-queue">
+            <div class="stats-row">
+                <div class="glass-card stat-card">
+                    <div class="stat-num" id="countPending" style="color:var(--accent)">0</div>
+                    <div class="stat-label">Pendientes</div>
+                </div>
+                <div class="glass-card stat-card">
+                    <div class="stat-num" id="countActive" style="color:var(--blue)">0</div>
+                    <div class="stat-label">En progreso</div>
+                </div>
+                <div class="glass-card stat-card">
+                    <div class="stat-num" id="countUrgent" style="color:var(--amber)">0</div>
+                    <div class="stat-label">SLA Urgente</div>
+                </div>
+                <div class="glass-card stat-card">
+                    <div class="stat-num" id="countCompleted" style="color:var(--text-dim)">0</div>
+                    <div class="stat-label">Completados hoy</div>
+                </div>
+            </div>
+
+            <div class="queue-header">
+                <div class="queue-title"><i class="fas fa-layer-group" style="color:var(--accent); margin-right:8px;"></i>Cola de peticiones</div>
+                <div class="queue-filters">
+                    <button class="filter-chip active" data-filter="all" onclick="setFilter('all',this)">Todas</button>
+                    <button class="filter-chip" data-filter="pending" onclick="setFilter('pending',this)">Pendientes</button>
+                    <button class="filter-chip" data-filter="accepted" onclick="setFilter('accepted',this)">En progreso</button>
+                    <button class="filter-chip" data-filter="high" onclick="setFilter('high',this)">Urgentes</button>
+                </div>
+            </div>
+
+            <div class="ticket-list" id="ticketList">
+                <div class="empty-state">
+                    <i class="fas fa-circle-notch spinner"></i>
+                    <p>Cargando cola...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══ MY TASKS VIEW ══ -->
+        <div class="view" id="view-mytasks">
+            <div class="queue-header">
+                <div class="queue-title"><i class="fas fa-clipboard-check" style="color:var(--blue); margin-right:8px;"></i>Mis tareas activas</div>
+            </div>
+            <div class="ticket-list" id="myTasksList">
+                <div class="empty-state">
+                    <i class="fas fa-inbox"></i>
+                    <p>No tienes tareas activas. Toma una de la cola.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══ DETAIL VIEW ══ -->
+        <div class="view" id="view-detail">
+            <button class="detail-back" onclick="goBack()">
+                <i class="fas fa-arrow-left"></i> Volver
+            </button>
+            <div class="detail-layout">
+                <!-- LEFT PANEL -->
+                <div class="detail-panel">
+                    <div class="panel-tabs">
+                        <button class="panel-tab active" onclick="switchDetailTab('blueprint', this, 'left')">Blueprint</button>
+                        <button class="panel-tab" onclick="switchDetailTab('clientinfo', this, 'left')">Cliente</button>
+                        <button class="panel-tab" onclick="switchDetailTab('clientchat', this, 'left')">Chat Cliente</button>
+                    </div>
+                    <div class="panel-content" id="leftPanelContent">
+                        <div class="tab-pane active" id="pane-blueprint">
+                            <div class="blueprint-box" id="blueprintContent">Cargando blueprint...</div>
+                        </div>
+                        <div class="tab-pane" id="pane-clientinfo">
+                            <div class="client-info-grid" id="clientInfoGrid"></div>
+                            <h4 style="margin:16px 0 8px; font-size:0.88rem;">Resumen del proyecto</h4>
+                            <div class="blueprint-box" id="projectSummary" style="max-height:300px;">Sin resumen disponible.</div>
+                        </div>
+                        <div class="tab-pane" id="pane-clientchat">
+                            <div class="chat-container">
+                                <div class="chat-messages" id="clientChatMessages"></div>
+                                <div class="chat-input-row">
+                                    <textarea class="chat-input" id="clientChatInput" placeholder="Escribe al cliente..." rows="1"></textarea>
+                                    <button class="chat-send-btn" onclick="sendClientChat()"><i class="fas fa-paper-plane"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- RIGHT PANEL -->
+                <div class="detail-panel">
+                    <div class="panel-tabs">
+                        <button class="panel-tab active" onclick="switchDetailTab('ai', this, 'right')">IA Asistente</button>
+                        <button class="panel-tab" onclick="switchDetailTab('deliver', this, 'right')">Entregables</button>
+                    </div>
+                    <div class="panel-content" id="rightPanelContent">
+                        <div class="tab-pane active" id="pane-ai">
+                            <div class="ai-chat-container">
+                                <div class="ai-quick-actions">
+                                    <button class="quick-action" onclick="aiQuickAction('resume')"><i class="fas fa-compress"></i> Resumir blueprint</button>
+                                    <button class="quick-action" onclick="aiQuickAction('steps')"><i class="fas fa-list-check"></i> Pasos de ejecucion</button>
+                                    <button class="quick-action" onclick="aiQuickAction('draft')"><i class="fas fa-pen-nib"></i> Borrador entregable</button>
+                                    <button class="quick-action" onclick="aiQuickAction('review')"><i class="fas fa-magnifying-glass"></i> Revisar calidad</button>
+                                </div>
+                                <div class="ai-messages" id="aiMessages">
+                                    <div class="ai-msg assistant">
+                                        <div style="font-size:0.72rem; color:var(--accent); margin-bottom:6px; font-weight:600;">IA Asistente</div>
+                                        Hola, soy tu asistente de operaciones. Tengo el contexto completo del blueprint y el proyecto. ¿En que te ayudo?
+                                    </div>
+                                </div>
+                                <div class="ai-input-row">
+                                    <textarea class="chat-input" id="aiChatInput" placeholder="Pregunta a la IA sobre este proyecto..." rows="1"></textarea>
+                                    <button class="chat-send-btn" onclick="sendAiChat()" style="background:var(--blue);"><i class="fas fa-bolt"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane" id="pane-deliver">
+                            <div class="delivery-section">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                                    <h3>Entregables</h3>
+                                    <div class="review-badge review-pending" id="qualityBadge">
+                                        <i class="fas fa-hourglass-half"></i> Pendiente de revision
+                                    </div>
+                                </div>
+                                <div id="deliverablesList">
+                                    <div class="empty-state" style="padding:30px;">
+                                        <i class="fas fa-file-circle-plus" style="font-size:1.5rem;"></i>
+                                        <p style="font-size:0.82rem;">Genera entregables con la IA o sube archivos.</p>
+                                    </div>
+                                </div>
+
+                                <div style="margin-top:20px;">
+                                    <button class="deliver-btn" onclick="generateDeliverable()" id="generateBtn">
+                                        <i class="fas fa-wand-magic-sparkles"></i> Generar entregable con IA
+                                    </button>
+                                </div>
+                                <div style="margin-top:10px;">
+                                    <button class="deliver-btn" onclick="runQualityReview()" id="reviewBtn" style="background: linear-gradient(135deg, var(--purple), var(--blue));">
+                                        <i class="fas fa-shield-check"></i> Revision de calidad IA
+                                    </button>
+                                </div>
+                                <div style="margin-top:10px;">
+                                    <button class="deliver-btn" onclick="deliverToClient()" id="deliverBtn" disabled>
+                                        <i class="fas fa-paper-plane"></i> Entregar al cliente
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══ HISTORY VIEW ══ -->
+        <div class="view" id="view-history">
+            <div class="queue-header">
+                <div class="queue-title"><i class="fas fa-clock-rotate-left" style="color:var(--text-dim); margin-right:8px;"></i>Historial de entregas</div>
+            </div>
+            <div class="glass-card" style="padding:0; overflow:hidden;">
+                <table class="history-table" id="historyTable">
+                    <thead>
+                        <tr>
+                            <th>Proyecto</th>
+                            <th>Cliente</th>
+                            <th>Prioridad</th>
+                            <th>Estado</th>
+                            <th>Fecha</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const API = '/api';
+        let currentUser = null;
+        let allTickets = [];
+        let currentFilter = 'all';
+        let activeTicket = null;
+        let aiConversation = [];
+        let previousView = 'queue';
+        let pollInterval = null;
+
+        // ─── AUTH ───
+        async function checkAuth() {
+            try {
+                const r = await fetch(API + '/internal/me', { credentials: 'include' });
+                if (!r.ok) throw new Error();
+                currentUser = await r.json();
+                document.getElementById('userName').textContent = currentUser.name || currentUser.username || 'Agente';
+                const initials = (currentUser.name || 'A').split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+                document.getElementById('userAvatar').textContent = initials;
+            } catch {
+                window.location.replace('login.html');
+            }
+        }
+
+        async function handleLogout() {
+            await fetch(API + '/internal/logout', { method: 'POST', credentials: 'include' });
+            localStorage.removeItem('internalUser');
+            window.location.replace('login.html');
+        }
+
+        // ─── NAVIGATION ───
+        function switchView(view) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.querySelectorAll('.sidebar-nav button').forEach(b => b.classList.remove('active'));
+            document.getElementById('view-' + view).classList.add('active');
+            const btn = document.getElementById('nav-' + view);
+            if (btn) btn.classList.add('active');
+            if (view !== 'detail') previousView = view;
+            if (view === 'queue') loadQueue();
+            if (view === 'mytasks') loadMyTasks();
+            if (view === 'history') loadHistory();
+        }
+
+        function goBack() { switchView(previousView); }
+
+        function switchDetailTab(tab, btn, side) {
+            const container = side === 'left' ? 'leftPanelContent' : 'rightPanelContent';
+            const parent = btn.parentElement;
+            parent.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById(container).querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+            document.getElementById('pane-' + tab).classList.add('active');
+        }
+
+        // ─── FILTERS ───
+        function setFilter(filter, btn) {
+            currentFilter = filter;
+            document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+            btn.classList.add('active');
+            renderTickets();
+        }
+
+        // ─── LOAD QUEUE ───
+        async function loadQueue() {
+            try {
+                const r = await fetch(API + '/internal-queue', { credentials: 'include' });
+                if (!r.ok) {
+                    const r2 = await fetch(API + '/internal-alerts', { credentials: 'include' });
+                    if (!r2.ok) throw new Error();
+                    allTickets = await r2.json();
+                } else {
+                    allTickets = await r.json();
+                }
+                if (!Array.isArray(allTickets)) allTickets = allTickets.tickets || allTickets.queue || [];
+                updateStats();
+                renderTickets();
+            } catch (err) {
+                console.error('Error loading queue:', err);
+                document.getElementById('ticketList').innerHTML =
+                    '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Error cargando la cola</p></div>';
+            }
+        }
+
+        function updateStats() {
+            const pending = allTickets.filter(t => t.status === 'pending' || t.status === 'pending_human_review').length;
+            const active = allTickets.filter(t => t.status === 'accepted' || t.status === 'developing').length;
+            const completed = allTickets.filter(t => t.status === 'completed').length;
+            const now = new Date();
+            const urgent = allTickets.filter(t => {
+                if (!t.sla_due_at) return false;
+                const due = new Date(t.sla_due_at);
+                return due < new Date(now.getTime() + 4 * 3600000) && t.status !== 'completed';
+            }).length;
+
+            document.getElementById('countPending').textContent = pending;
+            document.getElementById('countActive').textContent = active;
+            document.getElementById('countUrgent').textContent = urgent;
+            document.getElementById('countCompleted').textContent = completed;
+            document.getElementById('statPending').textContent = pending;
+            document.getElementById('statUrgent').textContent = urgent;
+
+            const badge = document.getElementById('queueBadge');
+            badge.style.display = pending > 0 ? 'block' : 'none';
+        }
+
+        function renderTickets() {
+            const container = document.getElementById('ticketList');
+            let filtered = allTickets;
+
+            if (currentFilter === 'pending') filtered = allTickets.filter(t => t.status === 'pending' || t.status === 'pending_human_review');
+            else if (currentFilter === 'accepted') filtered = allTickets.filter(t => t.status === 'accepted' || t.status === 'developing');
+            else if (currentFilter === 'high') filtered = allTickets.filter(t => (t.priority || '').toLowerCase() === 'high');
+
+            if (!filtered.length) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-check-circle"></i><p>No hay peticiones en esta categoria.</p></div>';
+                return;
+            }
+
+            container.innerHTML = filtered.map(t => {
+                const priority = (t.priority || 'low').toLowerCase();
+                const prClass = priority === 'high' ? 'priority-high' : priority === 'medium' ? 'priority-medium' : 'priority-low';
+                const slaClass = getSlaClass(t.sla_due_at, t.status);
+                const slaText = getSlaText(t.sla_due_at, t.status);
+                const canClaim = t.status === 'pending' || t.status === 'pending_human_review';
+                const projectName = t.project_name || t.project_id || 'Sin nombre';
+                const clientEmail = t.user_email || t.client_email || 'Desconocido';
+                const created = t.created_at ? timeAgo(t.created_at) : '';
+
+                return `
+                    <div class="glass-card ticket-row" onclick="openTicket('${t.id || t.ticket_id || ''}')">
+                        <div class="ticket-priority ${prClass}"></div>
+                        <div class="ticket-info">
+                            <h4>${escHtml(projectName)}</h4>
+                            <p>${escHtml(clientEmail)}</p>
+                        </div>
+                        <div class="ticket-meta">${created}</div>
+                        <div class="ticket-sla ${slaClass}">${slaText}</div>
+                        ${canClaim ? `<button class="ticket-action-btn" onclick="event.stopPropagation(); claimTicket('${t.id || t.ticket_id || ''}')"><i class="fas fa-hand"></i> Tomar</button>` :
+                        `<span class="status-pill status-${t.status === 'completed' ? 'completed' : t.status === 'accepted' ? 'accepted' : 'developing'}">${t.status}</span>`}
+                    </div>`;
+            }).join('');
+        }
+
+        // ─── MY TASKS ───
+        async function loadMyTasks() {
+            const myName = currentUser?.name || currentUser?.username || '';
+            const myTasks = allTickets.filter(t =>
+                (t.assigned_to === myName || t.engineer === myName) &&
+                (t.status === 'accepted' || t.status === 'developing')
+            );
+            const container = document.getElementById('myTasksList');
+            if (!myTasks.length) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><p>No tienes tareas activas. Toma una de la cola.</p></div>';
+                return;
+            }
+            container.innerHTML = myTasks.map(t => {
+                const priority = (t.priority || 'low').toLowerCase();
+                const prClass = priority === 'high' ? 'priority-high' : priority === 'medium' ? 'priority-medium' : 'priority-low';
+                return `
+                    <div class="glass-card ticket-row" onclick="openTicket('${t.id || t.ticket_id || ''}')">
+                        <div class="ticket-priority ${prClass}"></div>
+                        <div class="ticket-info">
+                            <h4>${escHtml(t.project_name || t.project_id || 'Sin nombre')}</h4>
+                            <p>${escHtml(t.user_email || '')}</p>
+                        </div>
+                        <div class="ticket-meta">${t.created_at ? timeAgo(t.created_at) : ''}</div>
+                        <div class="ticket-sla ${getSlaClass(t.sla_due_at, t.status)}">${getSlaText(t.sla_due_at, t.status)}</div>
+                        <button class="ticket-action-btn" onclick="event.stopPropagation(); openTicket('${t.id || t.ticket_id || ''}')" style="background:var(--blue);">
+                            <i class="fas fa-arrow-right"></i> Abrir
+                        </button>
+                    </div>`;
+            }).join('');
+        }
+
+        // ─── HISTORY ───
+        async function loadHistory() {
+            try {
+                const r = await fetch(API + '/internal/order-history', { credentials: 'include' });
+                let history = [];
+                if (r.ok) {
+                    const data = await r.json();
+                    history = Array.isArray(data) ? data : data.history || data.orders || [];
+                }
+                // Also include completed from current tickets
+                const completed = allTickets.filter(t => t.status === 'completed');
+                const all = [...history, ...completed];
+                const tbody = document.getElementById('historyBody');
+                if (!all.length) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-dim); padding:40px;">Sin entregas registradas</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = all.slice(0, 50).map(t => `
+                    <tr>
+                        <td>${escHtml(t.project_name || t.project_id || '-')}</td>
+                        <td style="color:var(--text-dim)">${escHtml(t.user_email || t.client_email || '-')}</td>
+                        <td><span class="ticket-priority ${(t.priority||'').toLowerCase() === 'high' ? 'priority-high' : (t.priority||'').toLowerCase() === 'medium' ? 'priority-medium' : 'priority-low'}" style="display:inline-block;"></span> ${t.priority || 'low'}</td>
+                        <td><span class="status-pill status-completed"><i class="fas fa-check"></i> Completado</span></td>
+                        <td class="ticket-meta">${t.completed_at || t.created_at || '-'}</td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        // ─── CLAIM TICKET ───
+        async function claimTicket(ticketId) {
+            try {
+                const r = await fetch(API + '/accept-ticket', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ ticket_id: ticketId, engineer: currentUser?.name || 'Agente' })
+                });
+                if (!r.ok) {
+                    // Try alternative endpoint
+                    const r2 = await fetch(API + '/claim-task', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({ ticket_id: ticketId, engineer: currentUser?.name || 'Agente' })
+                    });
+                    if (!r2.ok) throw new Error('No se pudo tomar la tarea');
+                }
+                await loadQueue();
+                openTicket(ticketId);
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        // ─── OPEN TICKET DETAIL ───
+        async function openTicket(ticketId) {
+            activeTicket = allTickets.find(t => (t.id || t.ticket_id) == ticketId);
+            if (!activeTicket) {
+                alert('Ticket no encontrado');
+                return;
+            }
+            // Reset AI conversation
+            aiConversation = [];
+            document.getElementById('aiMessages').innerHTML = `
+                <div class="ai-msg assistant">
+                    <div style="font-size:0.72rem; color:var(--accent); margin-bottom:6px; font-weight:600;">IA Asistente</div>
+                    Tengo el contexto del proyecto <strong>${escHtml(activeTicket.project_name || '')}</strong>.
+                    Puedo ayudarte a ejecutar esta peticion, generar entregables, o revisar la calidad. ¿Que necesitas?
+                </div>`;
+
+            // Blueprint
+            const bp = activeTicket.blueprint_md || activeTicket.engineer_brief || activeTicket.request || 'Sin blueprint disponible.';
+            document.getElementById('blueprintContent').textContent = bp;
+
+            // Client info
+            const infoGrid = document.getElementById('clientInfoGrid');
+            infoGrid.innerHTML = `
+                <div class="info-item"><label>Email cliente</label><span>${escHtml(activeTicket.user_email || activeTicket.client_email || '-')}</span></div>
+                <div class="info-item"><label>Proyecto</label><span>${escHtml(activeTicket.project_name || activeTicket.project_id || '-')}</span></div>
+                <div class="info-item"><label>Prioridad</label><span>${escHtml(activeTicket.priority || 'normal')}</span></div>
+                <div class="info-item"><label>Estado</label><span>${escHtml(activeTicket.status || '-')}</span></div>
+                <div class="info-item"><label>Creado</label><span>${escHtml(activeTicket.created_at || '-')}</span></div>
+                <div class="info-item"><label>SLA</label><span>${escHtml(activeTicket.sla_due_at || 'Sin SLA')}</span></div>
+            `;
+
+            // Project summary
+            const summary = activeTicket.handoff_package || activeTicket.ai_suggestion || 'Sin resumen adicional.';
+            document.getElementById('projectSummary').textContent = typeof summary === 'object' ? JSON.stringify(summary, null, 2) : summary;
+
+            // Load client chat
+            loadClientChat();
+
+            // Quality badge
+            document.getElementById('qualityBadge').className = 'review-badge review-pending';
+            document.getElementById('qualityBadge').innerHTML = '<i class="fas fa-hourglass-half"></i> Pendiente de revision';
+
+            // Deliverables reset
+            document.getElementById('deliverablesList').innerHTML = `
+                <div class="empty-state" style="padding:30px;">
+                    <i class="fas fa-file-circle-plus" style="font-size:1.5rem;"></i>
+                    <p style="font-size:0.82rem;">Genera entregables con la IA o sube archivos.</p>
+                </div>`;
+            document.getElementById('deliverBtn').disabled = true;
+
+            switchView('detail');
+        }
+
+        // ─── CLIENT CHAT ───
+        async function loadClientChat() {
+            if (!activeTicket) return;
+            const project = activeTicket.project_name || activeTicket.project_id || '';
+            try {
+                const r = await fetch(API + '/human-chat/history?project_name=' + encodeURIComponent(project), { credentials: 'include' });
+                if (!r.ok) throw new Error();
+                const data = await r.json();
+                const messages = data.messages || data.history || data || [];
+                const container = document.getElementById('clientChatMessages');
+                if (!messages.length) {
+                    container.innerHTML = '<div class="empty-state" style="padding:20px;"><i class="fas fa-comments" style="font-size:1.2rem;"></i><p style="font-size:0.8rem;">Sin mensajes con el cliente aun.</p></div>';
+                    return;
+                }
+                container.innerHTML = messages.map(m => {
+                    const isClient = m.role === 'client' || m.sender === 'client' || m.from === 'client';
+                    const sender = isClient ? (activeTicket.user_email || 'Cliente') : (m.sender || 'Equipo');
+                    // Handle blueprint messages
+                    if (m.kind === 'blueprint' && m.payload) {
+                        const p = m.payload;
+                        return `<div class="chat-msg internal" style="background:rgba(168,85,247,0.08); border-color:rgba(168,85,247,0.2);">
+                            <div class="msg-sender" style="color:var(--purple);">Blueprint enviado</div>
+                            <strong>${escHtml(p.title || 'Blueprint')}</strong><br>
+                            <span style="font-size:0.8rem;">${escHtml(p.summary || '')}</span>
+                            ${m.accepted ? '<br><span class="review-badge review-pass" style="margin-top:8px;"><i class="fas fa-check"></i> Aprobado</span>' : ''}
+                        </div>`;
+                    }
+                    const text = m.text || m.message || m.content || '';
+                    return `<div class="chat-msg ${isClient ? 'client' : 'internal'}">
+                        <div class="msg-sender">${escHtml(sender)}</div>
+                        ${escHtml(text)}
+                        <div class="msg-time">${m.timestamp || m.created_at || ''}</div>
+                    </div>`;
+                }).join('');
+                container.scrollTop = container.scrollHeight;
+            } catch (err) {
+                console.error('Chat error:', err);
+            }
+        }
+
+        async function sendClientChat() {
+            const input = document.getElementById('clientChatInput');
+            const text = input.value.trim();
+            if (!text || !activeTicket) return;
+            input.value = '';
+
+            const project = activeTicket.project_name || activeTicket.project_id || '';
+
+            // Optimistic render
+            const container = document.getElementById('clientChatMessages');
+            container.innerHTML += `<div class="chat-msg internal">
+                <div class="msg-sender">${escHtml(currentUser?.name || 'Equipo')}</div>
+                ${escHtml(text)}
+                <div class="msg-time">Ahora</div>
+            </div>`;
+            container.scrollTop = container.scrollHeight;
+
+            try {
+                await fetch(API + '/human-chat/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        project_name: project,
+                        sender: currentUser?.name || 'internal',
+                        role: 'internal',
+                        message: text
+                    })
+                });
+            } catch (err) {
+                console.error('Send error:', err);
+            }
+        }
+
+        // ─── AI ASSISTANT ───
+        async function sendAiChat(customPrompt) {
+            const input = document.getElementById('aiChatInput');
+            const text = customPrompt || input.value.trim();
+            if (!text) return;
+            if (!customPrompt) input.value = '';
+
+            const container = document.getElementById('aiMessages');
+            // Add user message
+            container.innerHTML += `<div class="ai-msg user">${escHtml(text)}</div>`;
+            // Add loading
+            const loadingId = 'ai-loading-' + Date.now();
+            container.innerHTML += `<div class="ai-msg assistant" id="${loadingId}">
+                <i class="fas fa-circle-notch spinner" style="color:var(--accent);"></i> Pensando...
+            </div>`;
+            container.scrollTop = container.scrollHeight;
+
+            // Build context
+            const blueprintContext = activeTicket?.blueprint_md || activeTicket?.engineer_brief || activeTicket?.request || '';
+            const projectName = activeTicket?.project_name || '';
+
+            aiConversation.push({ role: 'user', content: text });
+
+            try {
+                const r = await fetch(API + '/engineer/ai-assist', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        project_name: projectName,
+                        context: blueprintContext,
+                        prompt: text,
+                        history: aiConversation.slice(-10)
+                    })
+                });
+
+                let reply = '';
+                if (r.ok) {
+                    const data = await r.json();
+                    reply = data.response || data.suggestion || data.reply || data.text || JSON.stringify(data);
+                } else {
+                    // Fallback to get-ai-suggestion
+                    const r2 = await fetch(API + '/get-ai-suggestion', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({
+                            context: `Proyecto: ${projectName}\n\nBlueprint:\n${blueprintContext}\n\nSolicitud del operador: ${text}`
+                        })
+                    });
+                    if (r2.ok) {
+                        const data2 = await r2.json();
+                        reply = data2.suggestion || data2.response || JSON.stringify(data2);
+                    } else {
+                        reply = 'Error obteniendo respuesta de la IA.';
+                    }
+                }
+
+                aiConversation.push({ role: 'assistant', content: reply });
+
+                const loadingEl = document.getElementById(loadingId);
+                if (loadingEl) {
+                    loadingEl.innerHTML = `<div style="font-size:0.72rem; color:var(--accent); margin-bottom:6px; font-weight:600;">IA Asistente</div>${formatAiResponse(reply)}`;
+                }
+            } catch (err) {
+                const loadingEl = document.getElementById(loadingId);
+                if (loadingEl) loadingEl.innerHTML = '<span style="color:var(--red);">Error de conexion con la IA.</span>';
+            }
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function aiQuickAction(type) {
+            const project = activeTicket?.project_name || 'el proyecto';
+            const prompts = {
+                resume: `Resume el blueprint de "${project}" en 5 puntos clave que necesito para ejecutar esta peticion.`,
+                steps: `Dame los pasos de ejecucion detallados para completar la peticion del proyecto "${project}". Incluye estimacion de tiempo para cada paso.`,
+                draft: `Genera un borrador del entregable principal para "${project}" basado en el blueprint. Incluye estructura, contenido y recomendaciones.`,
+                review: `Revisa la calidad del trabajo realizado para "${project}". Evalua completitud, calidad tecnica, y alineacion con lo solicitado en el blueprint.`
+            };
+            sendAiChat(prompts[type] || '');
+        }
+
+        // ─── DELIVERABLES ───
+        async function generateDeliverable() {
+            const btn = document.getElementById('generateBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-circle-notch spinner"></i> Generando entregable...';
+
+            const project = activeTicket?.project_name || '';
+            const blueprint = activeTicket?.blueprint_md || activeTicket?.engineer_brief || activeTicket?.request || '';
+
+            try {
+                const r = await fetch(API + '/engineer/ai-generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        project_name: project,
+                        context: blueprint,
+                        type: 'deliverable'
+                    })
+                });
+
+                let result = null;
+                if (r.ok) {
+                    result = await r.json();
+                } else {
+                    // Fallback
+                    const r2 = await fetch(API + '/get-ai-suggestion', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({
+                            context: `Genera un entregable profesional para el siguiente proyecto:\n\nBlueprint:\n${blueprint}\n\nCrea un documento de entrega completo con todas las secciones necesarias.`
+                        })
+                    });
+                    if (r2.ok) result = await r2.json();
+                }
+
+                if (result) {
+                    const content = result.code || result.content || result.suggestion || result.response || 'Entregable generado';
+                    const container = document.getElementById('deliverablesList');
+                    container.innerHTML = `
+                        <div class="deliverable-item">
+                            <div class="file-info">
+                                <div class="file-icon"><i class="fas fa-file-code"></i></div>
+                                <div>
+                                    <div class="file-name">entregable_${project.replace(/\s+/g, '_')}.md</div>
+                                    <div class="file-size">${content.length} caracteres</div>
+                                </div>
+                            </div>
+                            <button class="quick-action" onclick="viewDeliverable(this)" data-content="${btoa(unescape(encodeURIComponent(content)))}">
+                                <i class="fas fa-eye"></i> Ver
+                            </button>
+                        </div>`;
+                    document.getElementById('deliverBtn').disabled = false;
+                }
+            } catch (err) {
+                console.error(err);
+            }
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> Generar entregable con IA';
+        }
+
+        function viewDeliverable(btn) {
+            const content = decodeURIComponent(escape(atob(btn.dataset.content)));
+            const win = window.open('', '_blank');
+            win.document.write(`<html><head><title>Entregable</title><style>body{background:#111;color:#eee;font-family:monospace;padding:40px;white-space:pre-wrap;line-height:1.7;max-width:900px;margin:0 auto;}</style></head><body>${content.replace(/</g,'&lt;')}</body></html>`);
+        }
+
+        async function runQualityReview() {
+            const btn = document.getElementById('reviewBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-circle-notch spinner"></i> Revisando calidad...';
+
+            const badge = document.getElementById('qualityBadge');
+            badge.className = 'review-badge review-pending';
+            badge.innerHTML = '<i class="fas fa-circle-notch spinner"></i> Revisando...';
+
+            const blueprint = activeTicket?.blueprint_md || activeTicket?.engineer_brief || '';
+            const project = activeTicket?.project_name || '';
+
+            try {
+                const r = await fetch(API + '/get-ai-suggestion', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        context: `Eres un revisor de calidad. Evalua si el trabajo para "${project}" cumple con los requisitos del blueprint:\n\n${blueprint}\n\nDa una puntuacion de 1-10, lista los puntos fuertes, puntos debiles, y si esta listo para entregar (SI o NO).`
+                    })
+                });
+
+                if (r.ok) {
+                    const data = await r.json();
+                    const review = data.suggestion || data.response || '';
+                    const passed = review.toLowerCase().includes(': si') || review.toLowerCase().includes('listo para entregar: si') || review.toLowerCase().includes('aprobado');
+
+                    badge.className = passed ? 'review-badge review-pass' : 'review-badge review-fail';
+                    badge.innerHTML = passed
+                        ? '<i class="fas fa-check-circle"></i> Aprobado'
+                        : '<i class="fas fa-exclamation-circle"></i> Necesita mejoras';
+
+                    // Show review in AI chat
+                    const container = document.getElementById('aiMessages');
+                    container.innerHTML += `<div class="ai-msg assistant">
+                        <div style="font-size:0.72rem; color:var(--purple); margin-bottom:6px; font-weight:600;">Revision de Calidad</div>
+                        ${formatAiResponse(review)}
+                    </div>`;
+                    container.scrollTop = container.scrollHeight;
+
+                    if (passed) document.getElementById('deliverBtn').disabled = false;
+                }
+            } catch (err) {
+                badge.className = 'review-badge review-fail';
+                badge.innerHTML = '<i class="fas fa-times"></i> Error en revision';
+            }
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-shield-check"></i> Revision de calidad IA';
+        }
+
+        async function deliverToClient() {
+            const btn = document.getElementById('deliverBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-circle-notch spinner"></i> Entregando...';
+
+            const ticketId = activeTicket?.id || activeTicket?.ticket_id || '';
+            const project = activeTicket?.project_name || '';
+
+            try {
+                const r = await fetch(API + '/deliver-ticket', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        ticket_id: ticketId,
+                        project_name: project,
+                        engineer: currentUser?.name || 'Agente'
+                    })
+                });
+
+                if (r.ok || true) {
+                    // Also try deliver-work
+                    await fetch(API + '/deliver-work', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({
+                            ticket_id: ticketId,
+                            project_name: project,
+                            engineer: currentUser?.name || 'Agente'
+                        })
+                    }).catch(() => {});
+
+                    btn.innerHTML = '<i class="fas fa-check"></i> Entregado';
+                    btn.style.background = 'var(--accent)';
+
+                    // Notify via chat
+                    await fetch(API + '/human-chat/send', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({
+                            project_name: project,
+                            sender: currentUser?.name || 'Equipo Anmar',
+                            role: 'internal',
+                            message: '¡Tu proyecto ha sido completado y entregado! Revisa los resultados y dejanos saber si necesitas algun ajuste.'
+                        })
+                    }).catch(() => {});
+
+                    setTimeout(() => { loadQueue(); goBack(); }, 1500);
+                }
+            } catch (err) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-paper-plane"></i> Entregar al cliente';
+                alert('Error entregando: ' + err.message);
+            }
+        }
+
+        // ─── HELPERS ───
+        function escHtml(s) {
+            if (!s) return '';
+            return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        function formatAiResponse(text) {
+            return escHtml(text).replace(/\n/g, '<br>');
+        }
+
+        function timeAgo(dateStr) {
+            try {
+                const d = new Date(dateStr);
+                const now = new Date();
+                const diff = now - d;
+                const mins = Math.floor(diff / 60000);
+                if (mins < 60) return mins + 'm';
+                const hrs = Math.floor(mins / 60);
+                if (hrs < 24) return hrs + 'h';
+                return Math.floor(hrs / 24) + 'd';
+            } catch { return ''; }
+        }
+
+        function getSlaClass(slaDue, status) {
+            if (!slaDue || status === 'completed') return 'sla-ok';
+            const now = new Date();
+            const due = new Date(slaDue);
+            const hoursLeft = (due - now) / 3600000;
+            if (hoursLeft < 0) return 'sla-overdue';
+            if (hoursLeft < 4) return 'sla-warn';
+            return 'sla-ok';
+        }
+
+        function getSlaText(slaDue, status) {
+            if (!slaDue) return 'Sin SLA';
+            if (status === 'completed') return 'Completado';
+            const now = new Date();
+            const due = new Date(slaDue);
+            const hoursLeft = (due - now) / 3600000;
+            if (hoursLeft < 0) return 'Vencido';
+            if (hoursLeft < 1) return Math.round(hoursLeft * 60) + 'min';
+            if (hoursLeft < 24) return Math.round(hoursLeft) + 'h';
+            return Math.round(hoursLeft / 24) + 'd';
+        }
+
+        // ─── ENTER KEY FOR INPUTS ───
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                if (e.target.id === 'clientChatInput') { e.preventDefault(); sendClientChat(); }
+                if (e.target.id === 'aiChatInput') { e.preventDefault(); sendAiChat(); }
+            }
+        });
+
+        // ─── INIT ───
+        (async function init() {
+            await checkAuth();
+            await loadQueue();
+            // Poll every 15s
+            pollInterval = setInterval(loadQueue, 15000);
+        })();
+    </script>
+</body>
+</html>

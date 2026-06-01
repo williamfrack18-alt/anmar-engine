@@ -1,1069 +1,1748 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ANMAR Internal Panel</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <style>
-    :root {
-      --bg: #000;
-      --panel: rgba(6, 6, 6, 0.68);
-      --panel-2: rgba(6, 6, 6, 0.78);
-      --panel-3: rgba(6, 6, 6, 0.88);
-      --border: rgba(255, 255, 255, 0.12);
-      --text: #e5e7eb;
-      --muted: rgba(255, 255, 255, 0.55);
-      --accent: #10b981;
-      --success: #10b981;
-      --warning: #f59e0b;
-      --danger: #ef4444;
-      --radius: 18px;
-      --shadow: 0 18px 46px rgba(0,0,0,0.55);
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      min-height: 100vh;
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Inter', system-ui, sans-serif;
-      overflow: hidden;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anmar | Ops Panel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #f5f7fa; --surface: #ffffff; --border: #e5e7eb;
+            --border-hover: #d1d5db; --text: #111827; --text-dim: #6b7280;
+            --text-muted: #9ca3af; --accent: #10b981; --accent-dim: rgba(16,185,129,0.08);
+            --accent-glow: rgba(16,185,129,0.2); --blue: #3b82f6; --amber: #f59e0b;
+            --red: #ef4444; --purple: #8b5cf6; --sidebar-w: 64px; --header-h: 60px;
+            --radius: 14px; --radius-sm: 10px;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: var(--bg); font-family: 'Inter', sans-serif; color: var(--text);
+            min-height: 100vh; overflow: hidden; -webkit-font-smoothing: antialiased;
+        }
+        .mono { font-family: 'JetBrains Mono', monospace; }
 
-    .video-background {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: -100;
-      pointer-events: none;
-      overflow: hidden;
-    }
+        /* ── SIDEBAR ── */
+        .sidebar {
+            position: fixed; top: 0; left: 0; width: var(--sidebar-w); height: 100vh;
+            background: #ffffff; border-right: 1px solid var(--border); z-index: 100;
+            display: flex; flex-direction: column; align-items: center; padding: 16px 0;
+        }
+        .sidebar .logo {
+            width: 36px; height: 36px; border-radius: 10px;
+            background: linear-gradient(135deg, var(--accent), #0ea5e9);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 0.85rem; color: #ffffff;
+            margin-bottom: 2rem;
+        }
+        .sidebar-nav { display: flex; flex-direction: column; gap: 6px; width: 100%; padding: 0 8px; }
+        .sidebar-nav button {
+            width: 100%; aspect-ratio: 1; border-radius: var(--radius-sm); border: none;
+            background: transparent; color: var(--text-dim); font-size: 1.1rem;
+            cursor: pointer; transition: all 0.2s; display: flex; align-items: center;
+            justify-content: center; position: relative;
+        }
+        .sidebar-nav button:hover { background: #f3f4f6; color: var(--text); }
+        .sidebar-nav button.active { background: var(--accent-dim); color: var(--accent); }
+        .sidebar-nav button .badge-dot {
+            position: absolute; top: 8px; right: 8px; width: 8px; height: 8px;
+            border-radius: 50%; background: var(--red); display: none;
+        }
+        .sidebar-bottom { margin-top: auto; padding: 0 8px; width: 100%; }
+        .sidebar-bottom button {
+            width: 100%; aspect-ratio: 1; border-radius: var(--radius-sm); border: none;
+            background: transparent; color: var(--text-muted); font-size: 1rem;
+            cursor: pointer; transition: all 0.2s; display: flex; align-items: center;
+            justify-content: center;
+        }
+        .sidebar-bottom button:hover { color: var(--red); background: #fef2f2; }
+        .sidebar-bottom .team-btn:hover { color: var(--blue); background: #eff6ff; }
 
-    .video-background iframe {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 100vw;
-      height: 100vh;
-      transform: translate(-50%, -50%) scale(1.5);
-      pointer-events: none;
-      opacity: 0.5;
-    }
+        /* ── HEADER ── */
+        .header {
+            position: fixed; top: 0; left: var(--sidebar-w); right: 0; height: var(--header-h);
+            background: #ffffff; border-bottom: 1px solid var(--border); z-index: 90;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 28px;
+        }
+        .header-left { display: flex; align-items: center; gap: 14px; }
+        .header-title { font-size: 1.05rem; font-weight: 600; letter-spacing: -0.3px; }
+        .header-subtitle { font-size: 0.75rem; color: var(--text-dim); }
+        .header-right { display: flex; align-items: center; gap: 16px; }
+        .header-stat {
+            display: flex; align-items: center; gap: 6px;
+            font-size: 0.78rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace;
+        }
+        .header-stat .num { color: var(--accent); font-weight: 700; }
+        .user-pill {
+            display: flex; align-items: center; gap: 8px;
+            padding: 6px 14px 6px 10px; border-radius: 999px;
+            background: #f3f4f6; border: 1px solid var(--border);
+            font-size: 0.8rem; font-weight: 500;
+        }
+        .user-pill .avatar {
+            width: 26px; height: 26px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), var(--blue));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.65rem; font-weight: 700; color: #001a12;
+        }
 
-    .scanlines {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0) 50%, rgba(0, 0, 0, 0.2) 50%, rgba(0, 0, 0, 0.2));
-      background-size: 100% 4px;
-      z-index: -50;
-      pointer-events: none;
-    }
+        /* ── MAIN ── */
+        .main {
+            position: fixed; top: var(--header-h); left: var(--sidebar-w);
+            right: 0; bottom: 0; overflow: hidden;
+        }
+        .view { display: none; height: 100%; overflow-y: auto; padding: 24px 28px; }
+        .view.active { display: block; }
 
-    .green-tint {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(10, 20, 10, 0.5);
-      z-index: -51;
-      pointer-events: none;
-    }
-    .app {
-      display: grid;
-      grid-template-columns: 320px 1fr;
-      gap: 12px;
-      padding: 12px;
-      height: 100vh;
-    }
-    .panel {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      min-height: 0;
-      overflow: hidden;
-      backdrop-filter: blur(24px);
-    }
-    .sidebar {
-      display: flex;
-      flex-direction: column;
-      min-height: 0;
-    }
-    .brand {
-      padding: 14px 16px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: linear-gradient(180deg, rgba(16,185,129,0.18), transparent);
-    }
-    .brand h1 {
-      font-size: 0.95rem;
-      margin: 0;
-      font-weight: 700;
-      letter-spacing: 0.3px;
-    }
-    .filters {
-      padding: 12px;
-      border-bottom: 1px solid var(--border);
-      display: grid;
-      gap: 8px;
-      background: var(--panel-2);
-    }
-    .filters input[type="text"] {
-      font-size: 0.9rem;
-    }
-    select, input, textarea {
-      width: 100%;
-      background: var(--panel-3);
-      color: var(--text);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 9px 10px;
-      font: inherit;
-      outline: none;
-    }
-    .queue {
-      flex: 1;
-      overflow: auto;
-      padding: 10px;
-      display: grid;
-      gap: 8px;
-    }
-    .ticket {
-      background: var(--panel-2);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 10px;
-      cursor: pointer;
-      transition: 0.15s;
-    }
-    .ticket:hover { border-color: rgba(59,130,246,0.5); }
-    .ticket.active { border-color: rgba(16,185,129,0.7); box-shadow: 0 0 0 1px rgba(16,185,129,0.25); }
-    .ticket .meta {
-      font-size: 0.72rem;
-      color: var(--muted);
-      display: flex;
-      justify-content: space-between;
-    }
-    .ticket .title { font-weight: 700; margin: 6px 0; }
-    .status-pill {
-      font-size: 0.7rem;
-      padding: 3px 8px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      text-transform: uppercase;
-    }
-    .status-pending { color: #fbbf24; border-color: rgba(251,191,36,0.4); }
-    .status-developing { color: #60a5fa; border-color: rgba(96,165,250,0.4); }
-    .status-completed { color: #34d399; border-color: rgba(52,211,153,0.4); }
-    .status-blocked { color: #f87171; border-color: rgba(248,113,113,0.4); }
-    .workspace {
-      display: grid;
-      grid-template-columns: 0.85fr 1.6fr;
-      gap: 12px;
-      height: 100%;
-      padding: 12px;
-    }
-    .card {
-      background: var(--panel-2);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 12px;
-      min-height: 0;
-    }
-    .card.chat-card {
-      display: flex;
-      flex-direction: column;
-      min-height: 0;
-    }
-    .card h2 { margin: 0 0 10px 0; font-size: 0.95rem; }
-    .card h3 { margin: 0; font-size: 0.85rem; }
-    .muted { color: var(--muted); font-size: 0.82rem; }
-    .actions {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin-top: 10px;
-    }
-    .actions.wide {
-      grid-template-columns: 1fr 1fr 1fr 1fr;
-    }
-    button {
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 9px 10px;
-      background: var(--panel-3);
-      color: var(--text);
-      font-weight: 700;
-      cursor: pointer;
-    }
-    .btn-primary { background: #10b981; color: #001b12; }
-    .btn-success { background: #10b981; color: #01261c; }
-    .btn-warning { background: #f59e0b; color: #2b1600; }
-    .chat {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      gap: 10px;
-    }
-    .chat-log {
-      flex: 1;
-      overflow: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      font-size: 0.9rem;
-      min-height: 360px;
-    }
-    .msg {
-      padding: 8px 12px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      max-width: 85%;
-    }
-    .msg.client { background: rgba(59,130,246,0.12); align-self: flex-start; }
-    .msg.engineer { background: rgba(16,185,129,0.12); align-self: flex-end; }
-    .toolbar { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; }
-    .toolbar textarea { flex: 1 1 320px; min-height: 72px; }
-    .toolbar button { height: 38px; }
-    .btn-ghost { background: transparent; border: 1px dashed rgba(148,163,184,0.4); color: var(--muted); }
-    .ai-suggestions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-top: 6px;
-    }
-    .suggestion {
-      font-size: 0.74rem;
-      padding: 6px 10px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      background: rgba(59,130,246,0.08);
-      cursor: pointer;
-      color: var(--text);
-    }
-    .suggestion:hover { border-color: rgba(59,130,246,0.5); }
-    .unread-pill {
-      font-size: 0.65rem;
-      padding: 2px 6px;
-      border-radius: 999px;
-      background: rgba(59,130,246,0.25);
-      color: #bfdbfe;
-      border: 1px solid rgba(59,130,246,0.35);
-    }
-    .topline {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 10px 12px;
-      border-bottom: 1px solid var(--border);
-      background: var(--panel-2);
-    }
-    .badge {
-      font-size: 0.72rem;
-      color: var(--muted);
-    }
-    .row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin-top: 8px;
-    }
-    .row label {
-      font-size: 0.74rem;
-      color: var(--muted);
-      display: block;
-      margin-bottom: 4px;
-    }
-    .order-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      margin-bottom: 6px;
-    }
-    .pill {
-      font-size: 0.7rem;
-      padding: 3px 10px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      text-transform: uppercase;
-    }
-    details {
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 8px 10px;
-      background: rgba(0,0,0,0.25);
-    }
-    details > summary {
-      cursor: pointer;
-      list-style: none;
-      font-size: 0.78rem;
-      color: var(--muted);
-    }
-    details > summary::-webkit-details-marker { display: none; }
-    .filters details {
-      border: 1px dashed rgba(255,255,255,0.2);
-      background: transparent;
-    }
-    .filters details summary {
-      font-size: 0.75rem;
-    }
-    .modal {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.75);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-      backdrop-filter: blur(10px);
-    }
-    .modal.open { display: flex; }
-    .modal-content {
-      width: min(680px, 92vw);
-      background: var(--panel-2);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 16px;
-      box-shadow: var(--shadow);
-      display: grid;
-      gap: 10px;
-    }
-    .editor-textarea {
-      width: 100%;
-      min-height: 320px;
-      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
-      font-size: 0.85rem;
-      background: rgba(0,0,0,0.35);
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 12px;
-      color: var(--text);
-      padding: 10px;
-      resize: vertical;
-    }
-    .ai-textarea {
-      width: 100%;
-      min-height: 180px;
-      font-family: 'Inter', system-ui, sans-serif;
-      font-size: 0.9rem;
-      background: rgba(0,0,0,0.35);
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 12px;
-      color: var(--text);
-      padding: 10px;
-      resize: vertical;
-    }
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .modal-close {
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--muted);
-      padding: 6px 10px;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    .blueprint-box {
-      margin-top: 10px;
-      padding: 10px;
-      border-radius: 12px;
-      border: 1px dashed rgba(59,130,246,0.4);
-      background: rgba(59,130,246,0.08);
-      display: grid;
-      gap: 8px;
-    }
-    .blueprint-box label {
-      font-size: 0.72rem;
-      color: var(--muted);
-    }
-    .blueprint-box input,
-    .blueprint-box textarea {
-      background: rgba(0,0,0,0.35);
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 10px;
-      color: var(--text);
-      padding: 8px 10px;
-      font-size: 0.85rem;
-    }
-    .blueprint-actions {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-  </style>
+        /* ── CARDS ── */
+        .glass-card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 20px; transition: border-color 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+        .glass-card:hover { border-color: var(--border-hover); }
+
+        /* ── QUEUE VIEW ── */
+        .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+        .stat-card { padding: 18px; text-align: center; }
+        .stat-card .stat-num { font-size: 2rem; font-weight: 700; letter-spacing: -1px; }
+        .stat-card .stat-label { font-size: 0.72rem; color: var(--text-dim); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .queue-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .queue-title { font-size: 1.1rem; font-weight: 600; }
+        .queue-filters { display: flex; gap: 8px; }
+        .filter-chip {
+            padding: 6px 14px; border-radius: 999px; border: 1px solid var(--border);
+            background: transparent; color: var(--text-dim); font-size: 0.76rem;
+            cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif;
+        }
+        .filter-chip:hover { border-color: var(--border-hover); color: var(--text); }
+        .filter-chip.active { background: var(--accent-dim); border-color: rgba(16,185,129,0.3); color: var(--accent); }
+
+        /* ── Search bar ── */
+        .search-bar-wrapper { position: relative; display: flex; align-items: center; margin-bottom: 16px; }
+        .search-bar-icon { position: absolute; left: 14px; color: var(--text-muted); font-size: 0.82rem; pointer-events: none; }
+        .ticket-search-input {
+            width: 100%; padding: 10px 40px 10px 36px; border-radius: 10px;
+            border: 1px solid var(--border); background: #ffffff;
+            color: var(--text); font-family: 'Inter', sans-serif; font-size: 0.85rem;
+            outline: none; transition: border-color 0.2s;
+        }
+        .ticket-search-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(16,185,129,0.1); }
+        .ticket-search-input::placeholder { color: var(--text-muted); }
+        .search-clear-btn {
+            position: absolute; right: 10px; background: transparent; border: none;
+            color: var(--text-muted); cursor: pointer; padding: 4px 6px; border-radius: 6px;
+        }
+        .search-clear-btn:hover { color: var(--text); }
+        .search-highlight { background: rgba(16,185,129,0.25); border-radius: 3px; padding: 0 2px; }
+
+        /* ── CHANNEL TABS ── */
+        .channel-tabs {
+            display: flex; gap: 4px; margin-bottom: 18px;
+            background: #f3f4f6; border-radius: var(--radius); padding: 4px;
+        }
+        .channel-tab {
+            flex: 1; padding: 10px 16px; border: none; border-radius: var(--radius-sm);
+            background: transparent; color: var(--text-dim); font-size: 0.82rem;
+            cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif;
+            font-weight: 600; text-align: center; display: flex;
+            align-items: center; justify-content: center; gap: 8px;
+        }
+        .channel-tab:hover { color: var(--text); background: #e5e7eb; }
+        .channel-tab.active-build { background: rgba(59,130,246,0.12); color: var(--blue); }
+        .channel-tab.active-marketing { background: rgba(168,85,247,0.12); color: var(--purple); }
+        .channel-tab.active-organic { background: rgba(16,185,129,0.12); color: var(--accent); }
+        .channel-tab .tab-count {
+            font-size: 0.68rem; padding: 2px 7px; border-radius: 999px;
+            font-family: 'JetBrains Mono', monospace; font-weight: 700;
+        }
+        .channel-tab.active-build .tab-count { background: rgba(59,130,246,0.2); color: var(--blue); }
+        .channel-tab.active-marketing .tab-count { background: rgba(168,85,247,0.2); color: var(--purple); }
+        .channel-tab.active-organic .tab-count { background: rgba(16,185,129,0.2); color: var(--accent); }
+        .channel-badge {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 3px 10px; border-radius: 999px; font-size: 0.66rem;
+            font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase;
+        }
+        .channel-badge.ch-build { background: rgba(59,130,246,0.12); color: var(--blue); border: 1px solid rgba(59,130,246,0.2); }
+        .channel-badge.ch-marketing { background: rgba(168,85,247,0.12); color: var(--purple); border: 1px solid rgba(168,85,247,0.2); }
+        .channel-badge.ch-organic { background: rgba(16,185,129,0.12); color: var(--accent); border: 1px solid rgba(16,185,129,0.2); }
+
+        .ticket-list { display: flex; flex-direction: column; gap: 10px; }
+        .ticket-row {
+            display: grid; grid-template-columns: auto 1fr auto auto auto;
+            align-items: center; gap: 16px; padding: 16px 18px; cursor: pointer;
+        }
+        .ticket-priority { width: 10px; height: 10px; border-radius: 50%; }
+        .priority-high { background: var(--red); box-shadow: 0 0 8px rgba(239,68,68,0.4); }
+        .priority-medium { background: var(--amber); box-shadow: 0 0 8px rgba(245,158,11,0.3); }
+        .priority-low { background: var(--accent); }
+        .ticket-info h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 3px; }
+        .ticket-info p { font-size: 0.76rem; color: var(--text-dim); }
+        .ticket-meta { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-muted); }
+        .ticket-sla { padding: 4px 10px; border-radius: 999px; font-size: 0.68rem; font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+        .sla-ok { background: rgba(16,185,129,0.1); color: var(--accent); border: 1px solid rgba(16,185,129,0.2); }
+        .sla-warn { background: rgba(245,158,11,0.1); color: var(--amber); border: 1px solid rgba(245,158,11,0.2); }
+        .sla-overdue { background: rgba(239,68,68,0.1); color: var(--red); border: 1px solid rgba(239,68,68,0.2); }
+        .ticket-action-btn {
+            padding: 6px 14px; border-radius: 8px; border: none;
+            background: var(--accent); color: #001a12; font-weight: 700;
+            font-size: 0.76rem; cursor: pointer; transition: all 0.2s; white-space: nowrap;
+        }
+        .ticket-action-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px var(--accent-glow); }
+        .status-pill {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 4px 10px; border-radius: 999px; font-size: 0.7rem; font-weight: 600;
+        }
+        .status-completed { background: rgba(16,185,129,0.1); color: var(--accent); }
+        .status-developing { background: rgba(59,130,246,0.1); color: var(--blue); }
+        .status-accepted { background: rgba(168,85,247,0.1); color: var(--purple); }
+
+        /* ── Plan badges ── */
+        .plan-badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 2px 8px; border-radius: 999px; font-size: 0.62rem; font-weight: 700;
+            letter-spacing: 0.03em; text-transform: uppercase; margin-left: 6px;
+        }
+        .plan-validate { background: rgba(16,185,129,0.12); color: #10b981; }
+        .plan-mvp { background: rgba(59,130,246,0.12); color: #3b82f6; }
+        .plan-growth { background: rgba(168,85,247,0.12); color: #8b5cf6; }
+        .plan-none { background: rgba(156,163,175,0.12); color: #9ca3af; }
+
+        /* ── New client highlight ── */
+        .ticket-row.new-client {
+            border: 1.5px solid rgba(59,130,246,0.4);
+            box-shadow: 0 0 12px rgba(59,130,246,0.1);
+            animation: newClientPulse 2s ease-in-out 3;
+        }
+        @keyframes newClientPulse {
+            0%, 100% { box-shadow: 0 0 6px rgba(59,130,246,0.08); }
+            50% { box-shadow: 0 0 18px rgba(59,130,246,0.2); }
+        }
+        .new-badge {
+            display: inline-flex; align-items: center; gap: 3px;
+            padding: 2px 7px; border-radius: 999px; font-size: 0.58rem; font-weight: 700;
+            letter-spacing: 0.04em; text-transform: uppercase;
+            background: rgba(59,130,246,0.15); color: #3b82f6;
+            animation: newBadgePulse 1.5s ease-in-out infinite; margin-left: 6px;
+        }
+        @keyframes newBadgePulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+        /* ── DETAIL VIEW ── */
+        .detail-layout {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 18px; height: calc(100vh - var(--header-h) - 100px);
+        }
+        .detail-back {
+            display: inline-flex; align-items: center; gap: 8px;
+            color: var(--text-dim); font-size: 0.82rem; cursor: pointer;
+            background: none; border: none; margin-bottom: 16px; padding: 6px 0;
+            transition: color 0.2s;
+        }
+        .detail-back:hover { color: var(--text); }
+        .detail-header-row {
+            display: flex; align-items: center; gap: 16px; margin-bottom: 16px; flex-wrap: wrap;
+        }
+        .detail-header-row h2 { font-size: 1.1rem; font-weight: 700; }
+        .detail-panel { display: flex; flex-direction: column; overflow: hidden; }
+        .panel-tabs {
+            display: flex; gap: 2px; margin-bottom: 12px;
+            background: #f3f4f6; border-radius: var(--radius-sm); padding: 3px;
+        }
+        .panel-tab {
+            flex: 1; padding: 8px 12px; border: none; border-radius: 8px;
+            background: transparent; color: var(--text-dim); font-size: 0.78rem;
+            cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif;
+            font-weight: 500; text-align: center;
+        }
+        .panel-tab:hover { color: var(--text); }
+        .panel-tab.active { background: var(--accent-dim); color: var(--accent); }
+        .panel-content {
+            flex: 1; overflow-y: auto; border-radius: var(--radius);
+            background: var(--surface); border: 1px solid var(--border);
+        }
+        .tab-pane { display: none; padding: 18px; height: 100%; }
+        .tab-pane.active { display: flex; flex-direction: column; }
+
+        /* Blueprint display */
+        .blueprint-box {
+            background: #f0fdf4; border: 1px solid #bbf7d0;
+            border-radius: var(--radius-sm); padding: 18px;
+            font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;
+            line-height: 1.7; color: #1a1a2e;
+            white-space: pre-wrap; overflow-y: auto; flex: 1;
+        }
+
+        /* Client info */
+        .client-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .info-item label {
+            display: block; font-size: 0.65rem; color: var(--text-muted);
+            text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 3px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .info-item span { font-size: 0.88rem; }
+
+        /* Chat */
+        .chat-container { display: flex; flex-direction: column; height: 100%; }
+        .chat-messages {
+            flex: 1; overflow-y: auto; padding: 12px; display: flex;
+            flex-direction: column; gap: 10px;
+        }
+        .chat-msg { max-width: 85%; padding: 10px 14px; border-radius: 14px; font-size: 0.85rem; line-height: 1.5; }
+        .chat-msg.client { align-self: flex-start; background: #f3f4f6; border: 1px solid #e5e7eb; color: var(--text); }
+        .chat-msg.internal { align-self: flex-end; background: #10b981; border: 1px solid #059669; color: #ffffff; }
+        .chat-msg .msg-sender { font-size: 0.68rem; font-weight: 600; margin-bottom: 4px; color: var(--text-dim); }
+        .chat-msg.internal .msg-sender { color: rgba(255,255,255,0.8); }
+        .chat-msg .msg-time { font-size: 0.6rem; color: var(--text-muted); margin-top: 4px; text-align: right; }
+        .chat-msg.internal .msg-time { color: rgba(255,255,255,0.6); }
+        .chat-input-row {
+            display: flex; gap: 10px; padding: 14px; border-top: 1px solid var(--border);
+            background: #ffffff; flex-shrink: 0;
+        }
+        .chat-input {
+            flex: 1; background: #f9fafb; border: 1.5px solid var(--border); border-radius: 12px;
+            padding: 12px 16px; color: var(--text); font-size: 0.85rem;
+            font-family: 'Inter', sans-serif; outline: none; resize: none; transition: all 0.2s;
+        }
+        .chat-input:focus { border-color: var(--accent); background: #ffffff; box-shadow: 0 0 0 3px rgba(16,185,129,0.1); }
+        .chat-send-btn {
+            width: 44px; height: 44px; border-radius: 12px; border: none;
+            background: var(--accent); color: #001a12; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.95rem; transition: all 0.2s; font-weight: 600; flex-shrink: 0;
+        }
+        .chat-send-btn:hover { transform: scale(1.08); }
+
+        /* Notes */
+        .notes-container { display: flex; flex-direction: column; height: 100%; gap: 10px; }
+        .notes-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .note-item { background: #f9fafb; border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+        .note-item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .note-author { font-size: 0.72rem; font-weight: 600; color: var(--accent); }
+        .note-time { font-size: 0.68rem; color: var(--text-muted); }
+        .note-body { font-size: 0.82rem; color: var(--text-dim); line-height: 1.5; white-space: pre-wrap; }
+        .note-delete { background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; }
+        .note-delete:hover { color: var(--red); }
+        .note-input-row { display: flex; gap: 8px; align-items: flex-end; }
+        .note-textarea {
+            flex: 1; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border);
+            background: #ffffff; color: var(--text); font-family: 'Inter', sans-serif;
+            font-size: 0.83rem; resize: none; outline: none; min-height: 70px;
+        }
+        .note-textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(16,185,129,0.1); }
+        .note-send-btn {
+            padding: 10px 16px; border-radius: 10px; border: none; cursor: pointer;
+            background: var(--accent-dim); color: var(--accent); font-size: 0.82rem;
+            font-family: 'Inter', sans-serif; font-weight: 600; transition: all 0.2s;
+        }
+        .note-send-btn:hover { background: rgba(16,185,129,0.25); }
+
+        /* ── CLIENTS VIEW ── */
+        .clients-grid { display: flex; flex-direction: column; gap: 8px; }
+        .client-row {
+            display: grid; grid-template-columns: auto 1fr auto auto auto;
+            align-items: center; gap: 16px; padding: 16px 18px; cursor: pointer;
+        }
+        .client-avatar {
+            width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 0.85rem; color: #fff;
+            background: linear-gradient(135deg, var(--accent), var(--blue));
+        }
+        .client-info h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 3px; }
+        .client-info p { font-size: 0.76rem; color: var(--text-dim); }
+        .client-stats {
+            display: flex; gap: 12px; font-size: 0.72rem; color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .client-stats .stat-item { display: flex; align-items: center; gap: 4px; }
+        .client-stats .stat-item i { font-size: 0.65rem; }
+
+        /* ── CLIENT DETAIL VIEW ── */
+        .client-detail-header {
+            display: flex; align-items: center; gap: 16px; margin-bottom: 24px;
+            padding: 20px; background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius);
+        }
+        .client-detail-avatar {
+            width: 56px; height: 56px; border-radius: 50%; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 1.2rem; color: #fff;
+            background: linear-gradient(135deg, var(--accent), var(--blue));
+        }
+        .client-detail-info { flex: 1; }
+        .client-detail-info h2 { font-size: 1.15rem; font-weight: 700; margin-bottom: 2px; }
+        .client-detail-info p { font-size: 0.82rem; color: var(--text-dim); }
+        .client-detail-actions { display: flex; gap: 8px; }
+        .btn-outline {
+            padding: 8px 16px; border-radius: var(--radius-sm);
+            border: 1px solid var(--border); background: transparent;
+            color: var(--text-dim); font-size: 0.78rem; font-weight: 600;
+            cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .btn-outline:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+        .btn-primary {
+            padding: 8px 16px; border: none; border-radius: var(--radius-sm);
+            background: linear-gradient(135deg, var(--accent), #0ea5e9);
+            color: #001a12; font-weight: 700; font-size: 0.78rem;
+            cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px;
+        }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 18px var(--accent-glow); }
+        .btn-primary:disabled { opacity: 0.5; pointer-events: none; }
+        .client-detail-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+        }
+        .client-section { margin-bottom: 20px; }
+        .client-section h3 {
+            font-size: 0.78rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 12px;
+        }
+        .client-projects-list { display: flex; flex-direction: column; gap: 8px; }
+        .project-card {
+            padding: 14px; border-radius: var(--radius-sm);
+            background: #f9fafb; border: 1px solid var(--border); cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        .project-card:hover { border-color: var(--border-hover); }
+        .project-card h4 { font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; }
+        .project-card p { font-size: 0.72rem; color: var(--text-dim); }
+
+        /* Plan upgrade modal */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+            z-index: 1000; align-items: center; justify-content: center;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-card {
+            background: var(--surface); border-radius: var(--radius);
+            padding: 28px; max-width: 420px; width: 90vw;
+            box-shadow: 0 24px 64px rgba(0,0,0,0.15);
+        }
+        .modal-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 16px; }
+        .modal-card .form-field { margin-bottom: 14px; }
+        .modal-card .form-field label {
+            display: block; font-size: 0.7rem; color: var(--text-muted);
+            text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .modal-card .form-field select,
+        .modal-card .form-field input {
+            width: 100%; padding: 10px 12px; border-radius: var(--radius-sm);
+            border: 1px solid var(--border); background: #ffffff;
+            color: var(--text); font-size: 0.85rem; font-family: 'Inter', sans-serif;
+            outline: none;
+        }
+        .modal-card .form-field select:focus,
+        .modal-card .form-field input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(16,185,129,0.1); }
+        .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+        .btn-cancel {
+            padding: 10px 20px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+            background: transparent; color: var(--text-dim); font-size: 0.82rem;
+            cursor: pointer; font-family: 'Inter', sans-serif;
+        }
+
+        /* ── TEAM VIEW ── */
+        .team-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; margin-top: 20px; }
+        .team-card {
+            padding: 18px; border-radius: var(--radius);
+            background: var(--surface); border: 1px solid var(--border);
+            display: flex; align-items: center; gap: 14px; transition: border-color 0.2s;
+        }
+        .team-card:hover { border-color: var(--border-hover); }
+        .team-avatar {
+            width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 1rem; color: #001a12;
+            background: linear-gradient(135deg, var(--accent), var(--blue));
+        }
+        .team-info h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 2px; }
+        .team-info p { font-size: 0.76rem; color: var(--text-dim); }
+        .team-role {
+            margin-left: auto; padding: 4px 10px; border-radius: 999px;
+            font-size: 0.68rem; font-weight: 700; flex-shrink: 0;
+        }
+        .role-admin { background: rgba(245,158,11,0.1); color: var(--amber); border: 1px solid rgba(245,158,11,0.2); }
+        .role-agent { background: rgba(59,130,246,0.1); color: var(--blue); border: 1px solid rgba(59,130,246,0.2); }
+        .add-user-card {
+            padding: 18px; border-radius: var(--radius); border: 1px dashed #d1d5db;
+            display: flex; flex-direction: column; gap: 12px; background: #ffffff;
+        }
+        .add-user-card h3 { font-size: 0.95rem; font-weight: 600; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .form-field label {
+            display: block; font-family: 'JetBrains Mono', monospace;
+            font-size: 0.66rem; color: var(--text-muted);
+            text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 5px;
+        }
+        .form-field input, .form-field select {
+            width: 100%; background: #ffffff; border: 1px solid var(--border);
+            border-radius: var(--radius-sm); padding: 10px 12px; color: var(--text);
+            font-size: 0.85rem; font-family: 'Inter', sans-serif; outline: none; transition: border-color 0.2s;
+        }
+        .form-field input:focus, .form-field select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(16,185,129,0.1); }
+        .form-actions { display: flex; gap: 10px; margin-top: 4px; }
+        .form-hint { font-size: 0.72rem; color: var(--text-muted); line-height: 1.5; }
+        .success-banner {
+            display: none; padding: 10px 14px; border-radius: var(--radius-sm);
+            background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2);
+            color: var(--accent); font-size: 0.82rem;
+        }
+
+        /* ── HISTORY VIEW ── */
+        .history-table { width: 100%; border-collapse: collapse; }
+        .history-table th {
+            text-align: left; padding: 10px 14px; font-size: 0.7rem;
+            color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;
+            font-family: 'JetBrains Mono', monospace; border-bottom: 1px solid var(--border);
+        }
+        .history-table td { padding: 12px 14px; font-size: 0.84rem; border-bottom: 1px solid #f3f4f6; }
+
+        /* ── EMPTY STATE ── */
+        .empty-state {
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: center; padding: 60px 20px; color: var(--text-dim);
+        }
+        .empty-state i { font-size: 2.5rem; margin-bottom: 16px; opacity: 0.3; }
+        .empty-state p { font-size: 0.9rem; }
+
+        /* ── LOADING ── */
+        .spinner { animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── SCROLLBAR ── */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+
+        /* ── MOBILE ── */
+        @media (max-width: 900px) {
+            .sidebar { width: 50px; }
+            :root { --sidebar-w: 50px; }
+            .header { padding: 0 16px; }
+            .view { padding: 16px; }
+            .stats-row { grid-template-columns: repeat(2, 1fr); }
+            .detail-layout { grid-template-columns: 1fr; height: auto; }
+            .client-detail-grid { grid-template-columns: 1fr; }
+            .ticket-row, .client-row { grid-template-columns: auto 1fr auto; }
+            .ticket-meta, .ticket-sla, .client-stats { display: none; }
+        }
+    </style>
 </head>
 <body>
-  <div class="video-background">
-    <iframe
-      src="https://www.youtube.com/embed/Uc1NI4COG9k?autoplay=1&mute=1&loop=1&playlist=Uc1NI4COG9k&controls=0&showinfo=0&rel=0&iv_load_policy=3&disablekb=1&modestbranding=1&start=120"
-      title="Anmar Background" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
-  </div>
-  <div class="green-tint"></div>
-  <div class="scanlines"></div>
 
-  <div class="app">
-    <aside class="panel sidebar">
-      <div class="brand">
-        <h1>ANMAR Internal</h1>
-        <span class="muted" id="queueMeta">Queue 0</span>
-      </div>
-      <div class="filters">
-        <select id="engineerSelect">
-          <option>William</option>
-          <option>Julián</option>
-          <option>George</option>
-          <option>Marketing</option>
-        </select>
-        <select id="statusFilter">
-          <option value="all">Todos</option>
-          <option value="pending">Pendientes</option>
-          <option value="developing">En progreso</option>
-          <option value="completed">Listos</option>
-          <option value="blocked">Bloqueados</option>
-        </select>
-        <details>
-          <summary>Filtros avanzados</summary>
-          <div style="display:grid; gap:8px; margin-top:8px;">
-            <select id="modeFilter">
-              <option value="all">Todas</option>
-              <option value="mine">Solo mías</option>
-            </select>
-            <select id="priorityFilter">
-              <option value="all">Todas prioridades</option>
-              <option value="high">Alta</option>
-              <option value="medium">Media</option>
-              <option value="low">Baja</option>
-            </select>
-          </div>
-        </details>
-        <input id="searchInput" type="text" placeholder="Buscar proyecto o cliente..." />
-      </div>
-      <div class="queue" id="queue"></div>
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="logo">A</div>
+        <div class="sidebar-nav">
+            <button onclick="switchView('queue')" id="nav-queue" class="active" title="Request Queue">
+                <i class="fas fa-inbox"></i>
+                <span class="badge-dot" id="queueBadge"></span>
+            </button>
+            <button onclick="switchView('clients')" id="nav-clients" title="Clients">
+                <i class="fas fa-address-book"></i>
+            </button>
+            <button onclick="switchView('mytasks')" id="nav-mytasks" title="My Tasks">
+                <i class="fas fa-clipboard-check"></i>
+            </button>
+            <button onclick="switchView('history')" id="nav-history" title="History">
+                <i class="fas fa-clock-rotate-left"></i>
+            </button>
+            <button onclick="switchView('team')" id="nav-team" title="Team">
+                <i class="fas fa-users"></i>
+            </button>
+        </div>
+        <div class="sidebar-bottom">
+            <button onclick="handleLogout()" title="Logout">
+                <i class="fas fa-arrow-right-from-bracket"></i>
+            </button>
+        </div>
     </aside>
 
-    <main class="panel">
-      <div class="topline">
-        <div style="font-weight:700;">Operaciones</div>
-        <div class="badge" id="activeOrderBadge">Sin orden activa • <span id="project-status">pending</span></div>
-      </div>
-      <div class="workspace">
-        <section class="card" id="orderCard">
-          <h2>Orden</h2>
-          <div class="muted">Selecciona una orden para ver detalles.</div>
-        </section>
-        <section class="card chat-card">
-          <h2>Chat con Cliente</h2>
-          <div class="chat">
-            <div id="chat-messages">
-              <div class="chat-log" id="chatLog">
-              <div class="muted">Sin mensajes.</div>
-              </div>
+    <!-- HEADER -->
+    <header class="header">
+        <div class="header-left">
+            <div>
+                <div class="header-title">Ops Panel</div>
+                <div class="header-subtitle">Anmar Enterprises · Internal Operations</div>
             </div>
-            <div class="toolbar">
-              <textarea id="chat-input-textarea" rows="3" placeholder="Escribe al cliente..."></textarea>
-              <button id="sendBtn" class="btn-primary">Enviar</button>
-              <button id="ia-suggest-btn" class="btn-ghost">IA sugerir</button>
+        </div>
+        <div class="header-right">
+            <div class="header-stat">
+                <i class="fas fa-inbox" style="color:var(--accent)"></i>
+                <span>Pending: </span><span class="num" id="statPending">0</span>
             </div>
-            <div class="ai-suggestions" id="aiSuggestions"></div>
-          </div>
-        </section>
-      </div>
+            <div class="header-stat">
+                <i class="fas fa-users" style="color:var(--blue)"></i>
+                <span>Clients: </span><span class="num" id="statClients" style="color:var(--blue)">0</span>
+            </div>
+            <div class="user-pill">
+                <div class="avatar" id="userAvatar">?</div>
+                <span id="userName">Loading...</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main class="main">
+
+        <!-- ══ QUEUE VIEW ══ -->
+        <div class="view active" id="view-queue">
+            <div class="stats-row">
+                <div class="glass-card stat-card">
+                    <div class="stat-num" id="countPending" style="color:var(--accent)">0</div>
+                    <div class="stat-label">Pending</div>
+                </div>
+                <div class="glass-card stat-card">
+                    <div class="stat-num" id="countActive" style="color:var(--blue)">0</div>
+                    <div class="stat-label">In Progress</div>
+                </div>
+                <div class="glass-card stat-card">
+                    <div class="stat-num" id="countUrgent" style="color:var(--amber)">0</div>
+                    <div class="stat-label">Urgent SLA</div>
+                </div>
+                <div class="glass-card stat-card">
+                    <div class="stat-num" id="countCompleted" style="color:var(--text-dim)">0</div>
+                    <div class="stat-label">Completed Today</div>
+                </div>
+            </div>
+
+            <div class="channel-tabs">
+                <button class="channel-tab active-build" id="chtab-build" onclick="setChannel('build')">
+                    <i class="fas fa-code"></i> Build
+                    <span class="tab-count" id="count-ch-build">0</span>
+                </button>
+                <button class="channel-tab" id="chtab-marketing" onclick="setChannel('marketing')">
+                    <i class="fas fa-bullhorn"></i> Marketing
+                    <span class="tab-count" id="count-ch-marketing">0</span>
+                </button>
+                <button class="channel-tab" id="chtab-organic" onclick="setChannel('organic')">
+                    <i class="fas fa-leaf"></i> Organic
+                    <span class="tab-count" id="count-ch-organic">0</span>
+                </button>
+            </div>
+
+            <div class="queue-header">
+                <div class="queue-title"><i class="fas fa-layer-group" style="color:var(--accent); margin-right:8px;"></i>Request Queue</div>
+                <div class="queue-filters">
+                    <button class="filter-chip active" data-filter="all" onclick="setFilter('all',this)">All</button>
+                    <button class="filter-chip" data-filter="pending" onclick="setFilter('pending',this)">Pending</button>
+                    <button class="filter-chip" data-filter="accepted" onclick="setFilter('accepted',this)">In Progress</button>
+                    <button class="filter-chip" data-filter="high" onclick="setFilter('high',this)">Urgent</button>
+                </div>
+            </div>
+            <div class="search-bar-wrapper">
+                <i class="fas fa-search search-bar-icon"></i>
+                <input type="text" id="ticketSearch" class="ticket-search-input" placeholder="Search by project, client, status..." oninput="renderTickets()">
+                <button class="search-clear-btn" onclick="clearSearch()" title="Clear"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="ticket-list" id="ticketList">
+                <div class="empty-state"><i class="fas fa-circle-notch spinner"></i><p>Loading queue...</p></div>
+            </div>
+        </div>
+
+        <!-- ══ CLIENTS VIEW ══ -->
+        <div class="view" id="view-clients">
+            <div class="queue-header">
+                <div class="queue-title"><i class="fas fa-address-book" style="color:var(--blue); margin-right:8px;"></i>All Clients</div>
+                <div class="queue-filters">
+                    <button class="filter-chip active" onclick="setClientFilter('all',this)">All</button>
+                    <button class="filter-chip" onclick="setClientFilter('paying',this)">Paying</button>
+                    <button class="filter-chip" onclick="setClientFilter('free',this)">Free</button>
+                </div>
+            </div>
+            <div class="search-bar-wrapper">
+                <i class="fas fa-search search-bar-icon"></i>
+                <input type="text" id="clientSearch" class="ticket-search-input" placeholder="Search by name, email, plan..." oninput="renderClients()">
+                <button class="search-clear-btn" onclick="document.getElementById('clientSearch').value=''; renderClients();" title="Clear"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="clients-grid" id="clientsList">
+                <div class="empty-state"><i class="fas fa-circle-notch spinner"></i><p>Loading clients...</p></div>
+            </div>
+        </div>
+
+        <!-- ══ CLIENT DETAIL VIEW ══ -->
+        <div class="view" id="view-clientdetail">
+            <button class="detail-back" onclick="switchView('clients')">
+                <i class="fas fa-arrow-left"></i> Back to Clients
+            </button>
+            <div class="client-detail-header" id="clientDetailHeader"></div>
+            <div class="client-detail-grid">
+                <div>
+                    <div class="client-section">
+                        <h3><i class="fas fa-circle-info" style="margin-right:6px;"></i>Client Information</h3>
+                        <div class="glass-card">
+                            <div class="client-info-grid" id="clientDetailInfo"></div>
+                        </div>
+                    </div>
+                    <div class="client-section">
+                        <h3><i class="fas fa-folder-open" style="margin-right:6px;"></i>Projects &amp; Tickets</h3>
+                        <div class="client-projects-list" id="clientDetailProjects"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="client-section">
+                        <h3><i class="fas fa-credit-card" style="margin-right:6px;"></i>Plan Management</h3>
+                        <div class="glass-card" id="clientPlanSection"></div>
+                    </div>
+                    <div class="client-section">
+                        <h3><i class="fas fa-clock-rotate-left" style="margin-right:6px;"></i>Recent Activity</h3>
+                        <div class="glass-card" id="clientActivitySection"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══ TICKET DETAIL VIEW ══ -->
+        <div class="view" id="view-detail">
+            <button class="detail-back" onclick="goBack()">
+                <i class="fas fa-arrow-left"></i> Back
+            </button>
+            <div class="detail-header-row" id="detailHeaderRow"></div>
+            <div class="detail-layout">
+                <!-- LEFT: Chat + Blueprint + Client -->
+                <div class="detail-panel">
+                    <div class="panel-tabs">
+                        <button class="panel-tab active" onclick="switchDetailTab('clientchat', this, 'left')">Chat</button>
+                        <button class="panel-tab" onclick="switchDetailTab('blueprint', this, 'left')">Blueprint</button>
+                        <button class="panel-tab" onclick="switchDetailTab('clientinfo', this, 'left')">Client</button>
+                    </div>
+                    <div class="panel-content" id="leftPanelContent">
+                        <div class="tab-pane active" id="pane-clientchat">
+                            <div class="chat-container">
+                                <div class="chat-messages" id="clientChatMessages"></div>
+                                <div class="chat-input-row">
+                                    <textarea class="chat-input" id="clientChatInput" placeholder="Message the client..." rows="1"></textarea>
+                                    <button class="chat-send-btn" onclick="sendClientChat()"><i class="fas fa-paper-plane"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane" id="pane-blueprint">
+                            <div class="blueprint-box" id="blueprintContent">Loading blueprint...</div>
+                        </div>
+                        <div class="tab-pane" id="pane-clientinfo">
+                            <div class="client-info-grid" id="clientInfoGrid"></div>
+                            <h4 style="margin:16px 0 8px; font-size:0.88rem;">Project Summary</h4>
+                            <div class="blueprint-box" id="projectSummary" style="max-height:300px;">No summary available.</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- RIGHT: Notes + Deliverables + History -->
+                <div class="detail-panel">
+                    <div class="panel-tabs">
+                        <button class="panel-tab active" onclick="switchDetailTab('notes', this, 'right')">Notes</button>
+                        <button class="panel-tab" onclick="switchDetailTab('deliver', this, 'right')">Deliverables</button>
+                        <button class="panel-tab" onclick="switchDetailTab('history', this, 'right')">History</button>
+                    </div>
+                    <div class="panel-content" id="rightPanelContent">
+                        <div class="tab-pane active" id="pane-notes">
+                            <div class="notes-container">
+                                <div class="notes-list" id="notesList">
+                                    <div class="empty-state" style="padding:20px;">
+                                        <i class="fas fa-sticky-note" style="font-size:1.4rem;"></i>
+                                        <p style="font-size:0.82rem;">No notes yet. Add the first internal note.</p>
+                                    </div>
+                                </div>
+                                <div class="note-input-row">
+                                    <textarea class="note-textarea" id="noteInput" placeholder="Write an internal note about this ticket..."></textarea>
+                                    <button class="note-send-btn" onclick="saveNote()"><i class="fas fa-save"></i><br>Save</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane" id="pane-deliver">
+                            <div style="padding:18px;">
+                                <h3 style="font-size:0.95rem; margin-bottom:12px;">Deliverables</h3>
+                                <div id="deliverablesList">
+                                    <div class="empty-state" style="padding:30px;">
+                                        <i class="fas fa-file-circle-plus" style="font-size:1.5rem;"></i>
+                                        <p style="font-size:0.82rem;">No deliverables yet.</p>
+                                    </div>
+                                </div>
+                                <button class="btn-primary" onclick="deliverToClient()" id="deliverBtn" disabled style="width:100%; justify-content:center; margin-top:16px; padding:14px;">
+                                    <i class="fas fa-paper-plane"></i> Mark as Delivered
+                                </button>
+                            </div>
+                        </div>
+                        <div class="tab-pane" id="pane-history">
+                            <div id="historyContent" style="font-size:0.82rem; color:var(--text-dim); line-height:1.6; overflow-y:auto; height:100%;">
+                                <div class="empty-state"><i class="fas fa-clock-rotate-left"></i><p>Loading history...</p></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══ MY TASKS VIEW ══ -->
+        <div class="view" id="view-mytasks">
+            <div class="queue-header">
+                <div class="queue-title"><i class="fas fa-clipboard-check" style="color:var(--blue); margin-right:8px;"></i>My Active Tasks</div>
+            </div>
+            <div class="ticket-list" id="myTasksList">
+                <div class="empty-state"><i class="fas fa-inbox"></i><p>You have no active tasks. Claim one from the queue.</p></div>
+            </div>
+        </div>
+
+        <!-- ══ HISTORY VIEW ══ -->
+        <div class="view" id="view-history">
+            <div class="queue-header">
+                <div class="queue-title"><i class="fas fa-clock-rotate-left" style="color:var(--text-dim); margin-right:8px;"></i>Delivery History</div>
+            </div>
+            <div class="glass-card" style="padding:0; overflow:hidden;">
+                <table class="history-table" id="historyTable">
+                    <thead>
+                        <tr><th>Project</th><th>Client</th><th>Priority</th><th>Status</th><th>Date</th></tr>
+                    </thead>
+                    <tbody id="historyBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ══ TEAM VIEW ══ -->
+        <div class="view" id="view-team">
+            <div class="queue-header">
+                <div class="queue-title"><i class="fas fa-users" style="color:var(--blue); margin-right:8px;"></i>Team Management</div>
+            </div>
+            <div class="add-user-card glass-card" id="addUserSection">
+                <h3><i class="fas fa-user-plus" style="color:var(--accent); margin-right:8px;"></i>Add New Member</h3>
+                <div id="addUserBanner" class="success-banner"></div>
+                <div class="form-row">
+                    <div class="form-field"><label>Full Name</label><input type="text" id="newName" placeholder="Ex: Maria Lopez"></div>
+                    <div class="form-field"><label>Username</label><input type="text" id="newUsername" placeholder="Ex: maria.lopez"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-field"><label>Email</label><input type="email" id="newEmail" placeholder="maria@gmail.com"></div>
+                    <div class="form-field"><label>Password</label><input type="password" id="newPassword" placeholder="Leave empty if using Google"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-field"><label>Role</label>
+                        <select id="newRole">
+                            <option value="agent">Agent — handles tickets</option>
+                            <option value="admin">Admin — full access</option>
+                        </select>
+                    </div>
+                </div>
+                <p class="form-hint"><i class="fas fa-info-circle" style="color:var(--accent);"></i> If the member will use Google login, just provide their Gmail and leave the password empty.</p>
+                <div class="form-actions">
+                    <button class="btn-primary" id="addUserBtn" onclick="addTeamMember()"><i class="fas fa-user-plus"></i> Add to Team</button>
+                </div>
+            </div>
+            <div class="team-grid" id="teamGrid">
+                <div class="empty-state" style="grid-column:1/-1; padding:30px;">
+                    <i class="fas fa-circle-notch spinner" style="color:var(--accent);"></i><p>Loading team...</p>
+                </div>
+            </div>
+        </div>
     </main>
-  </div>
 
-  <div class="modal" id="blueprintModal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <div style="font-weight:700;">Blueprint</div>
-        <button class="modal-close" onclick="closeBlueprintModal()">Cerrar</button>
-      </div>
-      <div>
-        <label>Título</label>
-        <input id="bpTitle" type="text" placeholder="Ej: MVP + flujo de reservas" />
-      </div>
-      <div>
-        <label>Resumen</label>
-        <textarea id="bpSummary" rows="3" placeholder="Resumen claro de lo que se va a construir y cambiar."></textarea>
-      </div>
-      <div class="row">
-        <div>
-          <label>Alcance / pasos (1 por línea)</label>
-          <textarea id="bpSteps" rows="5" placeholder="Landing + formulario&#10;Panel de admin básico&#10;Integración pagos"></textarea>
-        </div>
-        <div>
-          <label>Entregables (1 por línea)</label>
-          <textarea id="bpDeliverables" rows="5" placeholder="Figma + Preview&#10;MVP desplegado&#10;Reporte de métricas"></textarea>
-        </div>
-      </div>
-      <div class="blueprint-actions">
-        <button class="btn-primary" onclick="sendBlueprint()">Enviar blueprint al cliente</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal" id="aiBuildModal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <div style="font-weight:700;">Generar Preview con IA</div>
-        <button class="modal-close" onclick="closeAiBuildModal()">Cerrar</button>
-      </div>
-      <div>
-        <label>Instrucción</label>
-        <textarea id="aiBuildInstruction" class="ai-textarea" placeholder="Ej: Crea una landing para una librería de libros antiguos con catálogo, testimonios y formulario de contacto."></textarea>
-      </div>
-      <div class="row">
-        <div>
-          <label>Motor</label>
-          <select id="aiBuildEngine">
-            <option value="antigravity">Antigravity (Gemini)</option>
-            <option value="openai_codex">Codex (OpenAI)</option>
-          </select>
-        </div>
-        <div style="display:flex; align-items:end;">
-          <label style="font-size:0.74rem;">
-            <input id="aiBuildSendPreview" type="checkbox" checked />
-            Enviar preview al cliente
-          </label>
-        </div>
-      </div>
-      <div id="aiBuildStatus" class="muted"></div>
-      <div class="actions" style="grid-template-columns: 1fr;">
-        <button class="btn-primary" onclick="runAiBuild()">Generar Preview</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal" id="ai-suggestion-modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <div style="font-weight:700;">Sugerencia IA</div>
-        <button class="modal-close" onclick="closeAiSuggestionModal()">Cerrar</button>
-      </div>
-      <div class="muted">Acción recomendada</div>
-      <div id="aiSuggestionAction" style="font-weight:600;"></div>
-    </div>
-  </div>
-
-  <script>
-    let currentEngineer = 'William';
-    let currentStatus = 'all';
-    let currentMode = 'all';
-    let currentPriority = 'all';
-    let currentOrder = null;
-    let lastChatCount = 0;
-    let chatInterval = null;
-    let lastQueue = [];
-    let lastUnreadTotal = 0;
-    let currentChatHistory = [];
-    const notifyAudio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-
-    const queueEl = document.getElementById('queue');
-    const orderCard = document.getElementById('orderCard');
-    const chatLog = document.getElementById('chatLog');
-    const chatInput = document.getElementById('chat-input-textarea');
-    const sendBtn = document.getElementById('sendBtn');
-    const aiSuggestBtn = document.getElementById('ia-suggest-btn');
-    const aiSuggestions = document.getElementById('aiSuggestions');
-    const queueMeta = document.getElementById('queueMeta');
-    const searchInput = document.getElementById('searchInput');
-    const activeOrderBadge = document.getElementById('activeOrderBadge');
-    const modeFilter = document.getElementById('modeFilter');
-    const priorityFilter = document.getElementById('priorityFilter');
-
-    document.getElementById('engineerSelect').addEventListener('change', (e) => {
-      currentEngineer = e.target.value;
-      fetchQueue();
-    });
-    document.getElementById('statusFilter').addEventListener('change', (e) => {
-      currentStatus = e.target.value;
-      fetchQueue();
-    });
-    modeFilter.addEventListener('change', (e) => {
-      currentMode = e.target.value;
-      fetchQueue();
-    });
-    priorityFilter.addEventListener('change', (e) => {
-      currentPriority = e.target.value;
-      fetchQueue();
-    });
-    searchInput.addEventListener('input', () => {
-      renderQueue(lastQueue);
-    });
-
-    async function initAuth() {
-      try {
-        const res = await fetch('/api/internal/me');
-        if (!res.ok) {
-          window.location.href = '/internal/login.html';
-          return false;
-        }
-        const data = await res.json();
-        const user = data.user || {};
-        if (user.name) currentEngineer = user.name;
-        const select = document.getElementById('engineerSelect');
-        if (select && user.name) {
-          select.innerHTML = `<option>${user.name}</option>`;
-          select.disabled = true;
-        }
-        return true;
-      } catch (e) {
-        window.location.href = '/internal/login.html';
-        return false;
-      }
-    }
-
-    function statusClass(status) {
-      const s = String(status || 'pending').toLowerCase();
-      if (s === 'developing') return 'status-developing';
-      if (s === 'completed') return 'status-completed';
-      if (s === 'blocked') return 'status-blocked';
-      return 'status-pending';
-    }
-
-    async function fetchQueue() {
-      const q = new URLSearchParams({
-        engineer: currentEngineer,
-        mode: currentMode,
-        status: currentStatus,
-        priority: currentPriority
-      });
-      const res = await fetch(`/api/internal-queue?${q.toString()}`);
-      const data = await res.json();
-      const items = data.items || [];
-      lastQueue = items;
-      const unreadTotal = items.reduce((sum, item) => sum + (parseInt(item.unread_messages || 0, 10) || 0), 0);
-      queueMeta.textContent = unreadTotal ? `Queue ${items.length} • ${unreadTotal} nuevos` : `Queue ${items.length}`;
-      if (unreadTotal > lastUnreadTotal) {
-        notifyAudio.play().catch(() => {});
-      }
-      lastUnreadTotal = unreadTotal;
-      renderQueue(items);
-      if (!currentOrder && items.length) {
-        loadOrder(items[0]);
-      }
-    }
-
-    function renderQueue(items) {
-      const q = (searchInput.value || '').trim().toLowerCase();
-      const filtered = q
-        ? items.filter(i => `${i.project_name || ''} ${i.client_email || i.client || ''}`.toLowerCase().includes(q))
-        : items;
-      queueEl.innerHTML = '';
-      if (!filtered.length) {
-        queueEl.innerHTML = '<div class="muted" style="padding:10px;">Sin órdenes.</div>';
-        return;
-      }
-      filtered.forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'ticket' + (currentOrder && currentOrder.id === item.id ? ' active' : '');
-        div.onclick = () => loadOrder(item);
-        const hasUnread = item.unread_messages;
-        const unreadCount = parseInt(item.unread_messages || 0, 10) || 0;
-        div.innerHTML = `
-          <div class="meta"><span>${item.id || 'TKT'}</span><span>${(item.updated_at || '').slice(11,16)}</span></div>
-          <div class="title">${item.project_name || 'Sin nombre'}</div>
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span class="status-pill ${statusClass(item.status)}">${item.status || 'pending'}</span>
-            <span class="muted">${item.client_email || item.client || ''}</span>
-          </div>
-          ${unreadCount ? `<div style="margin-top:6px;"><span class="unread-pill">${unreadCount} nuevo${unreadCount > 1 ? 's' : ''}</span></div>` : ''}
-        `;
-        if (hasUnread && (!currentOrder || currentOrder.id !== item.id)) {
-          div.style.borderColor = 'rgba(59,130,246,0.7)';
-          div.style.boxShadow = '0 0 0 1px rgba(59,130,246,0.25)';
-        }
-        queueEl.appendChild(div);
-      });
-    }
-
-    function loadOrder(item) {
-      currentOrder = item;
-      lastChatCount = 0;
-      currentChatHistory = [];
-      aiSuggestions.innerHTML = '';
-      chatInput.value = '';
-      chatLog.innerHTML = '<div class="muted">Cargando mensajes...</div>';
-      activeOrderBadge.textContent = `${item.project_name || 'Orden'} • ${String(item.status || 'pending').toUpperCase()}`;
-      const statusEl = document.getElementById('project-status');
-      if (statusEl) statusEl.textContent = String(item.status || 'pending').toUpperCase();
-      const preview = item.preview_url || `/projects/${item.project_name}/index.html`;
-      const note = item.delivery_note || '';
-      const internalNotes = item.internal_notes || '';
-      orderCard.innerHTML = `
-        <div class="order-header">
-          <h2>${item.project_name || 'Orden'}</h2>
-          <span class="pill ${statusClass(item.status)}">${item.status || 'pending'}</span>
-        </div>
-        <div class="muted">Cliente: ${item.client_email || item.client || 'N/D'}</div>
-        <div style="margin:8px 0; font-size:0.9rem;">${item.summary || 'Sin resumen'}</div>
-
-        <div class="actions wide" style="grid-template-columns: repeat(3, 1fr); margin-top:10px;">
-          <button class="btn-primary" onclick="takeOrder('${item.id}')">Tomar</button>
-          <button onclick="setStatus('${item.id}','developing')">En progreso</button>
-          <button class="btn-success" onclick="setStatus('${item.id}','completed')">Entregar</button>
-        </div>
-        <div class="actions" style="margin-top:8px; grid-template-columns: repeat(3, 1fr);">
-          <button onclick="openBlueprintModal()">Blueprint</button>
-          <button onclick="openAiBuildModal()">IA Build</button>
-          <button onclick="openPreview('${item.project_name}')">Preview</button>
-        </div>
-        <div class="actions" style="margin-top:8px; grid-template-columns: repeat(3, 1fr);">
-          <button onclick="sendPreviewLink()">Enviar preview</button>
-          <button onclick="copyPath('${item.project_name}')">Copiar ruta</button>
-          <button onclick="saveNotes('${item.id}')">Guardar nota</button>
-        </div>
-
-        <details style="margin-top:10px;">
-          <summary>Detalles operativos</summary>
-          <div class="row" style="margin-top:10px;">
-            <div>
-              <label>Preview URL</label>
-              <input id="previewUrlInput" type="text" value="${preview}" />
+    <!-- ══ PLAN UPGRADE MODAL ══ -->
+    <div class="modal-overlay" id="upgradeModal">
+        <div class="modal-card">
+            <h3><i class="fas fa-arrow-up-right-dots" style="color:var(--accent); margin-right:8px;"></i>Upgrade Client Plan</h3>
+            <div id="upgradeModalClientInfo" style="font-size:0.82rem; color:var(--text-dim); margin-bottom:16px;"></div>
+            <div class="form-field">
+                <label>New Plan</label>
+                <select id="upgradePlanSelect">
+                    <option value="validate">Validate ($147 one-time)</option>
+                    <option value="mvp">MVP (custom price)</option>
+                    <option value="growth">Growth (custom price)</option>
+                    <option value="none">Remove plan</option>
+                </select>
             </div>
-            <div>
-              <label>Nota de entrega</label>
-              <textarea id="deliveryNoteInput" rows="3">${note}</textarea>
+            <div class="form-field" id="stripePriceField" style="display:none;">
+                <label>Stripe Price ID (for subscription)</label>
+                <input type="text" id="upgradeStripePriceId" placeholder="price_xxx (optional — for MVP/Growth)">
+                <p class="form-hint" style="margin-top:4px;">Leave empty to just mark the plan without creating a Stripe subscription.</p>
             </div>
-          </div>
-          <div style="margin-top:8px;">
-            <label>Notas internas</label>
-            <textarea id="internalNotesInput" rows="3" placeholder="Notas internas (solo equipo)">${internalNotes}</textarea>
-          </div>
-          <div class="actions" style="margin-top:8px;">
-            <button class="btn-warning" onclick="setStatus('${item.id}','blocked')">Bloquear</button>
-            <button onclick="saveProgress('${item.id}')">Guardar avance</button>
-          </div>
-        </details>
-      `;
-      loadChat();
-      if (chatInterval) clearInterval(chatInterval);
-      chatInterval = setInterval(loadChat, 3000);
-    }
+            <div id="upgradeResult" style="display:none; padding:10px; border-radius:8px; font-size:0.82rem; margin-top:10px;"></div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="hideUpgradeModal()">Cancel</button>
+                <button class="btn-primary" id="upgradeConfirmBtn" onclick="confirmUpgrade()"><i class="fas fa-check"></i> Confirm Upgrade</button>
+            </div>
+        </div>
+    </div>
 
-    async function takeOrder(id) {
-      await fetch('/api/accept-ticket', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ticket_id: id, engineer: currentEngineer })
-      });
-      fetchQueue();
-    }
+    <script>
+        const API = '/api';
+        let currentUser = null;
+        let allTickets = [];
+        let allClients = [];
+        let currentFilter = 'all';
+        let currentClientFilter = 'all';
+        let currentChannel = 'build';
+        let activeTicket = null;
+        let activeClient = null;
+        let previousView = 'queue';
+        let pollInterval = null;
+        let knownTicketIds = new Set();
+        let notifPermission = 'default';
 
-    async function setStatus(id, status) {
-      const previewUrl = (document.getElementById('previewUrlInput')?.value || '').trim();
-      const deliveryNote = (document.getElementById('deliveryNoteInput')?.value || '').trim();
-      const internalNotes = (document.getElementById('internalNotesInput')?.value || '').trim();
-      await fetch('/api/admin/update-ticket', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ticket_id: id, engineer: currentEngineer, status, preview_url: previewUrl, delivery_note: deliveryNote, internal_notes: internalNotes })
-      });
-      fetchQueue();
-    }
+        const CHANNEL_CONFIG = {
+            build: { label: 'Build', icon: 'fa-code', color: 'var(--blue)', cssClass: 'ch-build', activeClass: 'active-build' },
+            marketing: { label: 'Marketing', icon: 'fa-bullhorn', color: 'var(--purple)', cssClass: 'ch-marketing', activeClass: 'active-marketing' },
+            organic: { label: 'Organic', icon: 'fa-leaf', color: 'var(--accent)', cssClass: 'ch-organic', activeClass: 'active-organic' }
+        };
 
-    async function saveProgress(id) {
-      const previewUrl = (document.getElementById('previewUrlInput')?.value || '').trim();
-      const deliveryNote = (document.getElementById('deliveryNoteInput')?.value || '').trim();
-      const internalNotes = (document.getElementById('internalNotesInput')?.value || '').trim();
-      await fetch('/api/admin/update-ticket', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ticket_id: id, engineer: currentEngineer, status: 'developing', preview_url: previewUrl, delivery_note: deliveryNote, internal_notes: internalNotes })
-      });
-      fetchQueue();
-    }
+        // ─── AUTH ───
+        async function checkAuth() {
+            try {
+                const r = await fetch(API + '/internal/me', { credentials: 'include' });
+                if (!r.ok) throw new Error();
+                const data = await r.json();
+                currentUser = data.user || data;
+                document.getElementById('userName').textContent = currentUser.name || currentUser.username || 'Agent';
+                const initials = (currentUser.name || 'A').split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+                document.getElementById('userAvatar').textContent = initials;
+            } catch { window.location.replace('login.html'); }
+        }
 
-    async function saveNotes(id) {
-      const previewUrl = (document.getElementById('previewUrlInput')?.value || '').trim();
-      const deliveryNote = (document.getElementById('deliveryNoteInput')?.value || '').trim();
-      const internalNotes = (document.getElementById('internalNotesInput')?.value || '').trim();
-      await fetch('/api/admin/update-ticket', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ticket_id: id, engineer: currentEngineer, preview_url: previewUrl, delivery_note: deliveryNote, internal_notes: internalNotes })
-      });
-      fetchQueue();
-    }
+        async function handleLogout() {
+            await fetch(API + '/internal/logout', { method: 'POST', credentials: 'include' });
+            localStorage.removeItem('internalUser');
+            window.location.replace('login.html');
+        }
 
-    function parseLines(value) {
-      return String(value || '')
-        .split('\n')
-        .map(line => line.trim())
-        .filter(Boolean);
-    }
+        // ─── NOTIFICATIONS ───
+        async function requestNotifPermission() {
+            if (!('Notification' in window)) return;
+            if (Notification.permission === 'granted') { notifPermission = 'granted'; return; }
+            if (Notification.permission !== 'denied') {
+                notifPermission = await Notification.requestPermission();
+            } else { notifPermission = Notification.permission; }
+        }
 
-    async function sendBlueprint() {
-      if (!currentOrder) return;
-      const title = (document.getElementById('bpTitle')?.value || '').trim();
-      const summary = (document.getElementById('bpSummary')?.value || '').trim();
-      const steps = parseLines(document.getElementById('bpSteps')?.value || '');
-      const deliverables = parseLines(document.getElementById('bpDeliverables')?.value || '');
-      const payload = {
-        title: title || `Blueprint ${currentOrder.project_name || ''}`.trim(),
-        summary,
-        steps,
-        deliverables
-      };
-      await fetch('/api/human-chat/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          project_name: currentOrder.project_name,
-          role: 'human',
-          content: summary || payload.title,
-          actor: currentEngineer,
-          kind: 'blueprint',
-          payload
-        })
-      });
-      const fields = ['bpTitle','bpSummary','bpSteps','bpDeliverables'];
-      fields.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.value = '';
-      });
-      closeBlueprintModal();
-      loadChat();
-    }
+        function showToast(msg, type = 'info') {
+            let toast = document.getElementById('notifToast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'notifToast';
+                toast.style.cssText = `position:fixed;bottom:24px;right:24px;z-index:9999;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:14px 18px;display:flex;align-items:center;gap:12px;box-shadow:0 8px 32px rgba(0,0,0,0.12);font-size:14px;color:#111827;max-width:340px;cursor:pointer;transform:translateY(80px);opacity:0;transition:all 0.3s cubic-bezier(.4,0,.2,1);`;
+                toast.onclick = () => hideToast();
+                document.body.appendChild(toast);
+            }
+            const colors = { info: '#3b82f6', success: '#10b981', warning: '#f59e0b', error: '#ef4444' };
+            const icons  = { info: 'fa-bell', success: 'fa-check-circle', warning: 'fa-exclamation-triangle', error: 'fa-times-circle' };
+            toast.innerHTML = `<i class="fas ${icons[type]}" style="color:${colors[type]};font-size:18px;flex-shrink:0;"></i><span style="line-height:1.4;">${msg}</span>`;
+            setTimeout(() => { toast.style.transform = 'translateY(0)'; toast.style.opacity = '1'; }, 10);
+            clearTimeout(toast._hideTimer);
+            toast._hideTimer = setTimeout(hideToast, 5000);
+        }
+        function hideToast() {
+            const toast = document.getElementById('notifToast');
+            if (toast) { toast.style.transform = 'translateY(80px)'; toast.style.opacity = '0'; }
+        }
 
-    function openBlueprintModal() {
-      const modal = document.getElementById('blueprintModal');
-      if (modal) modal.classList.add('open');
-    }
+        function fireNotification(ticket) {
+            const ch = CHANNEL_CONFIG[getTicketChannel(ticket)] || CHANNEL_CONFIG.build;
+            const title = `New ticket — ${ch.label}`;
+            const body  = ticket.project_name || ticket.client_email || 'Unnamed ticket';
+            if (notifPermission === 'granted') {
+                const n = new Notification(title, { body, icon: '/favicon.ico', tag: ticket.id });
+                n.onclick = () => { window.focus(); n.close(); };
+            }
+            showToast(`<strong>${title}</strong><br>${body}`, 'info');
+        }
 
-    function closeBlueprintModal() {
-      const modal = document.getElementById('blueprintModal');
-      if (modal) modal.classList.remove('open');
-    }
+        function checkNewTickets(freshTickets) {
+            if (knownTicketIds.size === 0) {
+                freshTickets.forEach(t => knownTicketIds.add(t.id));
+                return;
+            }
+            freshTickets.filter(t => !knownTicketIds.has(t.id)).forEach(t => {
+                knownTicketIds.add(t.id);
+                fireNotification(t);
+            });
+            const pending = freshTickets.filter(t => t.status === 'pending' || t.status === 'pending_human_review').length;
+            document.title = pending > 0 ? `(${pending}) Anmar | Ops Panel` : 'Anmar | Ops Panel';
+        }
 
-    function openAiBuildModal() {
-      const modal = document.getElementById('aiBuildModal');
-      if (modal) modal.classList.add('open');
-    }
+        // ─── NAVIGATION ───
+        function switchView(view) {
+            if (window._clientChatPoll) { clearInterval(window._clientChatPoll); window._clientChatPoll = null; }
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.querySelectorAll('.sidebar-nav button').forEach(b => b.classList.remove('active'));
+            document.getElementById('view-' + view).classList.add('active');
+            const btn = document.getElementById('nav-' + view);
+            if (btn) btn.classList.add('active');
+            if (!['detail','clientdetail'].includes(view)) previousView = view;
+            if (view === 'queue') loadQueue();
+            if (view === 'mytasks') loadMyTasks();
+            if (view === 'history') loadHistory();
+            if (view === 'team') loadTeam();
+            if (view === 'clients') loadClients();
+        }
 
-    function closeAiBuildModal() {
-      const modal = document.getElementById('aiBuildModal');
-      if (modal) modal.classList.remove('open');
-    }
+        function goBack() {
+            if (window._clientChatPoll) { clearInterval(window._clientChatPoll); window._clientChatPoll = null; }
+            switchView(previousView);
+        }
 
-    async function runAiBuild() {
-      if (!currentOrder) return;
-      const instruction = (document.getElementById('aiBuildInstruction')?.value || '').trim();
-      const engine = document.getElementById('aiBuildEngine')?.value || 'antigravity';
-      const sendPreview = document.getElementById('aiBuildSendPreview')?.checked;
-      const statusEl = document.getElementById('aiBuildStatus');
-      if (!instruction) {
-        if (statusEl) statusEl.textContent = 'Escribe una instrucción para generar el preview.';
-        return;
-      }
-      if (statusEl) statusEl.textContent = 'Generando preview con IA...';
-      const res = await fetch('/api/engineer/ai-generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          project_id: currentOrder.project_name,
-          instruction,
-          engine
-        })
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        if (statusEl) statusEl.textContent = data.error || 'No se pudo generar el preview.';
-        return;
-      }
-      if (statusEl) statusEl.textContent = 'Preview generado.';
-      if (sendPreview) {
-        await sendPreviewLink();
-      }
-      closeAiBuildModal();
-    }
+        function switchDetailTab(tab, btn, side) {
+            const container = side === 'left' ? 'leftPanelContent' : 'rightPanelContent';
+            btn.parentElement.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById(container).querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+            document.getElementById('pane-' + tab).classList.add('active');
+        }
 
-    async function sendPreviewLink() {
-      if (!currentOrder) return;
-      const previewUrl = `/projects/${currentOrder.project_name}/index.html`;
-      await fetch('/api/human-chat/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          project_name: currentOrder.project_name,
-          role: 'human',
-          content: `Preview actualizado: ${previewUrl}`,
-          actor: currentEngineer,
-          kind: 'preview',
-          payload: { url: previewUrl }
-        })
-      });
-      loadChat();
-    }
+        // ─── CHANNEL SWITCH ───
+        function setChannel(ch) {
+            currentChannel = ch;
+            document.querySelectorAll('.channel-tab').forEach(t => t.className = 'channel-tab');
+            const activeTab = document.getElementById('chtab-' + ch);
+            if (activeTab) activeTab.classList.add(CHANNEL_CONFIG[ch].activeClass);
+            renderTickets();
+        }
 
-    async function loadChat() {
-      if (!currentOrder) return;
-      const res = await fetch(`/api/human-chat/history?project_name=${encodeURIComponent(currentOrder.project_name)}&mark_read=1`);
-      const data = await res.json();
-      const history = data.history || [];
-      currentChatHistory = history;
-      if (history.length === 0) {
-        chatLog.innerHTML = '<div class="muted">Sin mensajes.</div>';
-        return;
-      }
-      if (history.length === lastChatCount) return;
-      if (lastChatCount > 0 && history.length > lastChatCount) {
-        notifyAudio.play().catch(() => {});
-      }
-      lastChatCount = history.length;
-      chatLog.innerHTML = history.map(msg => {
-        const role = msg.role === 'client' ? 'client' : 'engineer';
-        const name = msg.role === 'client' ? 'Cliente' : (msg.actor || currentEngineer);
-        return `<div class="msg ${role}"><strong>${name}:</strong> ${msg.content}</div>`;
-      }).join('');
-      chatLog.scrollTop = chatLog.scrollHeight;
-    }
+        function getTicketChannel(t) {
+            if (t.channel) return t.channel;
+            const text = ((t.summary || '') + ' ' + (t.blueprint_md || '') + ' ' + (t.project_name || '')).toLowerCase();
+            if (text.includes('marketing') || text.includes('ads') || text.includes('paid')) return 'marketing';
+            if (text.includes('organic') || text.includes('seo') || text.includes('community')) return 'organic';
+            return 'build';
+        }
 
-    function openPreview(projectName) {
-      const target = `/projects/${projectName}/index.html`;
-      window.open(target, '_blank');
-    }
+        function updateChannelCounts() {
+            const counts = { build: 0, marketing: 0, organic: 0 };
+            allTickets.forEach(t => { const ch = getTicketChannel(t); if (counts[ch] !== undefined) counts[ch]++; });
+            document.getElementById('count-ch-build').textContent = counts.build;
+            document.getElementById('count-ch-marketing').textContent = counts.marketing;
+            document.getElementById('count-ch-organic').textContent = counts.organic;
+        }
 
-    function copyPath(projectName) {
-      const path = `/generated_projects/${projectName}`;
-      navigator.clipboard.writeText(path).catch(() => {});
-    }
+        function channelBadgeHtml(ch) {
+            const cfg = CHANNEL_CONFIG[ch] || CHANNEL_CONFIG.build;
+            return `<span class="channel-badge ${cfg.cssClass}"><i class="fas ${cfg.icon}"></i> ${cfg.label}</span>`;
+        }
 
-    async function sendChat() {
-      if (!currentOrder) return;
-      const content = (chatInput.value || '').trim();
-      if (!content) return;
-      chatInput.value = '';
-      aiSuggestions.innerHTML = '';
-      await fetch('/api/human-chat/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          project_name: currentOrder.project_name,
-          role: 'human',
-          content,
-          actor: currentEngineer
-        })
-      });
-      loadChat();
-    }
+        function planBadgeHtml(plan) {
+            const p = (plan || 'none').toLowerCase();
+            const labels = { validate: 'Validate', mvp: 'MVP', growth: 'Growth', none: 'No plan' };
+            const icons = { validate: 'fa-check-circle', mvp: 'fa-rocket', growth: 'fa-chart-line', none: 'fa-minus-circle' };
+            const cls = p === 'validate' ? 'plan-validate' : p === 'mvp' ? 'plan-mvp' : p === 'growth' ? 'plan-growth' : 'plan-none';
+            return `<span class="plan-badge ${cls}"><i class="fas ${icons[p] || icons.none}"></i> ${labels[p] || 'No plan'}</span>`;
+        }
 
-    function renderAiSuggestions(items) {
-      if (!items || !items.length) {
-        aiSuggestions.innerHTML = '';
-        return;
-      }
-      aiSuggestions.innerHTML = '';
-      items.forEach(text => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'suggestion';
-        btn.textContent = text;
-        btn.addEventListener('click', () => applySuggestion(text));
-        aiSuggestions.appendChild(btn);
-      });
-    }
+        // ─── FILTERS ───
+        function setFilter(filter, btn) {
+            currentFilter = filter;
+            document.querySelectorAll('#view-queue .filter-chip').forEach(c => c.classList.remove('active'));
+            btn.classList.add('active');
+            renderTickets();
+        }
 
-    function applySuggestion(text) {
-      chatInput.value = text || '';
-      chatInput.focus();
-    }
+        function setClientFilter(filter, btn) {
+            currentClientFilter = filter;
+            document.querySelectorAll('#view-clients .filter-chip').forEach(c => c.classList.remove('active'));
+            btn.classList.add('active');
+            renderClients();
+        }
 
-    function getChatHistoryText() {
-      if (Array.isArray(currentChatHistory) && currentChatHistory.length) {
-        return currentChatHistory.map((msg) => {
-          const role = msg.role === 'client' ? 'Cliente' : 'Anmar';
-          const content = String(msg.content || '').trim();
-          return content ? `${role}: ${content}` : '';
-        }).filter(Boolean).join('\n');
-      }
-      const container = document.getElementById('chat-messages');
-      if (!container) return '';
-      const msgs = container.querySelectorAll('.msg');
-      const lines = [];
-      msgs.forEach((node) => {
-        const isClient = node.classList.contains('client');
-        const role = isClient ? 'Cliente' : 'Anmar';
-        const content = node.textContent.trim();
-        if (content) lines.push(`${role}: ${content}`);
-      });
-      return lines.join('\n');
-    }
+        // ─── LOAD QUEUE ───
+        async function loadQueue() {
+            try {
+                const r = await fetch(API + '/internal-queue', { credentials: 'include' });
+                if (r.status === 401) { showToast('Session expired', 'error'); setTimeout(() => window.location.replace('login.html'), 1500); return; }
+                if (!r.ok) {
+                    const r2 = await fetch(API + '/internal-alerts', { credentials: 'include' });
+                    if (r2.status === 401) { showToast('Session expired', 'error'); setTimeout(() => window.location.replace('login.html'), 1500); return; }
+                    if (!r2.ok) throw new Error();
+                    allTickets = await r2.json();
+                } else {
+                    allTickets = await r.json();
+                }
+                if (!Array.isArray(allTickets)) allTickets = allTickets.items || allTickets.tickets || allTickets.queue || [];
+                checkNewTickets(allTickets);
+                updateStats();
+                renderTickets();
+            } catch (err) {
+                console.error('Error loading queue:', err);
+                document.getElementById('ticketList').innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Error loading queue. Please reload.</p></div>';
+            }
+        }
 
-    function showAiSuggestionModal(actionText) {
-      const modal = document.getElementById('ai-suggestion-modal');
-      const actionEl = document.getElementById('aiSuggestionAction');
-      if (actionEl) actionEl.textContent = actionText || '';
-      if (modal) modal.classList.add('open');
-    }
+        function updateStats() {
+            const channelTickets = allTickets.filter(t => getTicketChannel(t) === currentChannel);
+            const pending = channelTickets.filter(t => t.status === 'pending' || t.status === 'pending_human_review').length;
+            const active = channelTickets.filter(t => t.status === 'accepted' || t.status === 'developing').length;
+            const completed = channelTickets.filter(t => t.status === 'completed').length;
+            const now = new Date();
+            const urgent = channelTickets.filter(t => {
+                if (!t.sla_due_at) return false;
+                return new Date(t.sla_due_at) < new Date(now.getTime() + 4 * 3600000) && t.status !== 'completed';
+            }).length;
+            document.getElementById('countPending').textContent = pending;
+            document.getElementById('countActive').textContent = active;
+            document.getElementById('countUrgent').textContent = urgent;
+            document.getElementById('countCompleted').textContent = completed;
+            document.getElementById('statPending').textContent = allTickets.filter(t => t.status === 'pending' || t.status === 'pending_human_review').length;
+            const badge = document.getElementById('queueBadge');
+            badge.style.display = pending > 0 ? 'block' : 'none';
+            updateChannelCounts();
+        }
 
-    function closeAiSuggestionModal() {
-      const modal = document.getElementById('ai-suggestion-modal');
-      if (modal) modal.classList.remove('open');
-    }
+        function renderTickets() {
+            const container = document.getElementById('ticketList');
+            const query = (document.getElementById('ticketSearch')?.value || '').trim().toLowerCase();
+            let filtered = allTickets.filter(t => getTicketChannel(t) === currentChannel);
+            if (currentFilter === 'pending') filtered = filtered.filter(t => t.status === 'pending' || t.status === 'pending_human_review');
+            else if (currentFilter === 'accepted') filtered = filtered.filter(t => t.status === 'accepted' || t.status === 'developing');
+            else if (currentFilter === 'high') filtered = filtered.filter(t => (t.priority || '').toLowerCase() === 'high');
+            if (query) {
+                filtered = filtered.filter(t => {
+                    return [t.project_name, t.project_id, t.user_email, t.client_email, t.status, t.priority, t.assigned_to, t.engineer, t.id, t.ticket_id].join(' ').toLowerCase().includes(query);
+                });
+            }
+            const cfg = CHANNEL_CONFIG[currentChannel] || CHANNEL_CONFIG.build;
+            if (!filtered.length) {
+                container.innerHTML = `<div class="empty-state"><i class="fas ${cfg.icon}" style="color:${cfg.color};"></i><p>${query ? 'No results for "' + escHtml(query) + '"' : 'No ' + cfg.label + ' requests in this category.'}</p></div>`;
+                return;
+            }
+            container.innerHTML = filtered.map(t => {
+                const ch = getTicketChannel(t);
+                const priority = (t.priority || 'low').toLowerCase();
+                const prClass = priority === 'high' ? 'priority-high' : priority === 'medium' ? 'priority-medium' : 'priority-low';
+                const slaClass = getSlaClass(t.sla_due_at, t.status);
+                const slaText = getSlaText(t.sla_due_at, t.status);
+                const canClaim = t.status === 'pending' || t.status === 'pending_human_review';
+                const projectName = t.project_name || t.project_id || 'Unnamed';
+                const clientEmail = t.user_email || t.client_email || 'Unknown';
+                const created = t.created_at ? timeAgo(t.created_at) : '';
+                const isNewClient = t.client_plan && t.client_plan !== 'none' && t.created_at && (Date.now() - new Date(t.created_at).getTime()) < 30 * 60 * 1000 && (t.status === 'pending' || t.status === 'pending_human_review');
+                const newBadge = isNewClient ? '<span class="new-badge"><i class="fas fa-bolt" style="font-size:0.5rem;"></i> NEW</span>' : '';
+                return `<div class="glass-card ticket-row${isNewClient ? ' new-client' : ''}" onclick="openTicket('${t.id || t.ticket_id || ''}')">
+                    <div class="ticket-priority ${prClass}"></div>
+                    <div class="ticket-info">
+                        <h4>${highlightText(projectName, query)}${newBadge}</h4>
+                        <p>${highlightText(clientEmail, query)} ${planBadgeHtml(t.client_plan)} ${channelBadgeHtml(ch)}</p>
+                    </div>
+                    <div class="ticket-meta">${created}</div>
+                    <div class="ticket-sla ${slaClass}">${slaText}</div>
+                    ${canClaim ? `<button class="ticket-action-btn" onclick="event.stopPropagation(); claimTicket('${t.id || t.ticket_id || ''}')"><i class="fas fa-hand"></i> Claim</button>` :
+                    `<span class="status-pill status-${t.status === 'completed' ? 'completed' : t.status === 'accepted' ? 'accepted' : 'developing'}">${t.status}</span>`}
+                </div>`;
+            }).join('');
+        }
 
-    async function requestAiSuggestions() {
-      if (!currentOrder) return;
-      const original = aiSuggestBtn.textContent;
-      aiSuggestBtn.disabled = true;
-      aiSuggestBtn.textContent = 'Cargando...';
-      try {
-        const chatHistory = getChatHistoryText();
-        const statusEl = document.getElementById('project-status');
-        const projectStatus = statusEl ? statusEl.textContent.trim() : (currentOrder.status || '');
-        const res = await fetch('/api/get-ai-suggestion', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chatHistory,
-            projectStatus,
-            projectIdentifier: currentOrder.project_name || ''
-          })
+        // ─── CLIENTS ───
+        async function loadClients() {
+            try {
+                const r = await fetch(API + '/internal/clients', { credentials: 'include' });
+                if (!r.ok) throw new Error();
+                const data = await r.json();
+                allClients = data.clients || [];
+                document.getElementById('statClients').textContent = allClients.length;
+                renderClients();
+            } catch (err) {
+                console.error('Error loading clients:', err);
+                document.getElementById('clientsList').innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Error loading clients.</p></div>';
+            }
+        }
+
+        function renderClients() {
+            const container = document.getElementById('clientsList');
+            const query = (document.getElementById('clientSearch')?.value || '').trim().toLowerCase();
+            let filtered = [...allClients];
+            if (currentClientFilter === 'paying') filtered = filtered.filter(c => c.plan !== 'none' && c.plan_active);
+            else if (currentClientFilter === 'free') filtered = filtered.filter(c => c.plan === 'none' || !c.plan_active);
+            if (query) filtered = filtered.filter(c => [c.name, c.email, c.plan].join(' ').toLowerCase().includes(query));
+
+            if (!filtered.length) {
+                container.innerHTML = `<div class="empty-state"><i class="fas fa-address-book"></i><p>${query ? 'No clients matching "' + escHtml(query) + '"' : 'No clients found.'}</p></div>`;
+                return;
+            }
+
+            container.innerHTML = filtered.map(c => {
+                const initials = (c.name || '?').split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+                const channels = (c.channels || []).map(ch => channelBadgeHtml(ch)).join(' ');
+                return `<div class="glass-card client-row" onclick="openClientDetail('${escHtml(c.email)}')">
+                    <div class="client-avatar">${initials}</div>
+                    <div class="client-info">
+                        <h4>${highlightText(c.name || c.email, query)} ${planBadgeHtml(c.plan)}</h4>
+                        <p>${highlightText(c.email, query)} ${channels}</p>
+                    </div>
+                    <div class="client-stats">
+                        <span class="stat-item"><i class="fas fa-folder"></i> ${c.total_tickets || 0} tickets</span>
+                        <span class="stat-item"><i class="fas fa-clock"></i> ${c.open_tickets || 0} open</span>
+                    </div>
+                    <div class="ticket-meta">${c.latest_activity ? timeAgo(c.latest_activity) : ''}</div>
+                    <button class="ticket-action-btn" onclick="event.stopPropagation(); openClientDetail('${escHtml(c.email)}')" style="background:var(--blue);">
+                        <i class="fas fa-arrow-right"></i> View
+                    </button>
+                </div>`;
+            }).join('');
+        }
+
+        async function openClientDetail(email) {
+            activeClient = allClients.find(c => c.email === email);
+            if (!activeClient) {
+                showToast('Client not found', 'error');
+                return;
+            }
+            const c = activeClient;
+            const initials = (c.name || '?').split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+
+            // Header
+            document.getElementById('clientDetailHeader').innerHTML = `
+                <div class="client-detail-avatar">${initials}</div>
+                <div class="client-detail-info">
+                    <h2>${escHtml(c.name)} ${planBadgeHtml(c.plan)}</h2>
+                    <p>${escHtml(c.email)} · Joined ${c.created_at ? new Date(c.created_at).toLocaleDateString('en-US') : 'Unknown'}</p>
+                </div>
+                <div class="client-detail-actions">
+                    <button class="btn-outline" onclick="showUpgradeModal('${escHtml(c.email)}', '${escHtml(c.plan)}')"><i class="fas fa-arrow-up-right-dots"></i> Change Plan</button>
+                </div>`;
+
+            // Info grid
+            document.getElementById('clientDetailInfo').innerHTML = `
+                <div class="info-item"><label>Email</label><span>${escHtml(c.email)}</span></div>
+                <div class="info-item"><label>Plan</label><span>${planBadgeHtml(c.plan)} ${c.plan_active ? '<span style="color:var(--accent);font-size:0.72rem;">Active</span>' : '<span style="color:var(--red);font-size:0.72rem;">Inactive</span>'}</span></div>
+                <div class="info-item"><label>Stripe Customer</label><span style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;">${c.stripe_customer_id ? escHtml(c.stripe_customer_id) : 'None'}</span></div>
+                <div class="info-item"><label>Total Tickets</label><span>${c.total_tickets || 0}</span></div>
+                <div class="info-item"><label>Open Tickets</label><span style="color:${c.open_tickets > 0 ? 'var(--blue)' : 'var(--text-dim)'}; font-weight:600;">${c.open_tickets || 0}</span></div>
+                <div class="info-item"><label>Channels</label><span>${(c.channels || []).map(ch => channelBadgeHtml(ch)).join(' ') || 'None'}</span></div>`;
+
+            // Load tickets for this client
+            try {
+                const r = await fetch(API + '/client-tickets?client_email=' + encodeURIComponent(email), { credentials: 'include' });
+                if (r.ok) {
+                    const data = await r.json();
+                    const projects = data.tickets_by_project || {};
+                    const projectsContainer = document.getElementById('clientDetailProjects');
+                    if (Object.keys(projects).length === 0) {
+                        projectsContainer.innerHTML = '<div class="empty-state" style="padding:20px;"><i class="fas fa-folder-open"></i><p>No projects yet.</p></div>';
+                    } else {
+                        projectsContainer.innerHTML = Object.entries(projects).map(([project, tickets]) => {
+                            const latest = tickets[0];
+                            const ch = getTicketChannel(latest);
+                            return `<div class="project-card glass-card" onclick="openTicket('${latest.id || latest.ticket_id || ''}')">
+                                <h4>${escHtml(project)} ${channelBadgeHtml(ch)}</h4>
+                                <p>${tickets.length} ticket(s) · Latest: ${escHtml(latest.status)} · ${latest.created_at ? timeAgo(latest.created_at) : ''}</p>
+                            </div>`;
+                        }).join('');
+                    }
+                }
+            } catch (err) {
+                document.getElementById('clientDetailProjects').innerHTML = '<p style="color:var(--text-muted);font-size:0.82rem;">Could not load projects.</p>';
+            }
+
+            // Plan management section
+            document.getElementById('clientPlanSection').innerHTML = `
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                    <div>
+                        <div style="font-size:0.82rem;font-weight:600;">Current Plan</div>
+                        <div style="margin-top:4px;">${planBadgeHtml(c.plan)} ${c.plan_active ? '<span style="font-size:0.72rem;color:var(--accent);margin-left:6px;">Active</span>' : '<span style="font-size:0.72rem;color:var(--red);margin-left:6px;">Inactive</span>'}</div>
+                    </div>
+                    <button class="btn-primary" onclick="showUpgradeModal('${escHtml(c.email)}', '${escHtml(c.plan)}')">
+                        <i class="fas fa-arrow-up-right-dots"></i> Change Plan
+                    </button>
+                </div>
+                <div style="font-size:0.78rem; color:var(--text-dim); line-height:1.6;">
+                    <p><strong>Validate:</strong> $147 one-time payment. First step for new clients.</p>
+                    <p style="margin-top:6px;"><strong>MVP:</strong> Custom-quoted monthly. For clients building their first product.</p>
+                    <p style="margin-top:6px;"><strong>Growth:</strong> Custom-quoted monthly. For scaling clients with ongoing needs.</p>
+                </div>`;
+
+            // Activity section
+            const clientTickets = allTickets.filter(t => (t.user_email || t.client_email || '').toLowerCase() === email.toLowerCase());
+            const recent = clientTickets.slice(0, 5);
+            document.getElementById('clientActivitySection').innerHTML = recent.length ? recent.map(t => `
+                <div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #f3f4f6;">
+                    <div class="ticket-priority ${(t.priority||'low').toLowerCase() === 'high' ? 'priority-high' : 'priority-low'}" style="flex-shrink:0;"></div>
+                    <div style="flex:1;">
+                        <div style="font-size:0.82rem;font-weight:500;">${escHtml(t.project_name || 'Unnamed')}</div>
+                        <div style="font-size:0.68rem;color:var(--text-muted);">${escHtml(t.status)} · ${t.created_at ? timeAgo(t.created_at) : ''}</div>
+                    </div>
+                    <button class="btn-outline" onclick="openTicket('${t.id || t.ticket_id || ''}')" style="padding:4px 10px;font-size:0.7rem;">Open</button>
+                </div>`).join('') : '<p style="font-size:0.82rem;color:var(--text-muted);padding:12px 0;">No recent activity.</p>';
+
+            switchView('clientdetail');
+        }
+
+        // ─── PLAN UPGRADE MODAL ───
+        let upgradeClientEmail = '';
+
+        function showUpgradeModal(email, currentPlan) {
+            upgradeClientEmail = email;
+            document.getElementById('upgradeModalClientInfo').innerHTML = `Client: <strong>${escHtml(email)}</strong> · Current plan: ${planBadgeHtml(currentPlan)}`;
+            document.getElementById('upgradePlanSelect').value = currentPlan || 'validate';
+            document.getElementById('upgradeStripePriceId').value = '';
+            document.getElementById('upgradeResult').style.display = 'none';
+            toggleStripePriceField();
+            document.getElementById('upgradeModal').classList.add('active');
+        }
+
+        function hideUpgradeModal() {
+            document.getElementById('upgradeModal').classList.remove('active');
+        }
+
+        function toggleStripePriceField() {
+            const plan = document.getElementById('upgradePlanSelect').value;
+            document.getElementById('stripePriceField').style.display = (plan === 'mvp' || plan === 'growth') ? 'block' : 'none';
+        }
+        document.addEventListener('change', function(e) {
+            if (e.target.id === 'upgradePlanSelect') toggleStripePriceField();
         });
-        const data = await res.json();
-        if (data && data.Draft_Response) {
-          chatInput.value = data.Draft_Response;
-          chatInput.focus();
-        }
-        if (data && data.Action) {
-          showAiSuggestionModal(data.Action);
-        }
-      } catch (e) {
-        // ignore
-      } finally {
-        aiSuggestBtn.disabled = false;
-        aiSuggestBtn.textContent = original || 'IA sugerir';
-      }
-    }
 
-    sendBtn.addEventListener('click', sendChat);
-    aiSuggestBtn.addEventListener('click', requestAiSuggestions);
-    chatInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-        e.preventDefault();
-        sendChat();
-      }
-    });
+        async function confirmUpgrade() {
+            const btn = document.getElementById('upgradeConfirmBtn');
+            const result = document.getElementById('upgradeResult');
+            const plan = document.getElementById('upgradePlanSelect').value;
+            const stripePriceId = document.getElementById('upgradeStripePriceId').value.trim();
 
-    initAuth().then((ok) => {
-      if (!ok) return;
-      fetchQueue();
-      setInterval(fetchQueue, 8000);
-    });
-  </script>
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-circle-notch spinner"></i> Processing...';
+            result.style.display = 'none';
+
+            try {
+                const r = await fetch(API + '/internal/upgrade-client', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        client_email: upgradeClientEmail,
+                        plan: plan,
+                        stripe_price_id: stripePriceId || null
+                    })
+                });
+                const data = await r.json();
+                if (r.ok) {
+                    result.style.display = 'block';
+                    result.style.background = 'rgba(16,185,129,0.08)';
+                    result.style.color = 'var(--accent)';
+                    result.innerHTML = `<i class="fas fa-check-circle"></i> Plan updated to <strong>${plan.toUpperCase()}</strong> successfully.${data.stripe?.subscription_id ? ' Stripe subscription: ' + data.stripe.subscription_id : ''}`;
+                    showToast('Plan upgraded successfully', 'success');
+                    // Refresh client data
+                    setTimeout(async () => {
+                        hideUpgradeModal();
+                        await loadClients();
+                        openClientDetail(upgradeClientEmail);
+                    }, 1500);
+                } else {
+                    throw new Error(data.error || 'Upgrade failed');
+                }
+            } catch (err) {
+                result.style.display = 'block';
+                result.style.background = 'rgba(239,68,68,0.08)';
+                result.style.color = 'var(--red)';
+                result.innerHTML = `<i class="fas fa-times-circle"></i> ${escHtml(err.message)}`;
+            }
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-check"></i> Confirm Upgrade';
+        }
+
+        // ─── MY TASKS ───
+        async function loadMyTasks() {
+            const myName = currentUser?.name || currentUser?.username || '';
+            const myTasks = allTickets.filter(t =>
+                (t.assigned_to === myName || t.engineer === myName) &&
+                (t.status === 'accepted' || t.status === 'developing')
+            );
+            const container = document.getElementById('myTasksList');
+            if (!myTasks.length) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><p>You have no active tasks. Claim one from the queue.</p></div>';
+                return;
+            }
+            container.innerHTML = myTasks.map(t => {
+                const prClass = (t.priority||'low').toLowerCase() === 'high' ? 'priority-high' : (t.priority||'low').toLowerCase() === 'medium' ? 'priority-medium' : 'priority-low';
+                return `<div class="glass-card ticket-row" onclick="openTicket('${t.id || t.ticket_id || ''}')">
+                    <div class="ticket-priority ${prClass}"></div>
+                    <div class="ticket-info"><h4>${escHtml(t.project_name || 'Unnamed')}</h4><p>${escHtml(t.user_email || '')}</p></div>
+                    <div class="ticket-meta">${t.created_at ? timeAgo(t.created_at) : ''}</div>
+                    <div class="ticket-sla ${getSlaClass(t.sla_due_at, t.status)}">${getSlaText(t.sla_due_at, t.status)}</div>
+                    <button class="ticket-action-btn" onclick="event.stopPropagation(); openTicket('${t.id || t.ticket_id || ''}')" style="background:var(--blue);"><i class="fas fa-arrow-right"></i> Open</button>
+                </div>`;
+            }).join('');
+        }
+
+        // ─── HISTORY ───
+        async function loadHistory() {
+            try {
+                const r = await fetch(API + '/internal/order-history', { credentials: 'include' });
+                let history = [];
+                if (r.ok) {
+                    const data = await r.json();
+                    history = Array.isArray(data) ? data : data.history || data.orders || [];
+                }
+                const completed = allTickets.filter(t => t.status === 'completed');
+                const all = [...history, ...completed];
+                const tbody = document.getElementById('historyBody');
+                if (!all.length) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-dim); padding:40px;">No deliveries recorded</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = all.slice(0, 50).map(t => `
+                    <tr>
+                        <td>${escHtml(t.project_name || t.project_id || '-')}</td>
+                        <td style="color:var(--text-dim)">${escHtml(t.user_email || t.client_email || '-')}</td>
+                        <td><span class="ticket-priority ${(t.priority||'').toLowerCase() === 'high' ? 'priority-high' : 'priority-low'}" style="display:inline-block;"></span> ${t.priority || 'low'}</td>
+                        <td><span class="status-pill status-completed"><i class="fas fa-check"></i> Completed</span></td>
+                        <td class="ticket-meta">${t.completed_at || t.created_at || '-'}</td>
+                    </tr>`).join('');
+            } catch (err) { console.error(err); }
+        }
+
+        // ─── CLAIM TICKET ───
+        async function claimTicket(ticketId) {
+            try {
+                const r = await fetch(API + '/accept-ticket', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                    body: JSON.stringify({ ticket_id: ticketId, engineer: currentUser?.name || 'Agent' })
+                });
+                if (r.status === 401) { showToast('Session expired', 'error'); setTimeout(() => window.location.replace('login.html'), 1500); return; }
+                if (!r.ok) {
+                    const r2 = await fetch(API + '/claim-task', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                        body: JSON.stringify({ ticket_id: ticketId, engineer: currentUser?.name || 'Agent' })
+                    });
+                    if (!r2.ok) throw new Error('Could not claim task');
+                }
+                showToast('Task claimed successfully', 'success');
+                await loadQueue();
+                openTicket(ticketId);
+            } catch (err) { showToast('Error: ' + err.message, 'error'); }
+        }
+
+        // ─── OPEN TICKET DETAIL ───
+        async function openTicket(ticketId) {
+            activeTicket = allTickets.find(t => (t.id || t.ticket_id) == ticketId);
+            if (!activeTicket) { showToast('Ticket not found', 'error'); return; }
+            const t = activeTicket;
+            const ch = getTicketChannel(t);
+            const cfg = CHANNEL_CONFIG[ch] || CHANNEL_CONFIG.build;
+
+            // Header row
+            document.getElementById('detailHeaderRow').innerHTML = `
+                <h2>${escHtml(t.project_name || t.project_id || 'Unnamed')}</h2>
+                ${planBadgeHtml(t.client_plan)} ${channelBadgeHtml(ch)}
+                <span class="status-pill status-${t.status === 'completed' ? 'completed' : t.status === 'accepted' ? 'accepted' : 'developing'}">${escHtml(t.status)}</span>
+                <span style="font-size:0.72rem;color:var(--text-muted);margin-left:auto;">${escHtml(t.user_email || t.client_email || '')}</span>`;
+
+            // Blueprint
+            const bp = t.blueprint_md || t.engineer_brief || t.request || 'No blueprint available.';
+            document.getElementById('blueprintContent').textContent = bp;
+
+            // Client info
+            document.getElementById('clientInfoGrid').innerHTML = `
+                <div class="info-item"><label>Client Email</label><span>${escHtml(t.user_email || t.client_email || '-')}</span></div>
+                <div class="info-item"><label>Plan</label><span>${planBadgeHtml(t.client_plan)}</span></div>
+                <div class="info-item"><label>Project</label><span>${escHtml(t.project_name || t.project_id || '-')}</span></div>
+                <div class="info-item"><label>Type</label><span>${channelBadgeHtml(ch)}</span></div>
+                <div class="info-item"><label>Priority</label><span>${escHtml(t.priority || 'normal')}</span></div>
+                <div class="info-item"><label>Status</label><span>${escHtml(t.status || '-')}</span></div>
+                <div class="info-item"><label>SLA</label><span>${escHtml(t.sla_due_at || 'No SLA')}</span></div>
+                <div class="info-item"><label>Assigned</label><span>${escHtml(t.assigned_to || t.engineer || 'Unassigned')}</span></div>`;
+
+            const summary = t.handoff_package || t.ai_suggestion || 'No additional summary.';
+            document.getElementById('projectSummary').textContent = typeof summary === 'object' ? JSON.stringify(summary, null, 2) : summary;
+
+            // Load chat
+            loadClientChat();
+            renderNotes(t.id || t.ticket_id);
+            renderTicketHistory(t);
+
+            // Deliverables
+            document.getElementById('deliverablesList').innerHTML = `<div class="empty-state" style="padding:30px;"><i class="fas fa-file-circle-plus" style="font-size:1.5rem;"></i><p style="font-size:0.82rem;">No deliverables yet.</p></div>`;
+            document.getElementById('deliverBtn').disabled = t.status !== 'accepted' && t.status !== 'developing';
+
+            // Set Chat tab active on left, Notes on right
+            const leftTabs = document.querySelector('#leftPanelContent')?.parentElement?.querySelectorAll('.panel-tab');
+            if (leftTabs) { leftTabs.forEach(t => t.classList.remove('active')); leftTabs[0]?.classList.add('active'); }
+            document.getElementById('leftPanelContent')?.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+            document.getElementById('pane-clientchat')?.classList.add('active');
+
+            const rightTabs = document.querySelector('#rightPanelContent')?.parentElement?.querySelectorAll('.panel-tab');
+            if (rightTabs) { rightTabs.forEach(t => t.classList.remove('active')); rightTabs[0]?.classList.add('active'); }
+            document.getElementById('rightPanelContent')?.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+            document.getElementById('pane-notes')?.classList.add('active');
+
+            // Chat polling
+            if (window._clientChatPoll) clearInterval(window._clientChatPoll);
+            window._clientChatPoll = setInterval(loadClientChat, 4000);
+
+            switchView('detail');
+        }
+
+        // ─── CLIENT CHAT ───
+        let _chatSendingInProgress = false;
+
+        function renderChatMessages(messages) {
+            return messages.map(m => {
+                const isClient = m.role === 'client' || m.sender === 'client' || m.from === 'client';
+                const sender = isClient ? (activeTicket?.user_email || 'Client') : (m.sender || m.actor || 'Team');
+                let timeStr = '';
+                if (m.timestamp || m.created_at) {
+                    const ts = new Date(m.timestamp || m.created_at);
+                    const diffMs = Date.now() - ts;
+                    const diffMins = Math.floor(diffMs / 60000);
+                    if (diffMins < 1) timeStr = 'Now';
+                    else if (diffMins < 60) timeStr = diffMins + ' min ago';
+                    else { const h = Math.floor(diffMs / 3600000); timeStr = h < 24 ? h + 'h ago' : Math.floor(h/24) + 'd ago'; }
+                }
+                if (m.kind === 'blueprint' && m.payload) {
+                    const p = m.payload;
+                    return `<div class="chat-msg client" style="background:#faf5ff;border-color:#e9d5ff;">
+                        <div class="msg-sender" style="color:var(--purple);">Blueprint Sent</div>
+                        <strong>${escHtml(p.title || 'Blueprint')}</strong><br><span style="font-size:0.8rem;">${escHtml(p.summary || '')}</span>
+                    </div>`;
+                }
+                const text = m.text || m.message || m.content || '';
+                return `<div class="chat-msg ${isClient ? 'client' : 'internal'}">
+                    <div class="msg-sender">${escHtml(sender)}</div>${escHtml(text)}<div class="msg-time">${timeStr}</div>
+                </div>`;
+            }).join('');
+        }
+
+        async function loadClientChat() {
+            if (!activeTicket || _chatSendingInProgress) return;
+            const project = activeTicket.project_name || activeTicket.project_id || '';
+            try {
+                const r = await fetch(API + '/human-chat/history?project_name=' + encodeURIComponent(project) + '&mark_read=1', { credentials: 'include' });
+                if (!r.ok) throw new Error();
+                const data = await r.json();
+                const messages = data.messages || data.history || data || [];
+                const container = document.getElementById('clientChatMessages');
+                if (!messages.length) {
+                    container.innerHTML = '<div class="empty-state" style="padding:20px;"><i class="fas fa-comments" style="font-size:1.2rem;"></i><p style="font-size:0.8rem;">No messages with client yet.</p></div>';
+                    return;
+                }
+                container.innerHTML = renderChatMessages(messages);
+                container.scrollTop = container.scrollHeight;
+            } catch (err) { console.error('Chat error:', err); }
+        }
+
+        async function sendClientChat() {
+            const input = document.getElementById('clientChatInput');
+            const text = input.value.trim();
+            if (!text || !activeTicket) return;
+            input.value = '';
+            const project = activeTicket.project_name || activeTicket.project_id || '';
+            const container = document.getElementById('clientChatMessages');
+            _chatSendingInProgress = true;
+            const tempId = 'msg-sending-' + Date.now();
+            container.innerHTML += `<div class="chat-msg internal" id="${tempId}"><div class="msg-sender">${escHtml(currentUser?.name || 'Team')}</div>${escHtml(text)}<div class="msg-time" style="opacity:0.6;"><i class="fas fa-clock" style="margin-right:3px;"></i>Sending...</div></div>`;
+            container.scrollTop = container.scrollHeight;
+            try {
+                const r = await fetch(API + '/human-chat/send', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                    body: JSON.stringify({ project_name: project, actor: currentUser?.name || 'Team', role: 'internal', content: text })
+                });
+                if (!r.ok) {
+                    document.getElementById(tempId)?.remove();
+                    showToast('Error sending message', 'error');
+                    input.value = text;
+                    _chatSendingInProgress = false;
+                    return;
+                }
+                _chatSendingInProgress = false;
+                await loadClientChat();
+            } catch (err) {
+                document.getElementById(tempId)?.remove();
+                showToast('Connection error', 'error');
+                input.value = text;
+                _chatSendingInProgress = false;
+            }
+        }
+
+        // ─── DELIVER ───
+        async function deliverToClient() {
+            const btn = document.getElementById('deliverBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-circle-notch spinner"></i> Delivering...';
+            const ticketId = activeTicket?.id || activeTicket?.ticket_id || '';
+            const project = activeTicket?.project_name || '';
+            try {
+                const r = await fetch(API + '/deliver-ticket', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                    body: JSON.stringify({ ticket_id: ticketId, project_name: project, engineer: currentUser?.name || 'Agent' })
+                });
+                if (r.ok) {
+                    await fetch(API + '/deliver-work', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                        body: JSON.stringify({ ticket_id: ticketId, project_name: project, engineer: currentUser?.name || 'Agent' })
+                    }).catch(() => {});
+                    await fetch(API + '/human-chat/send', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                        body: JSON.stringify({ project_name: project, actor: currentUser?.name || 'Anmar Team', role: 'internal', content: 'Your project has been completed and delivered! Review the results and let us know if you need any adjustments.' })
+                    }).catch(() => {});
+                    btn.innerHTML = '<i class="fas fa-check"></i> Delivered';
+                    showToast('Delivered to client', 'success');
+                    setTimeout(() => { loadQueue(); goBack(); }, 1500);
+                }
+            } catch (err) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-paper-plane"></i> Mark as Delivered';
+                showToast('Error delivering', 'error');
+            }
+        }
+
+        // ─── TEAM MANAGEMENT ───
+        async function loadTeam() {
+            const grid = document.getElementById('teamGrid');
+            try {
+                const r = await fetch(API + '/internal/team', { credentials: 'include' });
+                let members = [];
+                if (r.ok) { const data = await r.json(); members = data.users || data.members || data || []; }
+                if (!members.length && currentUser) members = [currentUser];
+                const addSection = document.getElementById('addUserSection');
+                if (addSection) addSection.style.display = (currentUser?.role === 'admin') ? 'flex' : 'none';
+                grid.innerHTML = members.map(m => {
+                    const initials = (m.name || m.username || '?').split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+                    const role = m.role || 'agent';
+                    const isYou = m.email === currentUser?.email;
+                    return `<div class="team-card"><div class="team-avatar">${initials}</div><div class="team-info"><h4>${escHtml(m.name || m.username || '-')} ${isYou ? '<span style="font-size:0.65rem;color:var(--text-muted);">(you)</span>' : ''}</h4><p>${escHtml(m.email || '-')}</p></div><span class="team-role ${role === 'admin' ? 'role-admin' : 'role-agent'}">${role === 'admin' ? 'Admin' : 'Agent'}</span></div>`;
+                }).join('');
+                if (!members.length) grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><i class="fas fa-users"></i><p>No members yet.</p></div>';
+            } catch (err) { grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><i class="fas fa-exclamation-triangle"></i><p>Error loading team.</p></div>'; }
+        }
+
+        async function addTeamMember() {
+            const btn = document.getElementById('addUserBtn');
+            const banner = document.getElementById('addUserBanner');
+            banner.style.display = 'none';
+            const name = document.getElementById('newName').value.trim();
+            const username = document.getElementById('newUsername').value.trim();
+            const email = document.getElementById('newEmail').value.trim();
+            const password = document.getElementById('newPassword').value;
+            const role = document.getElementById('newRole').value;
+            if (!name || !username || !email) {
+                banner.textContent = 'Name, username, and email are required.';
+                banner.style.background = 'rgba(239,68,68,0.08)'; banner.style.color = 'var(--red)'; banner.style.display = 'block';
+                return;
+            }
+            btn.disabled = true; btn.innerHTML = '<i class="fas fa-circle-notch spinner"></i> Adding...';
+            try {
+                const res = await fetch(API + '/internal/users', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                    body: JSON.stringify({ name, username, email, password: password || null, role })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    banner.textContent = `${name} was added as ${role}.`;
+                    banner.style.background = 'rgba(16,185,129,0.08)'; banner.style.color = 'var(--accent)'; banner.style.display = 'block';
+                    ['newName','newUsername','newEmail','newPassword'].forEach(id => document.getElementById(id).value = '');
+                    setTimeout(loadTeam, 400);
+                } else { throw new Error(data.error || 'Could not add member'); }
+            } catch (err) {
+                banner.textContent = err.message;
+                banner.style.background = 'rgba(239,68,68,0.08)'; banner.style.color = 'var(--red)'; banner.style.display = 'block';
+            }
+            btn.disabled = false; btn.innerHTML = '<i class="fas fa-user-plus"></i> Add to Team';
+        }
+
+        // ─── NOTES ───
+        function getNotesKey(ticketId) { return `anmar_notes_${ticketId}`; }
+        function loadNotes(ticketId) { const raw = localStorage.getItem(getNotesKey(ticketId)); return raw ? JSON.parse(raw) : []; }
+        function saveNotes(ticketId, notes) { localStorage.setItem(getNotesKey(ticketId), JSON.stringify(notes)); }
+
+        function renderNotes(ticketId) {
+            const notes = loadNotes(ticketId);
+            const container = document.getElementById('notesList');
+            if (!notes.length) {
+                container.innerHTML = '<div class="empty-state" style="padding:20px;"><i class="fas fa-sticky-note" style="font-size:1.4rem;"></i><p style="font-size:0.82rem;">No notes yet.</p></div>';
+                return;
+            }
+            container.innerHTML = notes.map((n, i) => `<div class="note-item"><div class="note-item-header"><span class="note-author"><i class="fas fa-user-circle"></i> ${escHtml(n.author)}</span><div style="display:flex;gap:8px;align-items:center;"><span class="note-time">${escHtml(n.time)}</span><button class="note-delete" onclick="deleteNote(${i})" title="Delete"><i class="fas fa-trash"></i></button></div></div><div class="note-body">${escHtml(n.body)}</div></div>`).join('');
+        }
+
+        function saveNote() {
+            if (!activeTicket) return;
+            const input = document.getElementById('noteInput');
+            const body = (input.value || '').trim();
+            if (!body) return;
+            const ticketId = activeTicket.id || activeTicket.ticket_id;
+            const notes = loadNotes(ticketId);
+            notes.unshift({ author: currentUser?.name || 'Agent', time: new Date().toLocaleString('en-US', { dateStyle: 'short', timeStyle: 'short' }), body });
+            saveNotes(ticketId, notes);
+            input.value = '';
+            renderNotes(ticketId);
+            showToast('Note saved', 'success');
+        }
+
+        function deleteNote(index) {
+            if (!activeTicket) return;
+            const ticketId = activeTicket.id || activeTicket.ticket_id;
+            const notes = loadNotes(ticketId);
+            notes.splice(index, 1);
+            saveNotes(ticketId, notes);
+            renderNotes(ticketId);
+        }
+
+        // ─── TICKET HISTORY ───
+        function renderTicketHistory(ticket) {
+            const container = document.getElementById('historyContent');
+            const fields = [
+                { label: 'Ticket ID', value: ticket.id || ticket.ticket_id },
+                { label: 'Project', value: ticket.project_name || ticket.project_id },
+                { label: 'Client', value: ticket.user_email || ticket.client_email },
+                { label: 'Channel', value: (CHANNEL_CONFIG[getTicketChannel(ticket)] || {}).label },
+                { label: 'Priority', value: ticket.priority },
+                { label: 'Status', value: ticket.status },
+                { label: 'Assigned to', value: ticket.assigned_to || ticket.engineer },
+                { label: 'SLA Due', value: ticket.sla_due_at ? new Date(ticket.sla_due_at).toLocaleString('en-US') : null },
+                { label: 'Created', value: ticket.created_at ? new Date(ticket.created_at).toLocaleString('en-US') : null },
+            ].filter(f => f.value);
+            const timeline = (ticket.history || ticket.timeline || ticket.events || []);
+            const timelineHtml = timeline.length ? timeline.map(e => `
+                <div style="display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--border);">
+                    <div style="width:8px;height:8px;border-radius:50%;background:var(--accent);margin-top:5px;flex-shrink:0;"></div>
+                    <div><div style="font-weight:600;font-size:0.8rem;">${escHtml(e.action || e.event || 'Event')}</div>
+                    <div style="color:var(--text-muted);font-size:0.73rem;">${escHtml(e.by || '')} · ${escHtml(e.at || e.timestamp || '')}</div></div>
+                </div>`).join('') : '<div style="color:var(--text-muted);font-size:0.8rem;padding:12px 0;">No events recorded.</div>';
+            container.innerHTML = `<div style="display:flex;flex-direction:column;gap:20px;padding-bottom:20px;">
+                <div><div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:10px;font-weight:600;">Ticket Data</div>
+                ${fields.map(f => `<div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid #f3f4f6;"><span style="color:var(--text-muted);min-width:140px;font-size:0.75rem;">${escHtml(f.label)}</span><span style="font-size:0.78rem;">${escHtml(String(f.value))}</span></div>`).join('')}</div>
+                <div><div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:10px;font-weight:600;">Timeline</div>${timelineHtml}</div>
+            </div>`;
+        }
+
+        // ─── HELPERS ───
+        function escHtml(s) { return s ? String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : ''; }
+        function timeAgo(dateStr) {
+            try {
+                const diff = Date.now() - new Date(dateStr).getTime();
+                const mins = Math.floor(diff / 60000);
+                if (mins < 60) return mins + 'm';
+                const hrs = Math.floor(mins / 60);
+                return hrs < 24 ? hrs + 'h' : Math.floor(hrs / 24) + 'd';
+            } catch { return ''; }
+        }
+        function getSlaClass(slaDue, status) {
+            if (!slaDue || status === 'completed') return 'sla-ok';
+            const hoursLeft = (new Date(slaDue) - new Date()) / 3600000;
+            return hoursLeft < 0 ? 'sla-overdue' : hoursLeft < 4 ? 'sla-warn' : 'sla-ok';
+        }
+        function getSlaText(slaDue, status) {
+            if (!slaDue) return 'No SLA';
+            if (status === 'completed') return 'Done';
+            const hoursLeft = (new Date(slaDue) - new Date()) / 3600000;
+            if (hoursLeft < 0) return 'Overdue';
+            if (hoursLeft < 1) return Math.round(hoursLeft * 60) + 'min';
+            return hoursLeft < 24 ? Math.round(hoursLeft) + 'h' : Math.round(hoursLeft / 24) + 'd';
+        }
+        function clearSearch() { const inp = document.getElementById('ticketSearch'); if (inp) inp.value = ''; renderTickets(); }
+        function highlightText(text, query) {
+            if (!query) return escHtml(text);
+            return escHtml(text).replace(new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'), '<span class="search-highlight">$1</span>');
+        }
+
+        // Enter key handlers
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                if (e.target.id === 'clientChatInput') { e.preventDefault(); sendClientChat(); }
+            }
+        });
+
+        // ─── INIT ───
+        (async function init() {
+            await checkAuth();
+            await requestNotifPermission();
+            await loadQueue();
+            pollInterval = setInterval(loadQueue, 15000);
+        })();
+    </script>
 </body>
 </html>
