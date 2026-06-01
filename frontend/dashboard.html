@@ -2480,15 +2480,100 @@
 
             /* Make room for bottom nav pill */
             .workspace {
-                padding-bottom: 110px !important;
+                padding-bottom: 120px !important;
             }
 
-            /* Adjust chat input so it doesn't hide behind nav */
+            /* Chat input — keep above nav bar */
             .chat-input-area {
-                margin-bottom: 20px !important;
+                margin-bottom: 80px !important;
             }
 
-            /* Token badge stays in header on mobile — no repositioning needed */
+            /* ── Fix video background edge line on iOS ── */
+            .video-background {
+                overflow: hidden !important;
+            }
+            .video-background iframe {
+                width: 200vw !important;
+                height: 200vh !important;
+                min-height: 100dvh !important;
+                top: 50% !important;
+                left: 50% !important;
+                transform: translate(-50%, -50%) !important;
+            }
+
+            /* ── BM scroll area padding ── */
+            #bmScrollArea {
+                padding: 16px 12px 120px !important;
+                overflow-x: hidden !important;
+            }
+
+            /* BM wrapper: no horizontal overflow */
+            #bmScrollArea > div {
+                width: 100% !important;
+                max-width: 100% !important;
+                overflow-x: hidden !important;
+            }
+
+            /* Mind map main row: stack vertically */
+            #bmMindMap > div {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                gap: 10px !important;
+            }
+
+            /* Center node: slim horizontal bar instead of tall box */
+            #bmMindMap > div > div:first-child {
+                width: 100% !important;
+                display: flex !important;
+                justify-content: center !important;
+                padding-top: 0 !important;
+            }
+
+            #bmCenterNode {
+                width: 100% !important;
+                padding: 12px 16px !important;
+                display: flex !important;
+                flex-direction: row !important;
+                align-items: center !important;
+                gap: 10px !important;
+                text-align: left !important;
+            }
+
+            #bmCenterNode > div:first-child {
+                margin: 0 !important;
+                flex-shrink: 0;
+            }
+
+            /* Branches container: full width */
+            #bmMindMap > div > div:last-child {
+                width: 100% !important;
+                flex: none !important;
+            }
+
+            /* Hide the 40px horizontal connector lines — useless on vertical layout */
+            #bmMindMap [style*="width:40px"] {
+                display: none !important;
+            }
+
+            /* Branch cards: full width */
+            .bm-branch {
+                flex: none !important;
+                width: 100% !important;
+                box-sizing: border-box !important;
+                overflow: hidden !important;
+            }
+
+            /* TAM/SAM/CAGR: smaller values so they fit */
+            #bmMarketSize, #bmMarketSam, #bmMarketGrowth {
+                font-size: 0.75rem !important;
+                word-break: break-word !important;
+            }
+
+            /* Score + Revenue + Analogy row: 1 column on mobile */
+            #bmInsightRow {
+                grid-template-columns: 1fr !important;
+                gap: 10px !important;
+            }
         }
     </style>
     <style>
