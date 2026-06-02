@@ -404,7 +404,8 @@
             <div id="g_id_onload"
                 data-client_id="676077959478-uo9f6h70osjmaeklm17ktithkualc4p3.apps.googleusercontent.com"
                 data-context="signin" data-ux_mode="popup"
-                data-callback="handleGoogleLogin" data-auto_prompt="false">
+                data-callback="handleGoogleLogin" data-auto_prompt="false"
+                data-locale="en">
             </div>
             <div style="width:100%; display:flex; justify-content:center; margin-bottom:16px; position:relative;">
                 <div class="g_id_signin" data-type="standard" data-shape="rectangular"
@@ -487,7 +488,7 @@
             <div id="statusMsg" class="error-msg"></div>
         </div>
 
-        <div class="left-footer">© 2026 anmarenterprices.com</div>
+        <div class="left-footer">© <span id="footerYear"></span> anmarenterprices.com</div>
     </div>
 
     <!-- RIGHT: VISUAL -->
@@ -780,6 +781,8 @@
     }
 
     if (continueBtn) continueBtn.addEventListener('click', checkEmail);
+    const footerYear = document.getElementById('footerYear');
+    if (footerYear) footerYear.textContent = new Date().getFullYear();
     const emailInput = document.getElementById('email');
     if (emailInput) emailInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); checkEmail(); } });
     if (changeEmailBtn) changeEmailBtn.addEventListener('click', () => {
