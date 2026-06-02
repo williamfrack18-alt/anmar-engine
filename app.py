@@ -949,17 +949,156 @@ def notify_new_registration(name, email):
             print(traceback.format_exc())
 
         # 2. Email bienvenida
-        _name = (name or "Nuevo usuario").strip()
+        _name = (name or "there").strip()
         try:
             _resend_send_email(
                 to_addr=email,
-                subject="Bienvenido a Anmar Enterprises!",
-                html_body=f"""<div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:40px 32px;background:#000;color:#fff;border-radius:16px;">
-                    <h1 style="color:#10b981;">Bienvenido, {_name}</h1>
-                    <p style="color:rgba(255,255,255,0.7);line-height:1.7;">Tu cuenta en <strong>Anmar Enterprises</strong> fue creada exitosamente.</p>
-                    <a href="https://anmarenterprices.com/" style="display:inline-block;margin-top:20px;background:#10b981;color:#000;font-weight:700;padding:12px 28px;border-radius:10px;text-decoration:none;">Ingresar ahora</a>
-                    <p style="color:rgba(255,255,255,0.3);font-size:0.75rem;margin-top:32px;">Anmar Enterprises</p>
-                </div>"""
+                subject="Your idea engine is live — Welcome to Anmar Enterprises",
+                html_body=f"""<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#0a0a0a;font-family:'Helvetica Neue',Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#0a0a0a;padding:32px 16px;">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+<tr><td>
+
+<!-- HEADER: neural network -->
+<div style="position:relative;background:#000;border-radius:16px 16px 0 0;overflow:hidden;height:200px;">
+<svg width="100%" height="200" viewBox="0 0 600 200" xmlns="http://www.w3.org/2000/svg" style="position:absolute;top:0;left:0;">
+  <line x1="30" y1="40" x2="80" y2="100" stroke="#fff" stroke-width="0.5" opacity="0.18"/>
+  <line x1="30" y1="160" x2="80" y2="100" stroke="#fff" stroke-width="0.5" opacity="0.15"/>
+  <line x1="80" y1="100" x2="200" y2="50" stroke="#fff" stroke-width="0.6" opacity="0.25"/>
+  <line x1="80" y1="100" x2="185" y2="148" stroke="#fff" stroke-width="0.6" opacity="0.2"/>
+  <line x1="200" y1="50" x2="315" y2="32" stroke="#fff" stroke-width="0.5" opacity="0.2"/>
+  <line x1="200" y1="50" x2="342" y2="80" stroke="#fff" stroke-width="0.6" opacity="0.3"/>
+  <line x1="185" y1="148" x2="342" y2="80" stroke="#fff" stroke-width="0.6" opacity="0.25"/>
+  <line x1="185" y1="148" x2="325" y2="165" stroke="#fff" stroke-width="0.5" opacity="0.18"/>
+  <line x1="315" y1="32" x2="342" y2="80" stroke="#fff" stroke-width="0.4" opacity="0.15"/>
+  <line x1="315" y1="32" x2="462" y2="55" stroke="#fff" stroke-width="0.5" opacity="0.22"/>
+  <line x1="342" y1="80" x2="462" y2="55" stroke="#fff" stroke-width="0.6" opacity="0.3"/>
+  <line x1="342" y1="80" x2="482" y2="115" stroke="#fff" stroke-width="0.6" opacity="0.25"/>
+  <line x1="325" y1="165" x2="482" y2="115" stroke="#fff" stroke-width="0.5" opacity="0.2"/>
+  <line x1="462" y1="55" x2="555" y2="80" stroke="#fff" stroke-width="0.5" opacity="0.2"/>
+  <line x1="482" y1="115" x2="555" y2="80" stroke="#fff" stroke-width="0.5" opacity="0.22"/>
+  <line x1="555" y1="80" x2="592" y2="50" stroke="#fff" stroke-width="0.4" opacity="0.12"/>
+  <line x1="555" y1="80" x2="592" y2="130" stroke="#fff" stroke-width="0.4" opacity="0.12"/>
+  <circle cx="30" cy="40" r="2.5" fill="#fff" opacity="0.3"/>
+  <circle cx="30" cy="160" r="2" fill="#fff" opacity="0.25"/>
+  <circle cx="80" cy="100" r="4.5" fill="#fff" opacity="0.45"/>
+  <circle cx="80" cy="100" r="9" fill="#fff" opacity="0.05"/>
+  <circle cx="200" cy="50" r="5.5" fill="#fff" opacity="0.55"/>
+  <circle cx="200" cy="50" r="11" fill="#fff" opacity="0.05"/>
+  <circle cx="185" cy="148" r="4" fill="#fff" opacity="0.4"/>
+  <circle cx="315" cy="32" r="3.5" fill="#fff" opacity="0.35"/>
+  <circle cx="342" cy="80" r="9" fill="#fff" opacity="0.75"/>
+  <circle cx="342" cy="80" r="18" fill="#fff" opacity="0.06"/>
+  <circle cx="325" cy="165" r="3.5" fill="#fff" opacity="0.3"/>
+  <circle cx="462" cy="55" r="5" fill="#fff" opacity="0.5"/>
+  <circle cx="482" cy="115" r="4.5" fill="#fff" opacity="0.45"/>
+  <circle cx="555" cy="80" r="3.5" fill="#fff" opacity="0.3"/>
+  <circle cx="592" cy="50" r="2" fill="#fff" opacity="0.2"/>
+  <circle cx="592" cy="130" r="2" fill="#fff" opacity="0.18"/>
+  <!-- brand node icon -->
+  <circle cx="300" cy="88" r="4" fill="#2d7a4f"/>
+  <circle cx="300" cy="88" r="8" stroke="#2d7a4f" stroke-width="0.8" fill="none" opacity="0.5"/>
+  <line x1="288" y1="88" x2="294" y2="88" stroke="#2d7a4f" stroke-width="1.2" opacity="0.8"/>
+  <line x1="306" y1="88" x2="312" y2="88" stroke="#2d7a4f" stroke-width="1.2" opacity="0.8"/>
+  <line x1="300" y1="76" x2="300" y2="82" stroke="#2d7a4f" stroke-width="1.2" opacity="0.8"/>
+  <line x1="300" y1="94" x2="300" y2="100" stroke="#2d7a4f" stroke-width="1.2" opacity="0.8"/>
+</svg>
+<table width="100%" height="200" cellpadding="0" cellspacing="0" style="position:relative;z-index:2;">
+  <tr><td align="center" valign="middle" style="padding:0;">
+    <p style="margin:0 0 10px;font-size:11px;font-weight:700;letter-spacing:3px;color:rgba(255,255,255,0.7);text-transform:uppercase;">Anmar Enterprises</p>
+    <p style="margin:0;font-size:24px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;line-height:1.25;text-align:center;">Every great company<br>started with <span style="color:#2d7a4f;">one idea.</span></p>
+  </td></tr>
+</table>
+</div>
+
+<!-- BODY -->
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#0d0d0d;border-left:1px solid rgba(255,255,255,0.06);border-right:1px solid rgba(255,255,255,0.06);">
+<tr><td style="padding:40px 36px;">
+
+  <h2 style="color:#ffffff;font-size:21px;font-weight:700;margin:0 0 16px;line-height:1.4;">{_name}, your idea just found<br>its <span style="color:#2d7a4f;">engine.</span></h2>
+  <p style="color:rgba(255,255,255,0.55);font-size:15px;line-height:1.85;margin:0 0 28px;">Most ideas never leave a notebook. Yours is different&nbsp;&#8212; you showed up.<br>From this moment, every idea you bring here gets validated, structured, and built into something real. <strong style="color:rgba(255,255,255,0.85);">That&#8217;s not a promise. That&#8217;s the platform.</strong></p>
+
+  <!-- Journey strip -->
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:12px;margin-bottom:32px;">
+  <tr><td style="padding:22px 20px;">
+    <p style="color:rgba(255,255,255,0.25);font-size:10px;letter-spacing:2px;text-transform:uppercase;margin:0 0 18px;">Your path from here</p>
+    <table width="100%" cellpadding="0" cellspacing="0">
+    <tr>
+      <!-- Idea -->
+      <td align="center" style="width:20%;">
+        <div style="width:36px;height:36px;margin:0 auto 8px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:8px;text-align:center;line-height:36px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-top:8px;"><path d="M9 21h6M12 3a6 6 0 0 1 3.75 10.66C14.88 14.72 14 16 14 17H10c0-1-.88-2.28-1.75-3.34A6 6 0 0 1 12 3z"/></svg>
+        </div>
+        <p style="color:rgba(255,255,255,0.35);font-size:10px;letter-spacing:0.5px;font-weight:500;margin:0;">Idea</p>
+      </td>
+      <td align="center" style="color:rgba(255,255,255,0.1);font-size:14px;width:4%;">&mdash;</td>
+      <!-- Validate -->
+      <td align="center" style="width:20%;">
+        <div style="width:36px;height:36px;margin:0 auto 8px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:8px;text-align:center;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-top:8px;"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8.5" y1="11" x2="13.5" y2="11"/><line x1="11" y1="8.5" x2="11" y2="13.5"/></svg>
+        </div>
+        <p style="color:rgba(255,255,255,0.35);font-size:10px;letter-spacing:0.5px;font-weight:500;margin:0;">Validate</p>
+      </td>
+      <td align="center" style="color:rgba(255,255,255,0.1);font-size:14px;width:4%;">&mdash;</td>
+      <!-- Build -->
+      <td align="center" style="width:20%;">
+        <div style="width:36px;height:36px;margin:0 auto 8px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:8px;text-align:center;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-top:8px;"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        </div>
+        <p style="color:rgba(255,255,255,0.35);font-size:10px;letter-spacing:0.5px;font-weight:500;margin:0;">Build</p>
+      </td>
+      <td align="center" style="color:rgba(255,255,255,0.1);font-size:14px;width:4%;">&mdash;</td>
+      <!-- Market -->
+      <td align="center" style="width:20%;">
+        <div style="width:36px;height:36px;margin:0 auto 8px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:8px;text-align:center;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-top:8px;"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+        </div>
+        <p style="color:rgba(255,255,255,0.35);font-size:10px;letter-spacing:0.5px;font-weight:500;margin:0;">Market</p>
+      </td>
+      <td align="center" style="color:rgba(255,255,255,0.1);font-size:14px;width:4%;">&mdash;</td>
+      <!-- Fund -->
+      <td align="center" style="width:20%;">
+        <div style="width:36px;height:36px;margin:0 auto 8px;background:rgba(45,122,79,0.15);border:1px solid rgba(45,122,79,0.4);border-radius:8px;text-align:center;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2d7a4f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-top:8px;"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        </div>
+        <p style="color:#2d7a4f;font-size:10px;letter-spacing:0.5px;font-weight:600;margin:0;">Fund</p>
+      </td>
+    </tr>
+    </table>
+  </td></tr>
+  </table>
+
+  <!-- CTA -->
+  <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:32px;">
+  <tr><td align="center">
+    <a href="https://anmarenterprices.com/dashboard.html" style="display:inline-block;background:#1a5c38;color:#ffffff;font-weight:800;font-size:15px;padding:16px 44px;border-radius:12px;text-decoration:none;letter-spacing:0.3px;">Launch your first idea &#8594;</a>
+  </td></tr>
+  </table>
+
+  <table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid rgba(255,255,255,0.06);">
+  <tr><td style="padding-top:20px;">
+    <p style="color:rgba(255,255,255,0.2);font-size:12px;line-height:1.7;margin:0;">You&#8217;re receiving this because you created an account at <a href="https://anmarenterprices.com" style="color:rgba(255,255,255,0.35);text-decoration:none;">anmarenterprices.com</a>. If this wasn&#8217;t you, you can safely ignore this email.</p>
+  </td></tr>
+  </table>
+
+</td></tr>
+</table>
+
+<!-- FOOTER -->
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#000;border-radius:0 0 16px 16px;border:1px solid rgba(255,255,255,0.05);border-top:none;">
+<tr><td align="center" style="padding:20px 36px;">
+  <p style="color:rgba(255,255,255,0.18);font-size:11px;letter-spacing:1px;text-transform:uppercase;margin:0;">&#169; 2026 Anmar Enterprises &middot; anmarenterprices.com</p>
+</td></tr>
+</table>
+
+</td></tr>
+</table>
+</td></tr>
+</table>
+</body></html>"""
             )
         except Exception as e:
             import traceback
