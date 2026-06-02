@@ -3383,6 +3383,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Project Management ---
+    function toDisplayName(slug) {
+        return (slug || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    }
+
     window.toggleProjectList = async function () {
         const el = document.getElementById('projectsModal');
         el.style.display = el.style.display === 'none' ? 'block' : 'none';
@@ -3560,7 +3564,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Project Name Clickable Area
                 const nameSpan = document.createElement('span');
-                nameSpan.innerHTML = `<i class="fas fa-folder" style="margin-right:8px; color:#3b82f6;"></i> ${escapeHtml(project)} ${phoneLabel ? `<span style="margin-left:8px; font-size:0.75rem; opacity:0.7;">${escapeHtml(phoneLabel)}</span>` : ''}`;
+                nameSpan.innerHTML = `<i class="fas fa-folder" style="margin-right:8px; color:#3b82f6;"></i> ${escapeHtml(toDisplayName(project))} ${phoneLabel ? `<span style="margin-left:8px; font-size:0.75rem; opacity:0.7;">${escapeHtml(phoneLabel)}</span>` : ''}`;
                 nameSpan.style.flexGrow = '1';
                 nameSpan.onclick = async () => {
                     currentProjectName = project;
@@ -3636,8 +3640,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <div style="width:32px; height:32px; border-radius:8px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
                                     <i class="fas fa-folder" style="color:rgba(255,255,255,0.7); font-size:0.85rem;"></i>
                                 </div>
-                                <strong title="${escapeHtml(project)}" style="font-size:1rem; display:block; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; letter-spacing:-0.2px;">
-                                    ${escapeHtml(project)}
+                                <strong title="${escapeHtml(toDisplayName(project))}" style="font-size:1rem; display:block; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; letter-spacing:-0.2px;">
+                                    ${escapeHtml(toDisplayName(project))}
                                 </strong>
                             </div>
                             <div style="color:rgba(255,255,255,0.45); font-size:0.8rem; line-height:1.5; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">${descText}</div>
