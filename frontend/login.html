@@ -447,6 +447,11 @@
                         <label class="field-label">Password</label>
                         <input type="password" id="password" class="field-input" placeholder="••••••••" required>
                     </div>
+                    <!-- Confirm password — only shown on register -->
+                    <div class="field" id="confirmPwGroup" style="display:none;">
+                        <label class="field-label">Confirm Password</label>
+                        <input type="password" id="confirmPassword" class="field-input" placeholder="••••••••">
+                    </div>
                     <button type="submit" class="cta-btn" id="submitBtn">
                         <span id="btnText">Sign in</span>
                         <i class="fas fa-arrow-right" style="font-size:11px;"></i>
@@ -455,7 +460,28 @@
                         <span id="authHint"></span>
                         <button type="button" class="link-btn" id="changeEmailBtn">Change email</button>
                     </div>
+                    <!-- Forgot password — only shown on login -->
+                    <div id="forgotWrap" style="text-align:center; margin-top:10px; display:none;">
+                        <button type="button" class="link-btn" id="forgotBtn" style="font-size:0.78rem; opacity:0.6;">Forgot password?</button>
+                    </div>
                 </form>
+
+                <!-- Forgot password flow -->
+                <div id="forgotArea" style="display:none; margin-top:8px;">
+                    <div style="font-size:0.82rem; color:rgba(255,255,255,0.5); margin-bottom:12px; line-height:1.5;">
+                        Enter your email and we'll send you a reset link.
+                    </div>
+                    <div class="field">
+                        <label class="field-label">Email</label>
+                        <input type="email" id="forgotEmail" class="field-input" placeholder="you@example.com">
+                    </div>
+                    <button type="button" class="cta-btn" id="forgotSubmitBtn" onclick="handleForgotPassword()">
+                        Send reset link <i class="fas fa-paper-plane" style="font-size:11px;"></i>
+                    </button>
+                    <div style="text-align:center; margin-top:10px;">
+                        <button type="button" class="link-btn" onclick="hideForgot()" style="font-size:0.78rem; opacity:0.6;">← Back to login</button>
+                    </div>
+                </div>
             </div>
 
             <div id="statusMsg" class="error-msg"></div>
@@ -526,19 +552,33 @@
 
     function setMode(nextMode) {
         mode = nextMode;
-        const nameInput     = document.getElementById('name');
-        const termsAccepted = document.getElementById('termsAccepted');
+        const nameInput      = document.getElementById('name');
+        const confirmPwGroup = document.getElementById('confirmPwGroup');
+        const confirmPw      = document.getElementById('confirmPassword');
+        const forgotWrap     = document.getElementById('forgotWrap');
+        const isRegister     = mode === 'register';
+
         if (nameGroup && nameInput) {
-            nameGroup.style.display = mode === 'register' ? 'block' : 'none';
-            nameInput.required = mode === 'register';
+            nameGroup.style.display = isRegister ? 'block' : 'none';
+            nameInput.required = isRegister;
         }
+        if (confirmPwGroup && confirmPw) {
+            confirmPwGroup.style.display = isRegister ? 'block' : 'none';
+            confirmPw.required = isRegister;
+            confirmPw.value = '';
+        }
+        if (forgotWrap) forgotWrap.style.display = isRegister ? 'none' : 'block';
+
+        // Fix #4: Don't uncheck terms when switching to login — user already accepted them
+        // Only set required on register
+        const termsAccepted = document.getElementById('termsAccepted');
         if (termsGroup && termsAccepted) {
-            termsAccepted.required = mode === 'register';
-            if (mode !== 'register') termsAccepted.checked = false;
+            termsAccepted.required = isRegister;
         }
-        document.getElementById('btnText').textContent = mode === 'register' ? 'Create Account' : 'Sign in';
+
+        document.getElementById('btnText').textContent = isRegister ? 'Create Account' : 'Sign in';
         if (authHint) {
-            authHint.textContent = mode === 'register'
+            authHint.textContent = isRegister
                 ? 'Create your account with this email.'
                 : 'Enter your password to continue.';
         }
@@ -575,11 +615,26 @@
 
     async function handleAuth(e) {
         e.preventDefault();
-        const email    = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-        const name     = document.getElementById('name').value;
+        const email         = document.getElementById('email').value.trim();
+        const password      = document.getElementById('password').value;
+        const confirmPw     = document.getElementById('confirmPassword')?.value;
+        const name          = document.getElementById('name')?.value.trim();
         const termsAccepted = document.getElementById('termsAccepted')?.checked;
-        const btn = document.getElementById('submitBtn');
+        const btn           = document.getElementById('submitBtn');
+
+        // Fix #3: Confirm password validation
+        if (mode === 'register') {
+            if (!name) {
+                showStatus('Please enter your full name.', 'error'); return;
+            }
+            if (password !== confirmPw) {
+                showStatus('Passwords do not match.', 'error'); return;
+            }
+            if (!termsAccepted) {
+                showStatus('You must accept the Terms & Conditions.', 'error'); return;
+            }
+        }
+
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
         showStatus('', '');
@@ -587,27 +642,35 @@
             let endpoint = mode === 'register' ? '/register' : '/login';
             let payload  = { email, password };
             if (mode === 'register') {
-                if (!termsAccepted) {
-                    showStatus('You must accept the Terms & Conditions.', 'error');
-                    btn.disabled = false;
-                    btn.innerHTML = '<span id="btnText">Create Account</span> <i class="fas fa-arrow-right" style="font-size:11px;"></i>';
-                    return;
-                }
                 payload.name = name;
                 payload.termsAccepted = termsAccepted;
             }
             const res  = await fetch(API_URL + endpoint, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify(payload)
             });
             const data = await res.json();
             if (res.ok) {
-                showStatus(data.message, 'success');
                 if (data.user) localStorage.setItem('currentUser', JSON.stringify(data.user));
                 btn.innerHTML = '<i class="fas fa-check"></i> Done';
                 btn.style.background = '#0a2a1a';
-                if (mode === 'login') setTimeout(() => window.location.href = 'dashboard.html', 900);
-                else setTimeout(() => { setMode('login'); setStep('details'); document.getElementById('email').value = email; btn.disabled = false; }, 1500);
+
+                if (mode === 'register') {
+                    // Fix #1: Auto-login after register — log in immediately, no extra step
+                    showStatus('Account created! Entering dashboard...', 'success');
+                    const loginRes  = await fetch(API_URL + '/login', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({ email, password })
+                    });
+                    const loginData = await loginRes.json();
+                    if (loginData.user) localStorage.setItem('currentUser', JSON.stringify(loginData.user));
+                    setTimeout(() => window.location.href = 'dashboard.html', 800);
+                } else {
+                    showStatus(data.message || 'Welcome back!', 'success');
+                    setTimeout(() => window.location.href = 'dashboard.html', 800);
+                }
             } else {
                 showStatus(data.error || 'Unknown error', 'error');
                 btn.disabled = false;
@@ -617,6 +680,51 @@
             showStatus('Connection error. Please try again.', 'error');
             btn.disabled = false;
             btn.innerHTML = '<i class="fas fa-redo"></i> Retry';
+        }
+    }
+
+    // Fix #2: Forgot password flow
+    function showForgot() {
+        const forgotArea = document.getElementById('forgotArea');
+        const authForm   = document.getElementById('authForm');
+        if (authForm)   authForm.style.display   = 'none';
+        if (forgotArea) forgotArea.style.display  = 'block';
+        const fe = document.getElementById('forgotEmail');
+        if (fe) { fe.value = document.getElementById('email')?.value || ''; fe.focus(); }
+    }
+
+    function hideForgot() {
+        const forgotArea = document.getElementById('forgotArea');
+        const authForm   = document.getElementById('authForm');
+        if (forgotArea) forgotArea.style.display = 'none';
+        if (authForm)   authForm.style.display   = 'block';
+    }
+
+    async function handleForgotPassword() {
+        const email = document.getElementById('forgotEmail')?.value.trim();
+        if (!email) { showStatus('Enter your email.', 'error'); return; }
+        const btn = document.getElementById('forgotSubmitBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+        try {
+            const res  = await fetch(API_URL + '/forgot-password', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                showStatus('Reset link sent! Check your email.', 'success');
+                btn.innerHTML = '<i class="fas fa-check"></i> Sent';
+                setTimeout(() => hideForgot(), 2500);
+            } else {
+                showStatus(data.error || 'Could not send reset link.', 'error');
+                btn.disabled = false;
+                btn.innerHTML = 'Send reset link <i class="fas fa-paper-plane" style="font-size:11px;"></i>';
+            }
+        } catch {
+            showStatus('Connection error. Try again.', 'error');
+            btn.disabled = false;
+            btn.innerHTML = 'Send reset link <i class="fas fa-paper-plane" style="font-size:11px;"></i>';
         }
     }
 
@@ -678,6 +786,8 @@
         setStep('email');
         if (emailInput) emailInput.focus();
     });
+    const forgotBtn = document.getElementById('forgotBtn');
+    if (forgotBtn) forgotBtn.addEventListener('click', showForgot);
 
     // --- RIGHT PANEL NEURAL PARTICLES ---
     const canvas = document.getElementById('rightCanvas');

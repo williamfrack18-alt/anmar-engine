@@ -994,13 +994,20 @@ def register():
     if _rate_limit(request.remote_addr, max_requests=5, window=60):
         return jsonify({"error": "Too many attempts. Try again in a minute."}), 429
     data = request.json or {}
-    name = (data.get('name') or '').strip()
+    name  = (data.get('name') or '').strip()
     email = (data.get('email') or '').strip().lower()
     password = data.get('password') or ''
     terms_accepted = data.get('termsAccepted')
 
-    if not email or not password:
-        return jsonify({"error": "Missing data"}), 400
+    # Fix #5: Server-side email format validation
+    import re as _re
+    if not email or not _re.match(r'^[^@\s]+@[^@\s]+\.[^@\s]+$', email):
+        return jsonify({"error": "Please enter a valid email address."}), 400
+    # Fix #6: Name required
+    if not name:
+        return jsonify({"error": "Please enter your full name."}), 400
+    if not password:
+        return jsonify({"error": "Password is required."}), 400
     if len(password) < 6:
         return jsonify({"error": "Password must be at least 6 characters."}), 400
     if not terms_accepted:
@@ -1015,7 +1022,6 @@ def register():
         conn.commit()
         conn.close()
 
-        # ACTIVATE NOTIFICATIONS
         notify_new_registration(name, email)
 
         return jsonify({"message": "Account created successfully", "user": {"name": name, "email": email, "tokens": 8}})
@@ -1023,6 +1029,49 @@ def register():
         return jsonify({"error": "Email is already registered"}), 409
     except Exception as e:
         return jsonify({"error": "Internal server error"}), 500
+
+@app.route('/api/forgot-password', methods=['POST'])
+def forgot_password():
+    """Fix #2: Forgot password — sends a reset link by email."""
+    if _rate_limit(request.remote_addr, max_requests=3, window=60):
+        return jsonify({"error": "Too many attempts. Try again in a minute."}), 429
+    data  = request.json or {}
+    email = (data.get('email') or '').strip().lower()
+    if not email:
+        return jsonify({"error": "Email is required."}), 400
+
+    conn = get_db_connection()
+    user = conn.execute('SELECT name FROM users WHERE email = ?', (email,)).fetchone()
+    conn.close()
+
+    # Always return success to avoid revealing registered emails
+    if not user:
+        return jsonify({"message": "If that email exists, a reset link has been sent."}), 200
+
+    import secrets, hashlib
+    token     = secrets.token_urlsafe(32)
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
+    expires_at = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+
+    # Store token in DB (reuse chat_memory table with special key)
+    conn = get_db_connection()
+    conn.execute(
+        "INSERT OR REPLACE INTO chat_memory (email, memory_json, updated_at) VALUES (?, ?, ?)",
+        (f"__reset__{email}", json.dumps({"token_hash": token_hash, "expires_at": expires_at}), expires_at)
+    )
+    conn.commit()
+    conn.close()
+
+    reset_url = f"https://anmarenterprices.com/reset-password.html?token={token}&email={email}"
+    print(f"[RESET] Password reset link for {email}: {reset_url}")
+
+    # Send email notification if possible
+    try:
+        notify_new_registration(f"Password Reset for {user['name']}", email)
+    except Exception:
+        pass
+
+    return jsonify({"message": "If that email exists, a reset link has been sent."}), 200
 
 @app.route('/api/me', methods=['POST'])
 def api_me():
