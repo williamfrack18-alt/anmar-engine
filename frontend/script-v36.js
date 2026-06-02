@@ -281,7 +281,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (welcomeEl) {
             const hasMessages = history && history.length > 0;
             welcomeEl.style.display = hasMessages ? 'none' : 'flex';
-            if (!hasMessages) positionChatWelcome();
+            if (!hasMessages) { positionChatWelcome(); updateChannelWelcome(activeChannel); }
         }
         history.forEach(msg => {
             const isClient = msg.role === 'client';
@@ -556,6 +556,98 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Hide result section for non-build channels
         if (resultSection && !isBuildChannel()) resultSection.style.display = 'none';
+
+        // Update welcome content + lock state per channel
+        updateChannelWelcome(activeChannel);
+    }
+
+    function updateChannelWelcome(channel) {
+        const welcome = document.getElementById('humanChatWelcome');
+        const inputArea = document.querySelector('.chat-input-area');
+        const sendBtnEl = document.getElementById('generateBtn');
+        const chatInputEl = document.getElementById('businessIdea');
+        if (!welcome) return;
+
+        const hasMessages = document.getElementById('humanChatContent')?.children.length > 0;
+        if (hasMessages) { welcome.style.display = 'none'; return; }
+
+        const configs = {
+            build: {
+                icon: 'fa-hammer',
+                iconColor: '#10b981',
+                iconBg: 'rgba(16,185,129,0.1)',
+                iconBorder: 'rgba(16,185,129,0.2)',
+                title: 'Your idea is validated. Now let\'s build it.',
+                desc: 'Turn your business model into an actionable product roadmap — tech stack, MVP scope, timeline, and team structure.',
+                chips: ['What should my MVP include?', 'Help me define my tech stack', 'How long will it take to build?'],
+                chipsColor: '#10b981',
+                chipsBorder: 'rgba(16,185,129,0.25)',
+                chipsBg: 'rgba(16,185,129,0.07)',
+                locked: false
+            },
+            marketing: {
+                icon: 'fa-bullhorn',
+                iconColor: '#3b82f6',
+                iconBg: 'rgba(59,130,246,0.1)',
+                iconBorder: 'rgba(59,130,246,0.2)',
+                title: 'A great product without distribution is invisible.',
+                desc: 'Get a custom go-to-market strategy — channels, messaging, launch sequence, and paid vs organic breakdown.',
+                chips: ['What\'s my best acquisition channel?', 'Write my launch strategy', 'Who should I target first?'],
+                chipsColor: '#3b82f6',
+                chipsBorder: 'rgba(59,130,246,0.25)',
+                chipsBg: 'rgba(59,130,246,0.07)',
+                locked: false
+            },
+            organic: {
+                icon: 'fa-seedling',
+                iconColor: '#a855f7',
+                iconBg: 'rgba(168,85,247,0.1)',
+                iconBorder: 'rgba(168,85,247,0.2)',
+                title: 'Your audience is out there. Let\'s make them find you.',
+                desc: 'Build a content engine — platform strategy, post formats, content calendar, and SEO keywords tailored to your idea.',
+                chips: ['Create a 30-day content calendar', 'What should I post on Instagram?', 'Give me 10 SEO keywords for my idea'],
+                chipsColor: '#a855f7',
+                chipsBorder: 'rgba(168,85,247,0.25)',
+                chipsBg: 'rgba(168,85,247,0.07)',
+                locked: false
+            },
+            capital: {
+                icon: 'fa-lock',
+                iconColor: '#f59e0b',
+                iconBg: 'rgba(245,158,11,0.08)',
+                iconBorder: 'rgba(245,158,11,0.2)',
+                title: 'Capital comes after proof.',
+                desc: 'This section unlocks once your idea has validated traction — real users, revenue, or market signals. Keep building. The investors will come.',
+                chips: [],
+                locked: true
+            }
+        };
+
+        const cfg = configs[channel] || configs.build;
+
+        // Build chips HTML
+        let chipsHTML = '';
+        if (cfg.chips && cfg.chips.length > 0) {
+            chipsHTML = `<div style="display:flex;flex-direction:column;gap:7px;margin-top:18px;width:100%;max-width:320px;">` +
+                cfg.chips.map(c => `<button onclick="document.getElementById('businessIdea').value=this.dataset.prompt;document.getElementById('businessIdea').dispatchEvent(new Event('input'));document.getElementById('businessIdea').focus();" data-prompt="${c.replace(/"/g,'&quot;')}" style="background:${cfg.chipsBg};border:1px solid ${cfg.chipsBorder};color:${cfg.chipsColor};border-radius:8px;padding:8px 14px;font-size:0.75rem;font-weight:500;cursor:pointer;text-align:left;letter-spacing:0.1px;transition:opacity 0.15s;" onmouseover="this.style.opacity='0.75'" onmouseout="this.style.opacity='1'">${c}</button>`).join('') +
+                `</div>`;
+        }
+
+        welcome.style.display = 'flex';
+        welcome.style.width = '320px';
+        welcome.innerHTML = `
+            <div style="width:42px;height:42px;border-radius:12px;background:${cfg.iconBg};border:1px solid ${cfg.iconBorder};display:flex;align-items:center;justify-content:center;margin-bottom:14px;flex-shrink:0;">
+                <i class="fas ${cfg.icon}" style="color:${cfg.iconColor};font-size:0.95rem;"></i>
+            </div>
+            <div style="font-weight:600;font-size:0.88rem;color:rgba(255,255,255,0.8);margin-bottom:8px;letter-spacing:-0.01em;line-height:1.4;">${cfg.title}</div>
+            <div style="color:rgba(255,255,255,0.35);font-size:0.76rem;line-height:1.6;">${cfg.desc}</div>
+            ${chipsHTML}
+        `;
+
+        // Lock/unlock input for capital
+        if (inputArea) inputArea.style.opacity = cfg.locked ? '0.35' : '1';
+        if (inputArea) inputArea.style.pointerEvents = cfg.locked ? 'none' : 'auto';
+        if (sendBtnEl) sendBtnEl.disabled = cfg.locked;
     }
 
     async function fetchConstructionContext() {
