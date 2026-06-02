@@ -3174,6 +3174,17 @@
             <div id="section-business" class="section-view"
                 style="padding:0; color:#fff; flex-direction:column; align-items:stretch; justify-content:flex-start; height:100%; overflow:hidden; position:relative;">
 
+                <!-- Scroll indicator -->
+                <div id="bmScrollHint" style="position:absolute; bottom:0; left:0; right:0; height:80px; background:linear-gradient(to bottom, transparent, rgba(7,14,11,0.95)); pointer-events:none; z-index:10; display:none; align-items:flex-end; justify-content:center; padding-bottom:12px;">
+                    <div style="display:flex; flex-direction:column; align-items:center; gap:3px; animation: bmBounce 1.5s ease-in-out infinite;">
+                        <span style="font-size:0.7rem; color:rgba(255,255,255,0.35); letter-spacing:1px; text-transform:uppercase;">scroll</span>
+                        <i class="fas fa-chevron-down" style="color:rgba(16,185,129,0.6); font-size:0.85rem;"></i>
+                    </div>
+                </div>
+                <style>
+                    @keyframes bmBounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(4px)} }
+                </style>
+
                 <!-- Scrollable content -->
                 <div id="bmScrollArea" style="flex:1; overflow-y:auto; padding:40px; display:flex; flex-direction:column; align-items:center;">
                     <div style="width:min(820px,94vw);">

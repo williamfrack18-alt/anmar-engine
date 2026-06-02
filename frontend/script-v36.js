@@ -3951,7 +3951,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Called every time the Business Model tab is activated (tab click or project switch)
-    window.__onBmTab = () => restoreBmFromCache(currentProjectName);
+    window.__onBmTab = () => {
+        restoreBmFromCache(currentProjectName);
+        initBmScrollHint();
+    };
+
+    // BM scroll indicator — shows when there's more content below, hides at bottom
+    function initBmScrollHint() {
+        const area = document.getElementById('bmScrollArea');
+        const hint = document.getElementById('bmScrollHint');
+        if (!area || !hint) return;
+        function updateHint() {
+            const scrollable = area.scrollHeight > area.clientHeight + 8;
+            const atBottom = area.scrollTop + area.clientHeight >= area.scrollHeight - 24;
+            hint.style.display = (scrollable && !atBottom) ? 'flex' : 'none';
+        }
+        area.removeEventListener('scroll', updateHint);
+        area.addEventListener('scroll', updateHint);
+        setTimeout(updateHint, 300);
+    }
 
     // ── Inline BM chat send ───────────────────────────────────────────────────
     window.bmChatSend = async function () {
@@ -4355,9 +4373,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>`;
         }
 
-        // Scroll
+        // Scroll + update hint
         const scrollArea = document.getElementById('bmScrollArea');
-        if (scrollArea) setTimeout(() => scrollArea.scrollTo({ top: scrollArea.scrollHeight, behavior: 'smooth' }), 300);
+        if (scrollArea) setTimeout(() => {
+            scrollArea.scrollTo({ top: 0, behavior: 'smooth' });
+            initBmScrollHint();
+        }, 300);
     }
 
     // ── Green confetti burst ──────────────────────────────────────────────────
