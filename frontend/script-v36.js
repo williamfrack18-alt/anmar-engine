@@ -4947,6 +4947,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     // Initial position after layout settles
     setTimeout(positionChatWelcome, 300);
+    // Initialize welcome content for default channel
+    setTimeout(() => updateChannelWelcome(activeChannel), 350);
 
     window.__mainScriptOk = true;
     } catch (e) {
