@@ -1252,8 +1252,23 @@ document.addEventListener('DOMContentLoaded', () => {
             const phone = (welcomePhoneInput?.value || '').trim();
             const desc = (welcomeDescInput?.value || '').trim();
             const descWords = countRealWords(desc);
-            const valid = !!(name && phone && descWords >= 5);
+            const phoneOk = !phone || isValidPhone(phone);
+            const valid = !!(name && phone && phoneOk && descWords >= 5);
             if (welcomeSubmitBtn) welcomeSubmitBtn.disabled = !valid;
+
+            // Live hint under phone field
+            const phoneHint = document.getElementById('phoneValidHint');
+            if (phoneHint) {
+                if (!phone) {
+                    phoneHint.textContent = '';
+                } else if (!phoneOk) {
+                    phoneHint.textContent = 'Please enter a valid phone number (e.g. +1 555 123 4567).';
+                    phoneHint.style.color = 'rgba(251,146,60,0.85)';
+                } else {
+                    phoneHint.textContent = '✓ Valid phone number';
+                    phoneHint.style.color = 'rgba(52,211,153,0.85)';
+                }
+            }
 
             // Live hint under description while typing
             const descHint = document.getElementById('wizDescHint');
@@ -1287,6 +1302,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         const desc = (welcomeDescInput?.value || '').trim();
                         if (!name) { if (welcomeStatus) welcomeStatus.textContent = 'Enter a project name.'; return; }
                         if (!phone) { if (welcomeStatus) welcomeStatus.textContent = 'Enter your phone number.'; return; }
+                        if (!isValidPhone(phone)) {
+                            if (welcomeStatus) welcomeStatus.textContent = 'Please enter a valid phone number (e.g. +1 555 123 4567).';
+                            if (welcomePhoneInput) welcomePhoneInput.focus();
+                            return;
+                        }
                         if (!desc) { if (welcomeStatus) welcomeStatus.textContent = 'Describe your project briefly.'; return; }
                         const descWordCount = countRealWords(desc);
                         if (descWordCount < 5) {
@@ -3380,6 +3400,16 @@ document.addEventListener('DOMContentLoaded', () => {
             if (chatInput) chatInput.focus();
         }
         updateSendState();
+    }
+
+    // --- Phone Validation ---
+    function isValidPhone(raw) {
+        if (!raw) return false;
+        const digits = raw.replace(/[\s\-\(\)\+]/g, '');
+        if (!/^\d+$/.test(digits)) return false;
+        if (digits.length < 7 || digits.length > 15) return false;
+        if (/^(\d)\1+$/.test(digits)) return false; // all same digit
+        return true;
     }
 
     // --- Project Management ---
