@@ -862,10 +862,49 @@ import threading
 import uuid
 from datetime import datetime
 import json
-# ── RESEND EMAIL CONFIG (module-level so we verify at startup) ──
+# ── RESEND EMAIL CONFIG ──
 RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "").strip()
 RESEND_FROM = "Anmar Enterprises <noreply@anmarenterprices.com>"
 RESEND_ADMIN = os.environ.get("ANMAR_ADMIN_EMAIL", "anmar@anmarenterprices.com").strip()
+
+# ── TWILIO SMS CONFIG ──
+TWILIO_ACCOUNT_SID   = os.environ.get("TWILIO_ACCOUNT_SID", "").strip()
+TWILIO_AUTH_TOKEN    = os.environ.get("TWILIO_AUTH_TOKEN", "").strip()
+TWILIO_FROM          = os.environ.get("TWILIO_FROM", "").strip()
+TWILIO_MESSAGING_SID = os.environ.get("TWILIO_MESSAGING_SID", "").strip()
+TWILIO_ADMIN_PHONE   = os.environ.get("TWILIO_ADMIN_PHONE", "").strip()
+
+
+def _send_sms(to_phone, body):
+    """Envía SMS via Twilio. Silencia errores en log — nunca rompe el flujo principal."""
+    if not TWILIO_ACCOUNT_SID or not TWILIO_AUTH_TOKEN or not to_phone:
+        print(f"[SMS] Skipped — missing config or phone. to={to_phone}")
+        return
+    # Normalize phone: ensure starts with +
+    phone = to_phone.strip()
+    if not phone.startswith('+'):
+        phone = '+1' + phone.replace(' ', '').replace('-', '').replace('(', '').replace(')', '')
+    try:
+        payload = {
+            'To': phone,
+            'Body': body,
+        }
+        if TWILIO_MESSAGING_SID:
+            payload['MessagingServiceSid'] = TWILIO_MESSAGING_SID
+        else:
+            payload['From'] = TWILIO_FROM
+        r = requests.post(
+            f"https://api.twilio.com/2010-04-01/Accounts/{TWILIO_ACCOUNT_SID}/Messages.json",
+            data=payload,
+            auth=(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN),
+            timeout=15
+        )
+        if r.status_code >= 400:
+            print(f"[SMS] ERROR {r.status_code}: {r.text}")
+        else:
+            print(f"[SMS] Sent to {phone} — status {r.status_code}")
+    except Exception as e:
+        print(f"[SMS] Exception sending to {phone}: {e}")
 
 
 def _resend_send_email(to_addr, subject, html_body):
@@ -912,8 +951,8 @@ def test_email_endpoint():
         return jsonify({"ok": False, "error": "Error al enviar email de prueba."}), 500
 
 
-def notify_new_registration(name, email):
-    """Envía emails de bienvenida + alerta admin en hilo separado."""
+def notify_new_registration(name, email, phone=None):
+    """Envía emails + SMS de bienvenida + alerta admin en hilo separado."""
 
     def background_task():
 
@@ -1121,6 +1160,27 @@ def notify_new_registration(name, email):
             import traceback
             print(f"[NOTIFY] ERROR alerta admin: {e}")
             print(traceback.format_exc())
+
+        # 4. SMS bienvenida al cliente (solo si proporcionó teléfono)
+        _phone = (phone or '').strip()
+        if _phone:
+            try:
+                _send_sms(
+                    to_phone=_phone,
+                    body=f"Welcome to Anmar Enterprises, {_name}! 🚀 Your account is live. Head to anmarenterprices.com to start building your idea. Reply STOP to unsubscribe."
+                )
+            except Exception as e:
+                print(f"[SMS] Error welcome to client: {e}")
+
+        # 5. SMS alerta admin
+        if TWILIO_ADMIN_PHONE:
+            try:
+                _send_sms(
+                    to_phone=TWILIO_ADMIN_PHONE,
+                    body=f"🔔 New lead registered on Anmar!\nName: {_name}\nEmail: {email}\nPhone: {_phone or 'not provided'}\nTime: {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+                )
+            except Exception as e:
+                print(f"[SMS] Error alert admin: {e}")
 
         print(f"[NOTIFY] HILO COMPLETADO para {email}")
 
@@ -6517,6 +6577,23 @@ def create_empty_project():
 """
         with open(os.path.join(project_path, 'index.html'), 'w', encoding='utf-8') as f:
             f.write(starter_html)
+
+        # SMS notifications for new project
+        def _sms_project():
+            display = project_name.replace('_', ' ').title()
+            # SMS to client
+            if phone:
+                _send_sms(
+                    to_phone=phone,
+                    body=f"Hi! Your project \"{display}\" has been created on Anmar Enterprises. Our team will start working on it shortly. Reply STOP to unsubscribe."
+                )
+            # SMS to admin
+            if TWILIO_ADMIN_PHONE:
+                _send_sms(
+                    to_phone=TWILIO_ADMIN_PHONE,
+                    body=f"🚀 New project created!\nProject: {display}\nOwner: {user_email}\nPhone: {phone or 'not provided'}\nType: {project_type or 'N/A'}\nStage: {stage or 'N/A'}"
+                )
+        threading.Thread(target=_sms_project, daemon=True).start()
 
         return jsonify({
             "status": "ok",
