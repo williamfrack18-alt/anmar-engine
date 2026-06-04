@@ -540,9 +540,23 @@
         } catch (_) { localStorage.removeItem('currentUser'); }
     }
 
+    // Disable "Continue with email" until T&C is checked
+    function syncTermsBtn() {
+        const checked = document.getElementById('termsAccepted')?.checked;
+        if (emailToggleBtn) {
+            emailToggleBtn.disabled = !checked;
+            emailToggleBtn.style.opacity = checked ? '1' : '0.45';
+            emailToggleBtn.style.cursor = checked ? 'pointer' : 'not-allowed';
+        }
+    }
+    const termsCheckboxEl = document.getElementById('termsAccepted');
+    if (termsCheckboxEl) termsCheckboxEl.addEventListener('change', syncTermsBtn);
+    syncTermsBtn(); // run once on load
+
     // Show email input area when button clicked
     if (emailToggleBtn) {
         emailToggleBtn.addEventListener('click', () => {
+            if (!document.getElementById('termsAccepted')?.checked) return;
             emailToggleWrap.style.display = 'none';
             emailInputArea.style.display = 'block';
             setStep('email');
