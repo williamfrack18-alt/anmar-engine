@@ -1627,8 +1627,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!welcomeType || welcomeTyped) return;
         welcomeTyped = true;
         const rawName = (currentUser?.name || '').trim();
-        const displayName = rawName ? rawName.split(' ')[0] : 'architect';
-        const text = `Welcome back, ${displayName} -- what can we help you with today?`;
+        const displayName = rawName || 'there';
+        const isReturning = !forceWelcome;
+        const text = isReturning
+            ? `Welcome back, ${displayName}! What are we building today?`
+            : `Welcome, ${displayName}! Let's turn your idea into a business.`;
         let idx = 0;
         welcomeType.textContent = '';
         const tick = () => {
