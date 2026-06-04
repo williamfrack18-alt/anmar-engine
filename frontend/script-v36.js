@@ -4574,6 +4574,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (tab === 'projects') {
             loadProjects();
         }
+
+        if (tab === 'business' && currentProjectName) {
+            restoreBmFromCache(currentProjectName);
+        }
     }
 
     // Session restore: reopen last project and chat memory when possible.
