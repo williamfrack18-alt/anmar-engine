@@ -1240,6 +1240,16 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
+        // Phone format validation
+        function isValidPhone(raw) {
+            if (!raw) return false;
+            const digits = raw.replace(/[\s\-\(\)\+]/g, '');
+            if (!/^\d+$/.test(digits)) return false;
+            if (digits.length < 7 || digits.length > 15) return false;
+            if (/^(\d)\1+$/.test(digits)) return false; // all same digit
+            return true;
+        }
+
         // Count real words (≥2 letters) in a string
         function countRealWords(text) {
             return (text.match(/[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]{2,}/g) || []).length;
@@ -3400,16 +3410,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (chatInput) chatInput.focus();
         }
         updateSendState();
-    }
-
-    // --- Phone Validation ---
-    function isValidPhone(raw) {
-        if (!raw) return false;
-        const digits = raw.replace(/[\s\-\(\)\+]/g, '');
-        if (!/^\d+$/.test(digits)) return false;
-        if (digits.length < 7 || digits.length > 15) return false;
-        if (/^(\d)\1+$/.test(digits)) return false; // all same digit
-        return true;
     }
 
     // --- Project Management ---
