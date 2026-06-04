@@ -4575,8 +4575,15 @@ document.addEventListener('DOMContentLoaded', () => {
             loadProjects();
         }
 
-        if (tab === 'business' && currentProjectName) {
-            restoreBmFromCache(currentProjectName);
+        if (tab === 'business') {
+            // currentProjectName is closure-scoped; read from localStorage as fallback
+            const _bmProject = currentProjectName || (() => {
+                try {
+                    const email = (currentUser?.email || '').toLowerCase();
+                    return localStorage.getItem(`anmar:last_project:${email}`) || '';
+                } catch(_) { return ''; }
+            })();
+            if (_bmProject) restoreBmFromCache(_bmProject);
         }
     }
 
