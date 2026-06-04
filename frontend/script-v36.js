@@ -4128,7 +4128,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const d = JSON.parse(raw);
             const titleEl = document.getElementById('bmTitle');
             const subEl   = document.getElementById('bmSubtitle');
-            if (titleEl) titleEl.textContent = `${projectName} — Business Model`;
+            if (titleEl) titleEl.textContent = `${toDisplayName(projectName)} — Business Model`;
             if (subEl)   subEl.textContent   = 'Your personalized analysis.';
             // Reset lists before re-filling
             const chList   = document.getElementById('bmChannelsList');
