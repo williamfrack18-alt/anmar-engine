@@ -4119,7 +4119,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── Restore BM from localStorage cache ───────────────────────────────────
     function restoreBmFromCache(projectName) {
         const _key = (projectName || '').toLowerCase().trim();
-        const raw  = localStorage.getItem(`bm_data_${_key}`);
+        // Try exact key, then with underscores→spaces, then spaces→underscores
+        const raw  = localStorage.getItem(`bm_data_${_key}`)
+                  || localStorage.getItem(`bm_data_${_key.replace(/_/g, ' ')}`)
+                  || localStorage.getItem(`bm_data_${_key.replace(/ /g, '_')}`);
         if (!raw) { resetBmToIdle(projectName); return; }
         try {
             const d = JSON.parse(raw);
