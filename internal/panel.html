@@ -8,66 +8,98 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --bg: #f5f7fa; --surface: #ffffff; --border: #e5e7eb;
-            --border-hover: #d1d5db; --text: #111827; --text-dim: #6b7280;
-            --text-muted: #9ca3af; --accent: #10b981; --accent-dim: rgba(16,185,129,0.08);
-            --accent-glow: rgba(16,185,129,0.2); --blue: #3b82f6; --amber: #f59e0b;
-            --red: #ef4444; --purple: #8b5cf6; --sidebar-w: 64px; --header-h: 60px;
-            --radius: 14px; --radius-sm: 10px;
+            --bg: #000;
+            --surface: rgba(8,12,10,0.78);
+            --border: rgba(255,255,255,0.09);
+            --border-hover: rgba(255,255,255,0.18);
+            --text: #ffffff;
+            --text-dim: rgba(255,255,255,0.55);
+            --text-muted: rgba(255,255,255,0.3);
+            --accent: #10b981;
+            --accent-dim: rgba(16,185,129,0.1);
+            --accent-glow: rgba(16,185,129,0.25);
+            --blue: #3b82f6;
+            --amber: #f59e0b;
+            --red: #ef4444;
+            --purple: #8b5cf6;
+            --sidebar-w: 68px;
+            --header-h: 60px;
+            --radius: 18px;
+            --radius-sm: 12px;
+            --blur: blur(22px);
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            background: var(--bg); font-family: 'Inter', sans-serif; color: var(--text);
+        html, body {
+            background: #000; font-family: 'Inter', sans-serif; color: var(--text);
             min-height: 100vh; overflow: hidden; -webkit-font-smoothing: antialiased;
         }
         .mono { font-family: 'JetBrains Mono', monospace; }
 
+        /* ── BACKGROUND ── */
+        .bg-gradient {
+            position: fixed; inset: 0; z-index: -10; pointer-events: none;
+            background:
+                radial-gradient(ellipse at 15% 10%, rgba(16,185,129,0.07), transparent 50%),
+                radial-gradient(ellipse at 85% 85%, rgba(16,185,129,0.04), transparent 45%),
+                #000;
+        }
+        .scanlines {
+            position: fixed; inset: 0; z-index: -5; pointer-events: none;
+            background: linear-gradient(to bottom,
+                rgba(255,255,255,0) 0%, rgba(255,255,255,0) 50%,
+                rgba(0,0,0,0.18) 50%, rgba(0,0,0,0.18) 100%);
+            background-size: 100% 4px;
+        }
+
         /* ── SIDEBAR ── */
         .sidebar {
             position: fixed; top: 0; left: 0; width: var(--sidebar-w); height: 100vh;
-            background: #ffffff; border-right: 1px solid var(--border); z-index: 100;
-            display: flex; flex-direction: column; align-items: center; padding: 16px 0;
+            background: rgba(0,0,0,0.55); backdrop-filter: var(--blur);
+            border-right: 1px solid var(--border); z-index: 100;
+            display: flex; flex-direction: column; align-items: center; padding: 18px 0;
         }
         .sidebar .logo {
-            width: 36px; height: 36px; border-radius: 10px;
+            width: 38px; height: 38px; border-radius: 12px;
             background: linear-gradient(135deg, var(--accent), #0ea5e9);
             display: flex; align-items: center; justify-content: center;
-            font-weight: 700; font-size: 0.85rem; color: #ffffff;
-            margin-bottom: 2rem;
+            font-weight: 700; font-size: 0.9rem; color: #001a12;
+            margin-bottom: 2rem; box-shadow: 0 0 20px var(--accent-glow);
         }
-        .sidebar-nav { display: flex; flex-direction: column; gap: 6px; width: 100%; padding: 0 8px; }
+        .sidebar-nav { display: flex; flex-direction: column; gap: 6px; width: 100%; padding: 0 10px; }
         .sidebar-nav button {
             width: 100%; aspect-ratio: 1; border-radius: var(--radius-sm); border: none;
             background: transparent; color: var(--text-dim); font-size: 1.1rem;
             cursor: pointer; transition: all 0.2s; display: flex; align-items: center;
             justify-content: center; position: relative;
         }
-        .sidebar-nav button:hover { background: #f3f4f6; color: var(--text); }
-        .sidebar-nav button.active { background: var(--accent-dim); color: var(--accent); }
+        .sidebar-nav button:hover { background: rgba(255,255,255,0.06); color: var(--text); }
+        .sidebar-nav button.active { background: var(--accent-dim); color: var(--accent); box-shadow: 0 0 12px var(--accent-glow); }
         .sidebar-nav button .badge-dot {
             position: absolute; top: 8px; right: 8px; width: 8px; height: 8px;
             border-radius: 50%; background: var(--red); display: none;
+            box-shadow: 0 0 8px rgba(239,68,68,0.6);
         }
-        .sidebar-bottom { margin-top: auto; padding: 0 8px; width: 100%; }
+        .sidebar-bottom { margin-top: auto; padding: 0 10px; width: 100%; }
         .sidebar-bottom button {
             width: 100%; aspect-ratio: 1; border-radius: var(--radius-sm); border: none;
             background: transparent; color: var(--text-muted); font-size: 1rem;
             cursor: pointer; transition: all 0.2s; display: flex; align-items: center;
             justify-content: center;
         }
-        .sidebar-bottom button:hover { color: var(--red); background: #fef2f2; }
-        .sidebar-bottom .team-btn:hover { color: var(--blue); background: #eff6ff; }
+        .sidebar-bottom button:hover { color: var(--red); background: rgba(239,68,68,0.1); }
+        .sidebar-bottom .team-btn:hover { color: var(--blue); background: rgba(59,130,246,0.1); }
 
         /* ── HEADER ── */
         .header {
             position: fixed; top: 0; left: var(--sidebar-w); right: 0; height: var(--header-h);
-            background: #ffffff; border-bottom: 1px solid var(--border); z-index: 90;
+            background: rgba(0,0,0,0.6); backdrop-filter: var(--blur);
+            border-bottom: 1px solid var(--border); z-index: 90;
             display: flex; align-items: center; justify-content: space-between;
             padding: 0 28px;
         }
         .header-left { display: flex; align-items: center; gap: 14px; }
-        .header-title { font-size: 1.05rem; font-weight: 600; letter-spacing: -0.3px; }
-        .header-subtitle { font-size: 0.75rem; color: var(--text-dim); }
+        .header-title { font-size: 1.05rem; font-weight: 600; letter-spacing: -0.3px; color: var(--text); }
+        .header-subtitle { font-size: 0.73rem; color: var(--text-muted); }
         .header-right { display: flex; align-items: center; gap: 16px; }
         .header-stat {
             display: flex; align-items: center; gap: 6px;
@@ -77,7 +109,7 @@
         .user-pill {
             display: flex; align-items: center; gap: 8px;
             padding: 6px 14px 6px 10px; border-radius: 999px;
-            background: #f3f4f6; border: 1px solid var(--border);
+            background: rgba(255,255,255,0.06); border: 1px solid var(--border);
             font-size: 0.8rem; font-weight: 500;
         }
         .user-pill .avatar {
@@ -97,9 +129,10 @@
 
         /* ── CARDS ── */
         .glass-card {
-            background: var(--surface); border: 1px solid var(--border);
-            border-radius: var(--radius); padding: 20px; transition: border-color 0.2s;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            background: var(--surface); backdrop-filter: var(--blur);
+            border: 1px solid var(--border); border-radius: var(--radius);
+            padding: 20px; transition: border-color 0.2s;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.45);
         }
         .glass-card:hover { border-color: var(--border-hover); }
 
@@ -117,7 +150,7 @@
             background: transparent; color: var(--text-dim); font-size: 0.76rem;
             cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif;
         }
-        .filter-chip:hover { border-color: var(--border-hover); color: var(--text); }
+        .filter-chip:hover { border-color: var(--border-hover); color: var(--text); background: rgba(255,255,255,0.05); }
         .filter-chip.active { background: var(--accent-dim); border-color: rgba(16,185,129,0.3); color: var(--accent); }
 
         /* ── Search bar ── */
@@ -125,11 +158,11 @@
         .search-bar-icon { position: absolute; left: 14px; color: var(--text-muted); font-size: 0.82rem; pointer-events: none; }
         .ticket-search-input {
             width: 100%; padding: 10px 40px 10px 36px; border-radius: 10px;
-            border: 1px solid var(--border); background: #ffffff;
+            border: 1px solid var(--border); background: rgba(255,255,255,0.04);
             color: var(--text); font-family: 'Inter', sans-serif; font-size: 0.85rem;
             outline: none; transition: border-color 0.2s;
         }
-        .ticket-search-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(16,185,129,0.1); }
+        .ticket-search-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
         .ticket-search-input::placeholder { color: var(--text-muted); }
         .search-clear-btn {
             position: absolute; right: 10px; background: transparent; border: none;
@@ -141,7 +174,8 @@
         /* ── CHANNEL TABS ── */
         .channel-tabs {
             display: flex; gap: 4px; margin-bottom: 18px;
-            background: #f3f4f6; border-radius: var(--radius); padding: 4px;
+            background: rgba(255,255,255,0.04); border-radius: var(--radius); padding: 4px;
+            border: 1px solid var(--border);
         }
         .channel-tab {
             flex: 1; padding: 10px 16px; border: none; border-radius: var(--radius-sm);
@@ -150,7 +184,7 @@
             font-weight: 600; text-align: center; display: flex;
             align-items: center; justify-content: center; gap: 8px;
         }
-        .channel-tab:hover { color: var(--text); background: #e5e7eb; }
+        .channel-tab:hover { color: var(--text); background: rgba(255,255,255,0.06); }
         .channel-tab.active-build { background: rgba(59,130,246,0.12); color: var(--blue); }
         .channel-tab.active-marketing { background: rgba(168,85,247,0.12); color: var(--purple); }
         .channel-tab.active-organic { background: rgba(16,185,129,0.12); color: var(--accent); }
@@ -179,9 +213,19 @@
         .priority-high { background: var(--red); box-shadow: 0 0 8px rgba(239,68,68,0.4); }
         .priority-medium { background: var(--amber); box-shadow: 0 0 8px rgba(245,158,11,0.3); }
         .priority-low { background: var(--accent); }
-        .ticket-info h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 3px; }
+        .ticket-info h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 3px; color: var(--text); }
         .ticket-info p { font-size: 0.76rem; color: var(--text-dim); }
         .ticket-meta { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-muted); }
+
+        /* ── Unread badge ── */
+        .unread-badge {
+            display: inline-flex; align-items: center; justify-content: center;
+            min-width: 18px; height: 18px; border-radius: 999px; padding: 0 5px;
+            background: var(--red); color: #fff; font-size: 0.62rem; font-weight: 700;
+            margin-left: 6px; box-shadow: 0 0 8px rgba(239,68,68,0.5);
+            animation: unreadPulse 2s ease-in-out infinite;
+        }
+        @keyframes unreadPulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
         .ticket-sla { padding: 4px 10px; border-radius: 999px; font-size: 0.68rem; font-family: 'JetBrains Mono', monospace; font-weight: 600; }
         .sla-ok { background: rgba(16,185,129,0.1); color: var(--accent); border: 1px solid rgba(16,185,129,0.2); }
         .sla-warn { background: rgba(245,158,11,0.1); color: var(--amber); border: 1px solid rgba(245,158,11,0.2); }
@@ -196,9 +240,9 @@
             display: inline-flex; align-items: center; gap: 5px;
             padding: 4px 10px; border-radius: 999px; font-size: 0.7rem; font-weight: 600;
         }
-        .status-completed { background: rgba(16,185,129,0.1); color: var(--accent); }
-        .status-developing { background: rgba(59,130,246,0.1); color: var(--blue); }
-        .status-accepted { background: rgba(168,85,247,0.1); color: var(--purple); }
+        .status-completed { background: rgba(16,185,129,0.12); color: var(--accent); border: 1px solid rgba(16,185,129,0.2); }
+        .status-developing { background: rgba(59,130,246,0.12); color: var(--blue); border: 1px solid rgba(59,130,246,0.2); }
+        .status-accepted { background: rgba(168,85,247,0.12); color: var(--purple); border: 1px solid rgba(168,85,247,0.2); }
 
         /* ── Plan badges ── */
         .plan-badge {
@@ -206,10 +250,10 @@
             padding: 2px 8px; border-radius: 999px; font-size: 0.62rem; font-weight: 700;
             letter-spacing: 0.03em; text-transform: uppercase; margin-left: 6px;
         }
-        .plan-validate { background: rgba(16,185,129,0.12); color: #10b981; }
-        .plan-mvp { background: rgba(59,130,246,0.12); color: #3b82f6; }
-        .plan-growth { background: rgba(168,85,247,0.12); color: #8b5cf6; }
-        .plan-none { background: rgba(156,163,175,0.12); color: #9ca3af; }
+        .plan-validate { background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid rgba(16,185,129,0.2); }
+        .plan-mvp { background: rgba(59,130,246,0.15); color: #3b82f6; border: 1px solid rgba(59,130,246,0.2); }
+        .plan-growth { background: rgba(168,85,247,0.15); color: #8b5cf6; border: 1px solid rgba(168,85,247,0.2); }
+        .plan-none { background: rgba(156,163,175,0.1); color: rgba(255,255,255,0.35); }
 
         /* ── New client highlight ── */
         .ticket-row.new-client {
@@ -249,7 +293,8 @@
         .detail-panel { display: flex; flex-direction: column; overflow: hidden; }
         .panel-tabs {
             display: flex; gap: 2px; margin-bottom: 12px;
-            background: #f3f4f6; border-radius: var(--radius-sm); padding: 3px;
+            background: rgba(255,255,255,0.04); border-radius: var(--radius-sm); padding: 3px;
+            border: 1px solid var(--border);
         }
         .panel-tab {
             flex: 1; padding: 8px 12px; border: none; border-radius: 8px;
@@ -257,21 +302,21 @@
             cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif;
             font-weight: 500; text-align: center;
         }
-        .panel-tab:hover { color: var(--text); }
-        .panel-tab.active { background: var(--accent-dim); color: var(--accent); }
+        .panel-tab:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+        .panel-tab.active { background: var(--accent-dim); color: var(--accent); box-shadow: 0 0 10px var(--accent-glow); }
         .panel-content {
             flex: 1; overflow-y: auto; border-radius: var(--radius);
-            background: var(--surface); border: 1px solid var(--border);
+            background: var(--surface); backdrop-filter: var(--blur); border: 1px solid var(--border);
         }
         .tab-pane { display: none; padding: 18px; height: 100%; }
         .tab-pane.active { display: flex; flex-direction: column; }
 
         /* Blueprint display */
         .blueprint-box {
-            background: #f0fdf4; border: 1px solid #bbf7d0;
+            background: rgba(16,185,129,0.04); border: 1px solid rgba(16,185,129,0.15);
             border-radius: var(--radius-sm); padding: 18px;
             font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;
-            line-height: 1.7; color: #1a1a2e;
+            line-height: 1.7; color: rgba(255,255,255,0.82);
             white-space: pre-wrap; overflow-y: auto; flex: 1;
         }
 
@@ -282,7 +327,7 @@
             text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 3px;
             font-family: 'JetBrains Mono', monospace;
         }
-        .info-item span { font-size: 0.88rem; }
+        .info-item span { font-size: 0.88rem; color: var(--text); }
 
         /* Chat */
         .chat-container { display: flex; flex-direction: column; height: 100%; }
@@ -290,35 +335,62 @@
             flex: 1; overflow-y: auto; padding: 12px; display: flex;
             flex-direction: column; gap: 10px;
         }
-        .chat-msg { max-width: 85%; padding: 10px 14px; border-radius: 14px; font-size: 0.85rem; line-height: 1.5; }
-        .chat-msg.client { align-self: flex-start; background: #f3f4f6; border: 1px solid #e5e7eb; color: var(--text); }
-        .chat-msg.internal { align-self: flex-end; background: #10b981; border: 1px solid #059669; color: #ffffff; }
-        .chat-msg .msg-sender { font-size: 0.68rem; font-weight: 600; margin-bottom: 4px; color: var(--text-dim); }
-        .chat-msg.internal .msg-sender { color: rgba(255,255,255,0.8); }
+        .chat-msg { max-width: 85%; padding: 10px 14px; font-size: 0.85rem; line-height: 1.5; }
+        .chat-msg.client {
+            align-self: flex-start; border-radius: 16px 16px 16px 4px;
+            background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: var(--text);
+        }
+        .chat-msg.internal {
+            align-self: flex-end; border-radius: 16px 16px 4px 16px;
+            background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.25); color: #fff;
+        }
+        .chat-msg.paylink {
+            align-self: flex-end; border-radius: 16px 16px 4px 16px;
+            background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.25); color: #fff;
+        }
+        .chat-msg .msg-sender { font-size: 0.68rem; font-weight: 600; margin-bottom: 4px; color: var(--text-muted); }
+        .chat-msg.internal .msg-sender, .chat-msg.paylink .msg-sender { color: rgba(255,255,255,0.45); }
         .chat-msg .msg-time { font-size: 0.6rem; color: var(--text-muted); margin-top: 4px; text-align: right; }
-        .chat-msg.internal .msg-time { color: rgba(255,255,255,0.6); }
+        .chat-msg.internal .msg-time, .chat-msg.paylink .msg-time { color: rgba(255,255,255,0.35); }
         .chat-input-row {
-            display: flex; gap: 10px; padding: 14px; border-top: 1px solid var(--border);
-            background: #ffffff; flex-shrink: 0;
+            display: flex; gap: 8px; padding: 14px; border-top: 1px solid var(--border);
+            background: rgba(0,0,0,0.3); flex-shrink: 0; align-items: flex-end;
         }
         .chat-input {
-            flex: 1; background: #f9fafb; border: 1.5px solid var(--border); border-radius: 12px;
+            flex: 1; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 12px;
             padding: 12px 16px; color: var(--text); font-size: 0.85rem;
             font-family: 'Inter', sans-serif; outline: none; resize: none; transition: all 0.2s;
         }
-        .chat-input:focus { border-color: var(--accent); background: #ffffff; box-shadow: 0 0 0 3px rgba(16,185,129,0.1); }
+        .chat-input::placeholder { color: var(--text-muted); }
+        .chat-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
         .chat-send-btn {
             width: 44px; height: 44px; border-radius: 12px; border: none;
             background: var(--accent); color: #001a12; cursor: pointer;
             display: flex; align-items: center; justify-content: center;
             font-size: 0.95rem; transition: all 0.2s; font-weight: 600; flex-shrink: 0;
         }
-        .chat-send-btn:hover { transform: scale(1.08); }
+        .chat-send-btn:hover { transform: scale(1.08); box-shadow: 0 4px 14px var(--accent-glow); }
+        .chat-paylink-btn {
+            width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
+            border: 1px solid rgba(59,130,246,0.3); background: rgba(59,130,246,0.1);
+            color: var(--blue); cursor: pointer; display: flex; align-items: center;
+            justify-content: center; font-size: 0.9rem; transition: all 0.2s;
+        }
+        .chat-paylink-btn:hover { background: rgba(59,130,246,0.2); transform: scale(1.05); }
+
+        /* AI suggestion pills */
+        .ai-suggestions { display: flex; gap: 6px; flex-wrap: wrap; padding: 8px 14px 0; }
+        .ai-suggestion-pill {
+            padding: 5px 12px; border-radius: 999px; border: 1px solid var(--border);
+            background: rgba(255,255,255,0.04); color: var(--text-dim); font-size: 0.75rem;
+            cursor: pointer; transition: all 0.15s; font-family: 'Inter', sans-serif;
+        }
+        .ai-suggestion-pill:hover { background: var(--accent-dim); border-color: rgba(16,185,129,0.3); color: var(--accent); }
 
         /* Notes */
         .notes-container { display: flex; flex-direction: column; height: 100%; gap: 10px; }
         .notes-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-        .note-item { background: #f9fafb; border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+        .note-item { background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
         .note-item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
         .note-author { font-size: 0.72rem; font-weight: 600; color: var(--accent); }
         .note-time { font-size: 0.68rem; color: var(--text-muted); }
@@ -328,16 +400,17 @@
         .note-input-row { display: flex; gap: 8px; align-items: flex-end; }
         .note-textarea {
             flex: 1; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border);
-            background: #ffffff; color: var(--text); font-family: 'Inter', sans-serif;
+            background: rgba(255,255,255,0.05); color: var(--text); font-family: 'Inter', sans-serif;
             font-size: 0.83rem; resize: none; outline: none; min-height: 70px;
         }
-        .note-textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(16,185,129,0.1); }
+        .note-textarea::placeholder { color: var(--text-muted); }
+        .note-textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
         .note-send-btn {
             padding: 10px 16px; border-radius: 10px; border: none; cursor: pointer;
             background: var(--accent-dim); color: var(--accent); font-size: 0.82rem;
             font-family: 'Inter', sans-serif; font-weight: 600; transition: all 0.2s;
         }
-        .note-send-btn:hover { background: rgba(16,185,129,0.25); }
+        .note-send-btn:hover { background: rgba(16,185,129,0.2); }
 
         /* ── CLIENTS VIEW ── */
         .clients-grid { display: flex; flex-direction: column; gap: 8px; }
@@ -348,10 +421,11 @@
         .client-avatar {
             width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
             display: flex; align-items: center; justify-content: center;
-            font-weight: 700; font-size: 0.85rem; color: #fff;
+            font-weight: 700; font-size: 0.85rem; color: #001a12;
             background: linear-gradient(135deg, var(--accent), var(--blue));
+            box-shadow: 0 0 12px var(--accent-glow);
         }
-        .client-info h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 3px; }
+        .client-info h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 3px; color: var(--text); }
         .client-info p { font-size: 0.76rem; color: var(--text-dim); }
         .client-stats {
             display: flex; gap: 12px; font-size: 0.72rem; color: var(--text-muted);
@@ -363,14 +437,15 @@
         /* ── CLIENT DETAIL VIEW ── */
         .client-detail-header {
             display: flex; align-items: center; gap: 16px; margin-bottom: 24px;
-            padding: 20px; background: var(--surface); border: 1px solid var(--border);
-            border-radius: var(--radius);
+            padding: 20px; background: var(--surface); backdrop-filter: var(--blur);
+            border: 1px solid var(--border); border-radius: var(--radius);
         }
         .client-detail-avatar {
             width: 56px; height: 56px; border-radius: 50%; flex-shrink: 0;
             display: flex; align-items: center; justify-content: center;
-            font-weight: 700; font-size: 1.2rem; color: #fff;
+            font-weight: 700; font-size: 1.2rem; color: #001a12;
             background: linear-gradient(135deg, var(--accent), var(--blue));
+            box-shadow: 0 0 20px var(--accent-glow);
         }
         .client-detail-info { flex: 1; }
         .client-detail-info h2 { font-size: 1.15rem; font-weight: 700; margin-bottom: 2px; }
@@ -390,8 +465,8 @@
             color: #001a12; font-weight: 700; font-size: 0.78rem;
             cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px;
         }
-        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 18px var(--accent-glow); }
-        .btn-primary:disabled { opacity: 0.5; pointer-events: none; }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px var(--accent-glow); }
+        .btn-primary:disabled { opacity: 0.4; pointer-events: none; }
         .client-detail-grid {
             display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
         }
@@ -403,25 +478,26 @@
         .client-projects-list { display: flex; flex-direction: column; gap: 8px; }
         .project-card {
             padding: 14px; border-radius: var(--radius-sm);
-            background: #f9fafb; border: 1px solid var(--border); cursor: pointer;
+            background: rgba(255,255,255,0.04); border: 1px solid var(--border); cursor: pointer;
             transition: border-color 0.2s;
         }
         .project-card:hover { border-color: var(--border-hover); }
-        .project-card h4 { font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; }
+        .project-card h4 { font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; color: var(--text); }
         .project-card p { font-size: 0.72rem; color: var(--text-dim); }
 
-        /* Plan upgrade modal */
+        /* Modals */
         .modal-overlay {
-            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4);
-            z-index: 1000; align-items: center; justify-content: center;
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(6px); z-index: 1000; align-items: center; justify-content: center;
         }
         .modal-overlay.active { display: flex; }
         .modal-card {
-            background: var(--surface); border-radius: var(--radius);
-            padding: 28px; max-width: 420px; width: 90vw;
-            box-shadow: 0 24px 64px rgba(0,0,0,0.15);
+            background: rgba(10,14,12,0.95); backdrop-filter: var(--blur);
+            border: 1px solid var(--border); border-radius: var(--radius);
+            padding: 28px; max-width: 440px; width: 90vw;
+            box-shadow: 0 24px 64px rgba(0,0,0,0.7);
         }
-        .modal-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 16px; }
+        .modal-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 16px; color: var(--text); }
         .modal-card .form-field { margin-bottom: 14px; }
         .modal-card .form-field label {
             display: block; font-size: 0.7rem; color: var(--text-muted);
@@ -431,24 +507,28 @@
         .modal-card .form-field select,
         .modal-card .form-field input {
             width: 100%; padding: 10px 12px; border-radius: var(--radius-sm);
-            border: 1px solid var(--border); background: #ffffff;
+            border: 1px solid var(--border); background: rgba(255,255,255,0.05);
             color: var(--text); font-size: 0.85rem; font-family: 'Inter', sans-serif;
             outline: none;
         }
+        .modal-card .form-field input::placeholder { color: var(--text-muted); }
+        .modal-card .form-field select option { background: #0a0e0c; color: #fff; }
         .modal-card .form-field select:focus,
-        .modal-card .form-field input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(16,185,129,0.1); }
+        .modal-card .form-field input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
         .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
         .btn-cancel {
             padding: 10px 20px; border: 1px solid var(--border); border-radius: var(--radius-sm);
             background: transparent; color: var(--text-dim); font-size: 0.82rem;
-            cursor: pointer; font-family: 'Inter', sans-serif;
+            cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.2s;
         }
+        .btn-cancel:hover { border-color: var(--border-hover); color: var(--text); }
 
         /* ── TEAM VIEW ── */
         .team-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; margin-top: 20px; }
         .team-card {
             padding: 18px; border-radius: var(--radius);
-            background: var(--surface); border: 1px solid var(--border);
+            background: var(--surface); backdrop-filter: var(--blur);
+            border: 1px solid var(--border);
             display: flex; align-items: center; gap: 14px; transition: border-color 0.2s;
         }
         .team-card:hover { border-color: var(--border-hover); }
@@ -458,19 +538,21 @@
             font-weight: 700; font-size: 1rem; color: #001a12;
             background: linear-gradient(135deg, var(--accent), var(--blue));
         }
-        .team-info h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 2px; }
+        .team-info h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 2px; color: var(--text); }
         .team-info p { font-size: 0.76rem; color: var(--text-dim); }
         .team-role {
             margin-left: auto; padding: 4px 10px; border-radius: 999px;
             font-size: 0.68rem; font-weight: 700; flex-shrink: 0;
         }
-        .role-admin { background: rgba(245,158,11,0.1); color: var(--amber); border: 1px solid rgba(245,158,11,0.2); }
-        .role-agent { background: rgba(59,130,246,0.1); color: var(--blue); border: 1px solid rgba(59,130,246,0.2); }
+        .role-admin { background: rgba(245,158,11,0.12); color: var(--amber); border: 1px solid rgba(245,158,11,0.25); }
+        .role-agent { background: rgba(59,130,246,0.12); color: var(--blue); border: 1px solid rgba(59,130,246,0.25); }
         .add-user-card {
-            padding: 18px; border-radius: var(--radius); border: 1px dashed #d1d5db;
-            display: flex; flex-direction: column; gap: 12px; background: #ffffff;
+            padding: 20px; border-radius: var(--radius);
+            border: 1px dashed rgba(255,255,255,0.12);
+            display: flex; flex-direction: column; gap: 12px;
+            background: rgba(255,255,255,0.02);
         }
-        .add-user-card h3 { font-size: 0.95rem; font-weight: 600; }
+        .add-user-card h3 { font-size: 0.95rem; font-weight: 600; color: var(--text); }
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .form-field label {
             display: block; font-family: 'JetBrains Mono', monospace;
@@ -478,11 +560,13 @@
             text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 5px;
         }
         .form-field input, .form-field select {
-            width: 100%; background: #ffffff; border: 1px solid var(--border);
+            width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border);
             border-radius: var(--radius-sm); padding: 10px 12px; color: var(--text);
             font-size: 0.85rem; font-family: 'Inter', sans-serif; outline: none; transition: border-color 0.2s;
         }
-        .form-field input:focus, .form-field select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(16,185,129,0.1); }
+        .form-field input::placeholder { color: var(--text-muted); }
+        .form-field select option { background: #0a0e0c; color: #fff; }
+        .form-field input:focus, .form-field select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
         .form-actions { display: flex; gap: 10px; margin-top: 4px; }
         .form-hint { font-size: 0.72rem; color: var(--text-muted); line-height: 1.5; }
         .success-banner {
@@ -498,25 +582,33 @@
             color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;
             font-family: 'JetBrains Mono', monospace; border-bottom: 1px solid var(--border);
         }
-        .history-table td { padding: 12px 14px; font-size: 0.84rem; border-bottom: 1px solid #f3f4f6; }
+        .history-table td { padding: 12px 14px; font-size: 0.84rem; border-bottom: 1px solid rgba(255,255,255,0.04); color: var(--text-dim); }
 
         /* ── EMPTY STATE ── */
         .empty-state {
             display: flex; flex-direction: column; align-items: center;
             justify-content: center; padding: 60px 20px; color: var(--text-dim);
         }
-        .empty-state i { font-size: 2.5rem; margin-bottom: 16px; opacity: 0.3; }
+        .empty-state i { font-size: 2.5rem; margin-bottom: 16px; opacity: 0.25; }
         .empty-state p { font-size: 0.9rem; }
+
+        /* ── Pulse dot ── */
+        .pulse-dot {
+            width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+            background: var(--accent); box-shadow: 0 0 10px var(--accent);
+            animation: pulseDot 2s infinite;
+        }
+        @keyframes pulseDot { 0%,100%{opacity:1} 50%{opacity:0.35} }
 
         /* ── LOADING ── */
         .spinner { animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
         /* ── SCROLLBAR ── */
-        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.22); }
 
         /* ── MOBILE ── */
         @media (max-width: 900px) {
@@ -533,6 +625,10 @@
     </style>
 </head>
 <body>
+
+    <!-- BACKGROUND -->
+    <div class="bg-gradient"></div>
+    <div class="scanlines"></div>
 
     <!-- SIDEBAR -->
     <aside class="sidebar">
@@ -707,6 +803,7 @@
                 <div class="detail-panel">
                     <div class="panel-tabs">
                         <button class="panel-tab active" onclick="switchDetailTab('clientchat', this, 'left')">Chat</button>
+                        <button class="panel-tab" onclick="switchDetailTab('validation', this, 'left')">Pre-Val</button>
                         <button class="panel-tab" onclick="switchDetailTab('blueprint', this, 'left')">Blueprint</button>
                         <button class="panel-tab" onclick="switchDetailTab('clientinfo', this, 'left')">Client</button>
                     </div>
@@ -714,10 +811,17 @@
                         <div class="tab-pane active" id="pane-clientchat">
                             <div class="chat-container">
                                 <div class="chat-messages" id="clientChatMessages"></div>
+                                <div id="aiSuggestionsRow" class="ai-suggestions" style="display:none;"></div>
                                 <div class="chat-input-row">
                                     <textarea class="chat-input" id="clientChatInput" placeholder="Message the client..." rows="1"></textarea>
+                                    <button class="chat-paylink-btn" onclick="showPayLinkModal()" title="Send payment link"><i class="fas fa-link"></i></button>
                                     <button class="chat-send-btn" onclick="sendClientChat()"><i class="fas fa-paper-plane"></i></button>
                                 </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane" id="pane-validation">
+                            <div id="validationContent" style="overflow-y:auto;height:100%;display:flex;flex-direction:column;gap:12px;padding-bottom:8px;">
+                                <div class="empty-state"><i class="fas fa-chart-bar"></i><p style="font-size:0.82rem;">Select a ticket to see the pre-validation.</p></div>
                             </div>
                         </div>
                         <div class="tab-pane" id="pane-blueprint">
@@ -838,6 +942,27 @@
         </div>
     </main>
 
+    <!-- ══ PAYMENT LINK MODAL ══ -->
+    <div class="modal-overlay" id="payLinkModal">
+        <div class="modal-card">
+            <h3><i class="fas fa-link" style="color:var(--blue); margin-right:8px;"></i>Send Payment Link</h3>
+            <div id="payLinkClientInfo" style="font-size:0.82rem; color:var(--text-dim); margin-bottom:16px;"></div>
+            <div class="form-field">
+                <label>Payment URL</label>
+                <input type="url" id="payLinkUrl" placeholder="https://buy.stripe.com/...">
+            </div>
+            <div class="form-field">
+                <label>Description</label>
+                <input type="text" id="payLinkDesc" placeholder="e.g. MVP Plan — $1,200">
+            </div>
+            <div id="payLinkResult" style="display:none; padding:10px; border-radius:8px; font-size:0.82rem; margin-top:8px;"></div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="hidePayLinkModal()">Cancel</button>
+                <button class="btn-primary" id="payLinkSendBtn" onclick="sendPaymentLink()"><i class="fas fa-paper-plane"></i> Send to Client</button>
+            </div>
+        </div>
+    </div>
+
     <!-- ══ PLAN UPGRADE MODAL ══ -->
     <div class="modal-overlay" id="upgradeModal">
         <div class="modal-card">
@@ -919,7 +1044,7 @@
             if (!toast) {
                 toast = document.createElement('div');
                 toast.id = 'notifToast';
-                toast.style.cssText = `position:fixed;bottom:24px;right:24px;z-index:9999;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:14px 18px;display:flex;align-items:center;gap:12px;box-shadow:0 8px 32px rgba(0,0,0,0.12);font-size:14px;color:#111827;max-width:340px;cursor:pointer;transform:translateY(80px);opacity:0;transition:all 0.3s cubic-bezier(.4,0,.2,1);`;
+                toast.style.cssText = `position:fixed;bottom:24px;right:24px;z-index:9999;background:rgba(10,14,12,0.95);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.12);border-radius:14px;padding:14px 18px;display:flex;align-items:center;gap:12px;box-shadow:0 8px 40px rgba(0,0,0,0.6);font-size:14px;color:#fff;max-width:340px;cursor:pointer;transform:translateY(80px);opacity:0;transition:all 0.3s cubic-bezier(.4,0,.2,1);`;
                 toast.onclick = () => hideToast();
                 document.body.appendChild(toast);
             }
@@ -1113,10 +1238,11 @@
                 const created = t.created_at ? timeAgo(t.created_at) : '';
                 const isNewClient = t.client_plan && t.client_plan !== 'none' && t.created_at && (Date.now() - new Date(t.created_at).getTime()) < 30 * 60 * 1000 && (t.status === 'pending' || t.status === 'pending_human_review');
                 const newBadge = isNewClient ? '<span class="new-badge"><i class="fas fa-bolt" style="font-size:0.5rem;"></i> NEW</span>' : '';
+                const unread = parseInt(t.unread_messages) > 0 ? `<span class="unread-badge">${t.unread_messages}</span>` : '';
                 return `<div class="glass-card ticket-row${isNewClient ? ' new-client' : ''}" onclick="openTicket('${t.id || t.ticket_id || ''}')">
                     <div class="ticket-priority ${prClass}"></div>
                     <div class="ticket-info">
-                        <h4>${highlightText(projectName, query)}${newBadge}</h4>
+                        <h4>${highlightText(projectName, query)}${newBadge}${unread}</h4>
                         <p>${highlightText(clientEmail, query)} ${planBadgeHtml(t.client_plan)} ${channelBadgeHtml(ch)}</p>
                     </div>
                     <div class="ticket-meta">${created}</div>
@@ -1250,7 +1376,7 @@
             const clientTickets = allTickets.filter(t => (t.user_email || t.client_email || '').toLowerCase() === email.toLowerCase());
             const recent = clientTickets.slice(0, 5);
             document.getElementById('clientActivitySection').innerHTML = recent.length ? recent.map(t => `
-                <div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #f3f4f6;">
+                <div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);">
                     <div class="ticket-priority ${(t.priority||'low').toLowerCase() === 'high' ? 'priority-high' : 'priority-low'}" style="flex-shrink:0;"></div>
                     <div style="flex:1;">
                         <div style="font-size:0.82rem;font-weight:500;">${escHtml(t.project_name || 'Unnamed')}</div>
@@ -1439,10 +1565,14 @@
             const summary = t.handoff_package || t.ai_suggestion || 'No additional summary.';
             document.getElementById('projectSummary').textContent = typeof summary === 'object' ? JSON.stringify(summary, null, 2) : summary;
 
-            // Load chat
+            // Load chat and new features
+            _lastChatMsgId = '';
+            _aiSuggestionsLoaded = false;
             loadClientChat();
             renderNotes(t.id || t.ticket_id);
             renderTicketHistory(t);
+            renderValidationTab(t);
+            setTimeout(loadAiSuggestions, 800);
 
             // Deliverables
             document.getElementById('deliverablesList').innerHTML = `<div class="empty-state" style="padding:30px;"><i class="fas fa-file-circle-plus" style="font-size:1.5rem;"></i><p style="font-size:0.82rem;">No deliverables yet.</p></div>`;
@@ -1490,7 +1620,19 @@
                     </div>`;
                 }
                 const text = m.text || m.message || m.content || '';
-                return `<div class="chat-msg ${isClient ? 'client' : 'internal'}">
+                if (m.kind === 'paylink') {
+                    const lines = text.split('\n');
+                    const desc = lines[0].replace(/^\*\*|\*\*$/g,'').replace(/^💳\s*/,'');
+                    const url = lines.find(l => l.startsWith('http')) || '';
+                    return `<div class="chat-msg paylink">
+                        <div class="msg-sender">${escHtml(sender)}</div>
+                        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><i class="fas fa-link" style="color:var(--blue);font-size:0.85rem;"></i><strong style="font-size:0.85rem;">${escHtml(desc)}</strong></div>
+                        ${url ? `<a href="${escHtml(url)}" target="_blank" style="color:var(--blue);font-size:0.78rem;word-break:break-all;">${escHtml(url)}</a>` : ''}
+                        <div class="msg-time">${timeStr}</div>
+                    </div>`;
+                }
+                const msgClass = isClient ? 'client' : 'internal';
+                return `<div class="chat-msg ${msgClass}">
                     <div class="msg-sender">${escHtml(sender)}</div>${escHtml(text)}<div class="msg-time">${timeStr}</div>
                 </div>`;
             }).join('');
@@ -1504,6 +1646,7 @@
                 if (!r.ok) throw new Error();
                 const data = await r.json();
                 const messages = data.messages || data.history || data || [];
+                _checkNewClientMessage(messages);
                 const container = document.getElementById('clientChatMessages');
                 if (!messages.length) {
                     container.innerHTML = '<div class="empty-state" style="padding:20px;"><i class="fas fa-comments" style="font-size:1.2rem;"></i><p style="font-size:0.8rem;">No messages with client yet.</p></div>';
@@ -1694,7 +1837,7 @@
                 </div>`).join('') : '<div style="color:var(--text-muted);font-size:0.8rem;padding:12px 0;">No events recorded.</div>';
             container.innerHTML = `<div style="display:flex;flex-direction:column;gap:20px;padding-bottom:20px;">
                 <div><div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:10px;font-weight:600;">Ticket Data</div>
-                ${fields.map(f => `<div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid #f3f4f6;"><span style="color:var(--text-muted);min-width:140px;font-size:0.75rem;">${escHtml(f.label)}</span><span style="font-size:0.78rem;">${escHtml(String(f.value))}</span></div>`).join('')}</div>
+                ${fields.map(f => `<div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);"><span style="color:var(--text-muted);min-width:140px;font-size:0.75rem;">${escHtml(f.label)}</span><span style="font-size:0.78rem;color:var(--text);">${escHtml(String(f.value))}</span></div>`).join('')}</div>
                 <div><div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:10px;font-weight:600;">Timeline</div>${timelineHtml}</div>
             </div>`;
         }
@@ -1735,6 +1878,136 @@
                 if (e.target.id === 'clientChatInput') { e.preventDefault(); sendClientChat(); }
             }
         });
+
+        // ─── PAYMENT LINK MODAL ───
+        function showPayLinkModal() {
+            if (!activeTicket) return;
+            const email = activeTicket.client_email || activeTicket.user_email || '';
+            document.getElementById('payLinkClientInfo').innerHTML = `Client: <strong>${escHtml(email)}</strong> · Project: <strong>${escHtml(activeTicket.project_name || '')}</strong>`;
+            document.getElementById('payLinkUrl').value = '';
+            document.getElementById('payLinkDesc').value = '';
+            document.getElementById('payLinkResult').style.display = 'none';
+            document.getElementById('payLinkModal').classList.add('active');
+        }
+
+        function hidePayLinkModal() {
+            document.getElementById('payLinkModal').classList.remove('active');
+        }
+
+        async function sendPaymentLink() {
+            const url = document.getElementById('payLinkUrl').value.trim();
+            const desc = document.getElementById('payLinkDesc').value.trim() || 'Payment link';
+            const result = document.getElementById('payLinkResult');
+            const btn = document.getElementById('payLinkSendBtn');
+            if (!url) { result.style.display='block'; result.style.background='rgba(239,68,68,0.08)'; result.style.color='var(--red)'; result.textContent='Enter a payment URL.'; return; }
+            if (!activeTicket) return;
+            btn.disabled = true; btn.innerHTML = '<i class="fas fa-circle-notch spinner"></i> Sending...';
+            const project = activeTicket.project_name || activeTicket.project_id || '';
+            const message = `💳 **${desc}**\n\n${url}`;
+            try {
+                const r = await fetch(API + '/human-chat/send', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                    body: JSON.stringify({ project_name: project, actor: currentUser?.name || 'Team', role: 'internal', content: message, kind: 'paylink' })
+                });
+                if (r.ok) {
+                    hidePayLinkModal();
+                    showToast('Payment link sent to client', 'success');
+                    await loadClientChat();
+                } else {
+                    throw new Error('Failed to send');
+                }
+            } catch (e) {
+                result.style.display='block'; result.style.background='rgba(239,68,68,0.08)'; result.style.color='var(--red)'; result.textContent='Error sending link.';
+            }
+            btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send to Client';
+        }
+
+        // ─── PRE-VALIDATION TAB ───
+        function renderValidationTab(ticket) {
+            const container = document.getElementById('validationContent');
+            if (!container) return;
+            const summary = ticket.summary || '';
+            const blueprint = ticket.blueprint_md || '';
+            const prevalidation = ticket.prevalidation || ticket.business_model || '';
+
+            let html = '';
+
+            if (prevalidation) {
+                html += `<div class="blueprint-box" style="max-height:none;">${escHtml(prevalidation)}</div>`;
+            } else if (summary) {
+                const lines = summary.split('\n').filter(l => l.trim());
+                html += `<div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:8px;font-weight:700;">Project Summary</div>`;
+                html += `<div class="blueprint-box" style="max-height:200px;">${escHtml(summary)}</div>`;
+            }
+
+            if (blueprint) {
+                html += `<div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin:12px 0 8px;font-weight:700;">Blueprint</div>`;
+                html += `<div class="blueprint-box">${escHtml(blueprint)}</div>`;
+            }
+
+            const email = ticket.client_email || ticket.user_email || '';
+            if (email) {
+                html += `<div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin:12px 0 8px;font-weight:700;">Client Info</div>`;
+                html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <div class="info-item"><label>Email</label><span>${escHtml(email)}</span></div>
+                    <div class="info-item"><label>Plan</label><span>${planBadgeHtml(ticket.client_plan)}</span></div>
+                    <div class="info-item"><label>Project</label><span>${escHtml(ticket.project_name||'')}</span></div>
+                    <div class="info-item"><label>Channel</label><span>${channelBadgeHtml(getTicketChannel(ticket))}</span></div>
+                </div>`;
+            }
+
+            if (!html) {
+                html = '<div class="empty-state"><i class="fas fa-chart-bar"></i><p style="font-size:0.82rem;">No pre-validation data available.</p></div>';
+            }
+            container.innerHTML = html;
+        }
+
+        // ─── AI SUGGESTIONS ───
+        let _aiSuggestionsLoaded = false;
+        async function loadAiSuggestions() {
+            if (!activeTicket || _aiSuggestionsLoaded) return;
+            const row = document.getElementById('aiSuggestionsRow');
+            if (!row) return;
+            try {
+                const chats = await fetch(API + '/human-chat/history?project_name=' + encodeURIComponent(activeTicket.project_name||'') + '&mark_read=0', { credentials: 'include' });
+                const chatData = chats.ok ? await chats.json() : {};
+                const messages = chatData.history || [];
+                const r = await fetch(API + '/internal/ai-reply', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                    body: JSON.stringify({ project_name: activeTicket.project_name, client_email: activeTicket.client_email||activeTicket.user_email, status: activeTicket.status, messages })
+                });
+                if (!r.ok) return;
+                const data = await r.json();
+                const suggestions = data.suggestions || [];
+                if (!suggestions.length) return;
+                _aiSuggestionsLoaded = true;
+                row.style.display = 'flex';
+                row.innerHTML = suggestions.map(s =>
+                    `<button class="ai-suggestion-pill" onclick="useAiSuggestion(this)">${escHtml(s)}</button>`
+                ).join('');
+            } catch (e) { /* silent */ }
+        }
+
+        function useAiSuggestion(btn) {
+            const input = document.getElementById('clientChatInput');
+            if (input) { input.value = btn.textContent; input.focus(); }
+        }
+
+        // ─── SOUND NOTIFICATION ───
+        let _lastChatMsgId = '';
+        const _notifAudio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+        _notifAudio.volume = 0.35;
+
+        function _checkNewClientMessage(messages) {
+            if (!messages.length) return;
+            const last = messages[messages.length - 1];
+            const lastId = last.id || last.timestamp || '';
+            if (_lastChatMsgId && lastId !== _lastChatMsgId && last.role === 'client') {
+                _notifAudio.play().catch(() => {});
+                showToast('New message from client', 'info');
+            }
+            _lastChatMsgId = lastId;
+        }
 
         // ─── INIT ───
         (async function init() {
