@@ -77,6 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function isContentChannel() { return activeChannel === 'marketing' || activeChannel === 'organic'; }
 
     // --- Session Management ---
+    let forceWelcome = true; // declared early to avoid TDZ error in typeWelcomeText
     let currentUser = null;
     try {
         const rawUser = localStorage.getItem('currentUser');
@@ -1111,7 +1112,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (_) { }
     }
 
-    let forceWelcome = true;
+    forceWelcome = true; // reset to default before wizard init
     let _wizGoToStep = null;   // exposed so openWelcomeNewProject can reach it
     let _wizClearData = null;  // exposed to clear wizard state from outside
 
