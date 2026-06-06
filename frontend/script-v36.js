@@ -1802,11 +1802,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function hydrateProfile() {
         if (!currentUser) return;
-        if (profileNameEl) profileNameEl.textContent = currentUser.name || 'Anmar User';
+        // Show cached data immediately
+        if (profileNameEl) profileNameEl.textContent = currentUser.name || currentUser.email?.split('@')[0] || '';
         if (profileEmailEl) profileEmailEl.textContent = currentUser.email || '';
-        if (profileMemberSinceEl) {
-            profileMemberSinceEl.textContent = `Active in Anmar`;
-        }
+        if (profileMemberSinceEl) profileMemberSinceEl.textContent = 'Active in Anmar';
+
+        // Refresh from server to get accurate name/email
+        try {
+            const res = await fetch('/api/me', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ email: currentUser.email })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                if (data.user) {
+                    currentUser.name  = data.user.name  || currentUser.name;
+                    currentUser.email = data.user.email || currentUser.email;
+                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                    if (profileNameEl)  profileNameEl.textContent  = currentUser.name || currentUser.email?.split('@')[0] || '';
+                    if (profileEmailEl) profileEmailEl.textContent = currentUser.email || '';
+                }
+            }
+        } catch (_) {}
+
         await checkUserCredits();
     }
 

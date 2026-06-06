@@ -1288,7 +1288,7 @@ def api_me():
         return jsonify({"error": "Unauthorized"}), 403
 
     conn = get_db_connection()
-    user = conn.execute('SELECT name, email, tokens FROM users WHERE email = ?', (email,)).fetchone()
+    user = conn.execute('SELECT name, email, tokens FROM users WHERE LOWER(email) = ?', (email,)).fetchone()
     conn.close()
     if not user:
         return jsonify({"error": "User not found"}), 401
@@ -1321,7 +1321,7 @@ def login():
     password = data.get('password') or ''
 
     conn = get_db_connection()
-    user = conn.execute('SELECT * FROM users WHERE email = ?', (email,)).fetchone()
+    user = conn.execute('SELECT * FROM users WHERE LOWER(email) = ?', (email,)).fetchone()
     conn.close()
 
     if user and check_password_hash(user['password'], password):
@@ -1369,7 +1369,8 @@ def social_login():
         return jsonify({"error": "Missing social network data"}), 400
 
     conn = get_db_connection()
-    user = conn.execute('SELECT * FROM users WHERE email = ?', (email,)).fetchone()
+    email_lower = (email or '').strip().lower()
+    user = conn.execute('SELECT * FROM users WHERE LOWER(email) = ?', (email_lower,)).fetchone()
 
     if not user:
         if not terms_accepted:
