@@ -1628,7 +1628,7 @@ document.addEventListener('DOMContentLoaded', () => {
         welcomeTyped = true;
         const rawName = (currentUser?.name || '').trim();
         const displayName = rawName || 'there';
-        const isReturning = !forceWelcome;
+        const isReturning = (typeof forceWelcome !== 'undefined') ? !forceWelcome : true;
         const text = isReturning
             ? `Welcome back, ${displayName}! What are we building today?`
             : `Welcome, ${displayName}! Let's turn your idea into a business.`;
