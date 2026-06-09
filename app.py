@@ -1424,6 +1424,8 @@ def generate_business_model():
     description     = data.get('description', '')
     project_type    = data.get('project_type', '')
     biz_model_type  = data.get('business_model', '')
+    audience        = data.get('audience', '')
+    geography       = data.get('geography', '')
     stage           = data.get('stage', '')
 
     if not ANTHROPIC_API_KEY:
@@ -1439,6 +1441,8 @@ PROJECT DATA:
 - Description: {description}
 - Type: {project_type}
 - Business model: {biz_model_type}
+- Target audience: {audience}
+- Target geography: {geography}
 - Current stage: {stage}
 
 Respond ONLY with a valid JSON object. No markdown, no code fences, no extra text. Use this EXACT structure:

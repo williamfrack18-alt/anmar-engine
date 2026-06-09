@@ -2677,10 +2677,20 @@
                     <div class="wiz-line"></div>
                     <div class="wiz-dot-wrap" data-step="4">
                         <div class="wiz-dot"></div>
-                        <span class="wiz-label">Stage</span>
+                        <span class="wiz-label">Audience</span>
                     </div>
                     <div class="wiz-line"></div>
                     <div class="wiz-dot-wrap" data-step="5">
+                        <div class="wiz-dot"></div>
+                        <span class="wiz-label">Market</span>
+                    </div>
+                    <div class="wiz-line"></div>
+                    <div class="wiz-dot-wrap" data-step="6">
+                        <div class="wiz-dot"></div>
+                        <span class="wiz-label">Stage</span>
+                    </div>
+                    <div class="wiz-line"></div>
+                    <div class="wiz-dot-wrap" data-step="7">
                         <div class="wiz-dot"></div>
                         <span class="wiz-label">Needs</span>
                     </div>
@@ -2755,17 +2765,17 @@
                             <i class="fas fa-percent wiz-card-icon"></i>
                             <span class="wiz-card-label">Commission</span>
                         </div>
-                        <div class="wiz-card" data-value="b2b">
-                            <i class="fas fa-building wiz-card-icon"></i>
-                            <span class="wiz-card-label">B2B</span>
-                        </div>
-                        <div class="wiz-card" data-value="nonprofit">
-                            <i class="fas fa-hand-holding-heart wiz-card-icon"></i>
-                            <span class="wiz-card-label">Non-Profit / Foundation</span>
+                        <div class="wiz-card" data-value="freemium">
+                            <i class="fas fa-gift wiz-card-icon"></i>
+                            <span class="wiz-card-label">Freemium</span>
                         </div>
                         <div class="wiz-card" data-value="digital_content">
                             <i class="fas fa-graduation-cap wiz-card-icon"></i>
                             <span class="wiz-card-label">Digital Content / Info-Products</span>
+                        </div>
+                        <div class="wiz-card" data-value="advertising">
+                            <i class="fas fa-rectangle-ad wiz-card-icon"></i>
+                            <span class="wiz-card-label">Advertising / Sponsorship</span>
                         </div>
                         <div class="wiz-card" data-value="unsure" style="grid-column: span 3;">
                             <i class="fas fa-circle-question wiz-card-icon"></i>
@@ -2774,8 +2784,60 @@
                     </div>
                 </div>
 
-                <!-- Step 4: Current stage -->
+                <!-- Step 4: Target audience -->
                 <div class="wiz-panel" id="wizPanel4" style="display:none;">
+                    <div class="wiz-cards-grid-2">
+                        <div class="wiz-card" data-value="b2c">
+                            <i class="fas fa-user wiz-card-icon"></i>
+                            <span class="wiz-card-label">Consumers (B2C)</span>
+                        </div>
+                        <div class="wiz-card" data-value="b2b">
+                            <i class="fas fa-building wiz-card-icon"></i>
+                            <span class="wiz-card-label">Businesses (B2B)</span>
+                        </div>
+                        <div class="wiz-card" data-value="both">
+                            <i class="fas fa-users wiz-card-icon"></i>
+                            <span class="wiz-card-label">Both</span>
+                        </div>
+                        <div class="wiz-card" data-value="unsure">
+                            <i class="fas fa-circle-question wiz-card-icon"></i>
+                            <span class="wiz-card-label">Not sure yet</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 5: Target geography -->
+                <div class="wiz-panel" id="wizPanel5" style="display:none;">
+                    <div class="wiz-cards-grid">
+                        <div class="wiz-card" data-value="local">
+                            <i class="fas fa-location-dot wiz-card-icon"></i>
+                            <span class="wiz-card-label">Local / My Country</span>
+                        </div>
+                        <div class="wiz-card" data-value="latam">
+                            <i class="fas fa-earth-americas wiz-card-icon"></i>
+                            <span class="wiz-card-label">Latin America</span>
+                        </div>
+                        <div class="wiz-card" data-value="us_canada">
+                            <i class="fas fa-flag-usa wiz-card-icon"></i>
+                            <span class="wiz-card-label">United States / Canada</span>
+                        </div>
+                        <div class="wiz-card" data-value="europe">
+                            <i class="fas fa-earth-europe wiz-card-icon"></i>
+                            <span class="wiz-card-label">Europe</span>
+                        </div>
+                        <div class="wiz-card" data-value="asia">
+                            <i class="fas fa-earth-asia wiz-card-icon"></i>
+                            <span class="wiz-card-label">Asia / Pacific</span>
+                        </div>
+                        <div class="wiz-card" data-value="global">
+                            <i class="fas fa-globe wiz-card-icon"></i>
+                            <span class="wiz-card-label">Global</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 6: Current stage -->
+                <div class="wiz-panel" id="wizPanel6" style="display:none;">
                     <div class="wiz-cards-grid-2">
                         <div class="wiz-card" data-value="idea">
                             <i class="fas fa-lightbulb wiz-card-icon"></i>
@@ -2796,8 +2858,8 @@
                     </div>
                 </div>
 
-                <!-- Step 5: Areas of help (multi-select) -->
-                <div class="wiz-panel" id="wizPanel5" style="display:none;">
+                <!-- Step 7: Areas of help (multi-select) -->
+                <div class="wiz-panel" id="wizPanel7" style="display:none;">
                     <div style="text-align:right; margin-bottom:10px;">
                         <button id="wizSelectAll" type="button" style="background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.35); color:#34d399; border-radius:8px; padding:6px 14px; font-size:0.78rem; font-family:inherit; cursor:pointer; transition:all 0.2s;">
                             <i class="fas fa-check-double" style="margin-right:5px;"></i>Select All

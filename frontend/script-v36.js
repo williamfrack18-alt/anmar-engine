@@ -1142,13 +1142,15 @@ document.addEventListener('DOMContentLoaded', () => {
             'Tell us about your project.',
             'What type of project is this?',
             'What\'s your business model?',
+            'Who are you selling to?',
+            'Where are you targeting?',
             'Where are you right now?',
             'What do you need help with?'
         ];
 
         function wizGoToStep(newStep) {
             // Hide all panels
-            for (let i = 1; i <= 5; i++) {
+            for (let i = 1; i <= 7; i++) {
                 const panel = document.getElementById(`wizPanel${i}`);
                 if (panel) panel.style.display = i === newStep ? '' : 'none';
             }
@@ -1190,9 +1192,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const phone = (welcomePhoneInput?.value || '').trim();
                 const desc = (welcomeDescInput?.value || '').trim();
                 welcomeSubmitBtn.disabled = !(name && phone && desc);
-            } else if (step === 5) {
+            } else if (step === 7) {
                 // Multi-select: at least 1 card must be selected
-                const panel = document.getElementById('wizPanel5');
+                const panel = document.getElementById('wizPanel7');
                 welcomeSubmitBtn.disabled = !panel?.querySelector('.wiz-card.selected');
             } else {
                 const panel = document.getElementById(`wizPanel${step}`);
@@ -1200,8 +1202,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // Card click logic for steps 2-4 (single select)
-        document.querySelectorAll('#wizPanel2 .wiz-card, #wizPanel3 .wiz-card, #wizPanel4 .wiz-card').forEach(card => {
+        // Card click logic for steps 2-6 (single select)
+        document.querySelectorAll('#wizPanel2 .wiz-card, #wizPanel3 .wiz-card, #wizPanel4 .wiz-card, #wizPanel5 .wiz-card, #wizPanel6 .wiz-card').forEach(card => {
             card.addEventListener('click', () => {
                 // Deselect siblings
                 card.closest('.wiz-cards-grid, .wiz-cards-grid-2')?.querySelectorAll('.wiz-card').forEach(c => c.classList.remove('selected'));
@@ -1210,26 +1212,26 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        // Card click logic for step 5 (multi-select — toggle)
-        document.querySelectorAll('#wizPanel5 .wiz-card').forEach(card => {
+        // Card click logic for step 7 (multi-select — toggle)
+        document.querySelectorAll('#wizPanel7 .wiz-card').forEach(card => {
             card.addEventListener('click', () => {
                 card.classList.toggle('selected');
-                wizValidateStep(5);
+                wizValidateStep(7);
             });
         });
 
-        // Select All button for step 5
+        // Select All button for step 7
         const wizSelectAllBtn = document.getElementById('wizSelectAll');
         if (wizSelectAllBtn) {
             wizSelectAllBtn.addEventListener('click', () => {
-                const cards = document.querySelectorAll('#wizPanel5 .wiz-card');
+                const cards = document.querySelectorAll('#wizPanel7 .wiz-card');
                 const allSelected = [...cards].every(c => c.classList.contains('selected'));
                 cards.forEach(c => allSelected ? c.classList.remove('selected') : c.classList.add('selected'));
                 // Toggle button label
                 wizSelectAllBtn.innerHTML = allSelected
                     ? '<i class="fas fa-check-double" style="margin-right:5px;"></i>Select All'
                     : '<i class="fas fa-times" style="margin-right:5px;"></i>Deselect All';
-                wizValidateStep(5);
+                wizValidateStep(7);
             });
         }
 
@@ -1305,8 +1307,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (welcomeSubmitBtn) {
             welcomeSubmitBtn.addEventListener('click', async () => {
 
-                // Steps 1-4: collect data and advance
-                if (wizCurrentStep < 5) {
+                // Steps 1-6: collect data and advance
+                if (wizCurrentStep < 7) {
                     if (wizCurrentStep === 1) {
                         const name = (welcomeInput?.value || '').trim();
                         const phone = (welcomePhoneInput?.value || '').trim();
@@ -1334,16 +1336,16 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (!sel) return;
                         if (wizCurrentStep === 2) wizData.project_type = sel.dataset.value;
                         if (wizCurrentStep === 3) wizData.business_model = sel.dataset.value;
-                        if (wizCurrentStep === 4) {
-                            wizData.stage = sel.dataset.value;
-                        }
+                        if (wizCurrentStep === 4) wizData.audience = sel.dataset.value;
+                        if (wizCurrentStep === 5) wizData.geography = sel.dataset.value;
+                        if (wizCurrentStep === 6) wizData.stage = sel.dataset.value;
                     }
                     wizGoToStep(wizCurrentStep + 1);
                     return;
                 }
 
-                // Step 5: collect help areas → fire animation
-                const panel5 = document.getElementById('wizPanel5');
+                // Step 7: collect help areas → fire animation
+                const panel5 = document.getElementById('wizPanel7');
                 const selectedHelpCards = panel5?.querySelectorAll('.wiz-card.selected');
                 if (!selectedHelpCards || selectedHelpCards.length === 0) return;
                 wizData.help_areas = [...selectedHelpCards].map(c => c.dataset.value);
@@ -1465,6 +1467,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     description: desc,
                     project_type: wizData.project_type || '',
                     business_model: wizData.business_model || '',
+                    audience: wizData.audience || '',
+                    geography: wizData.geography || '',
                     stage: wizData.stage || '',
                     onError: (msg) => {
                         _createError = msg || 'Error creating project.';
@@ -1536,6 +1540,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             description: desc || '',
                             project_type: wizData.project_type || '',
                             business_model: wizData.business_model || '',
+                            audience: wizData.audience || '',
+                            geography: wizData.geography || '',
                             stage: wizData.stage || ''
                         };
 
