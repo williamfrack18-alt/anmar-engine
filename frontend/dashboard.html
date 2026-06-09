@@ -2063,6 +2063,13 @@
             padding-top: 0 !important;
         }
 
+        /* === BUSINESS MODEL SECTION: full viewport height === */
+        #section-business.section-view.active {
+            height: calc(100vh - var(--header-height)) !important;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+
         /* === BUILD SECTION: cinema-style transparent layout === */
         #section-build.section-view.active {
             display: flex !important;
@@ -3459,32 +3466,35 @@
                         </div><!-- /bmMindMap -->
 
                         <!-- ── Inline Chat Panel (appears after BM analysis) ── -->
-                        <div id="bmChatPanel" style="display:none;margin-top:28px;width:100%;">
+                        <div id="bmChatPanel" style="display:none;margin-top:28px;width:100%;padding-bottom:100px;">
                             <div style="border-top:1px solid rgba(255,255,255,0.07);padding-top:24px;margin-bottom:18px;display:flex;align-items:center;gap:10px;">
                                 <div style="width:8px;height:8px;border-radius:50%;background:#10b981;animation:bmPulse 1.8s infinite;flex-shrink:0;"></div>
                                 <span style="font-size:0.82rem;font-weight:600;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.8px;">Chat with your Strategy Team</span>
                             </div>
-                            <div id="bmChatMessages" style="min-height:60px;max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;margin-bottom:14px;padding-right:4px;"></div>
-                            <div class="chat-input-area" onclick="showValidateGate();" style="cursor:pointer;">
-                                <div class="input-glass">
-                                    <div class="chat-input-wrap">
-                                        <textarea id="bmChatInput" rows="1"
-                                            placeholder="Ask about your business model, strategy, next steps..."
-                                            readonly
-                                            onfocus="this.blur(); showValidateGate();"
-                                            onclick="showValidateGate();"
-                                        ></textarea>
-                                        <button onclick="showValidateGate();" class="chat-send-btn">
-                                            <i class="fas fa-arrow-up"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
+                            <div id="bmChatMessages" style="min-height:60px;max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding-right:4px;"></div>
                         </div>
 
                         <div style="height:40px;"></div>
                     </div>
                 </div><!-- /bmScrollArea -->
+
+                <!-- ── BM Chat Input Bar — pinned to bottom of section ── -->
+                <div id="bmChatInputBar" style="display:none; position:absolute; bottom:0; left:0; right:0; padding:0 1.5rem 1.6rem; z-index:6; background:linear-gradient(to top, rgba(7,14,11,0.98) 60%, transparent);">
+                    <div style="max-width:720px; width:100%; margin:0 auto;">
+                        <div class="chat-input-wrap" style="background:rgba(0,0,0,0.55); backdrop-filter:blur(18px); border:1px solid rgba(255,255,255,0.12); border-radius:16px; box-shadow:0 8px 32px rgba(0,0,0,0.4);">
+                            <textarea id="bmChatInput" rows="1"
+                                placeholder="Ask about your business model, strategy, next steps..."
+                                readonly
+                                style="cursor:pointer;"
+                                onfocus="this.blur(); showValidateGate();"
+                                onclick="showValidateGate();"
+                            ></textarea>
+                            <button onclick="showValidateGate();" class="chat-send-btn">
+                                <i class="fas fa-arrow-up"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
 
             </div>
 

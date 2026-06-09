@@ -4142,6 +4142,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (done) done.style.display = 'none';
         const chatPanel = document.getElementById('bmChatPanel');
         if (chatPanel) chatPanel.style.display = 'none';
+        const chatInputBar = document.getElementById('bmChatInputBar');
+        if (chatInputBar) chatInputBar.style.display = 'none';
         const msgBox = document.getElementById('bmChatMessages');
         if (msgBox) msgBox.innerHTML = '';
     }
@@ -4419,8 +4421,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         await typeWriter(document.getElementById('bmNextStepText'), data.nextStep || '', speed * 0.5);
 
-        // ── Show inline chat panel ─────────────────────────────────────────
+        // ── Show inline chat panel + bottom input bar ─────────────────────
         const chatPanel = document.getElementById('bmChatPanel');
+        const chatInputBar = document.getElementById('bmChatInputBar');
+        if (chatInputBar) chatInputBar.style.display = 'block';
         if (chatPanel) {
             chatPanel.style.display = 'block';
             // Clear old messages
