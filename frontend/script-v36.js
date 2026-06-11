@@ -1175,7 +1175,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (backBtn) backBtn.style.display = newStep > 1 ? '' : 'none';
             // Continue button label
             if (welcomeSubmitBtn) {
-                welcomeSubmitBtn.innerHTML = newStep === 5
+                welcomeSubmitBtn.innerHTML = newStep === 7
                     ? 'Launch &ensp;<i class="fas fa-rocket"></i>'
                     : 'Continue &ensp;<i class="fas fa-arrow-right"></i>';
             }

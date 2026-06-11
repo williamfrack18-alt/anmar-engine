@@ -2063,16 +2063,18 @@
             padding-top: 0 !important;
         }
 
-        /* === BUSINESS MODEL SECTION: fill container exactly like Build === */
+        /* === BUSINESS MODEL SECTION: fixed to real viewport, bypasses scale === */
         #section-business.section-view.active {
-            position: absolute !important;
-            top: 0 !important;
+            position: fixed !important;
+            top: var(--header-height) !important;
             left: 0 !important;
             right: 0 !important;
             bottom: 0 !important;
             height: auto !important;
+            width: 100% !important;
             box-sizing: border-box;
             overflow: hidden;
+            z-index: 5;
         }
 
         /* === BUILD SECTION: cinema-style transparent layout === */
@@ -2955,7 +2957,7 @@
         </div>
     </div>
 
-    <div class="app-layout" style="display:flex; flex-direction:row; padding-top:var(--header-height); height:100vh; overflow:hidden;">
+    <div class="app-layout" style="display:flex; flex-direction:row; padding-top:var(--header-height); overflow:hidden;">
 
         <!-- MAIN CONTENT WRAPPER (no sidebar) -->
         <div style="flex-grow:1; position:relative; width:100%;">
