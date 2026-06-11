@@ -813,6 +813,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (subscriptionActive && chatLockedForSubscription) {
                     setChatLocked(false);
                 }
+                if (subscriptionActive) {
+                    unlockBmChat();
+                }
                 syncChatLockWithPendingTicket();
             }
         } catch (e) {
@@ -844,6 +847,49 @@ document.addEventListener('DOMContentLoaded', () => {
         // Don't lock the input — we use the modal gate on send instead
         setChatLocked(false);
     }
+
+    // ── Unlock BM chat for paid users ────────────────────────────────────────
+    let _bmChatUnlocked = false;
+    function unlockBmChat() {
+        if (_bmChatUnlocked) return;
+        const input = document.getElementById('bmChatInput');
+        const inputBar = document.getElementById('bmChatInputBar');
+        if (!input) return;
+
+        // Remove readonly + paygate handlers
+        input.removeAttribute('readonly');
+        input.removeAttribute('onclick');
+        input.removeAttribute('onfocus');
+        input.style.cursor = 'text';
+
+        // Wire send button to bmChatSend
+        if (inputBar) {
+            inputBar.removeAttribute('onclick');
+            inputBar.style.cursor = 'default';
+            const btn = inputBar.querySelector('.chat-send-btn');
+            if (btn) {
+                btn.removeAttribute('onclick');
+                btn.addEventListener('click', () => { if (window.bmChatSend) window.bmChatSend(); });
+            }
+        }
+
+        // Enter to send (Shift+Enter = new line)
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                if (window.bmChatSend) window.bmChatSend();
+            }
+        });
+
+        // Auto-resize textarea as user types
+        input.addEventListener('input', () => {
+            input.style.height = 'auto';
+            input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+        });
+
+        _bmChatUnlocked = true;
+    }
+    window.unlockBmChat = unlockBmChat;
 
     async function checkUserCredits() {
         await refreshSubscriptionStatus();
