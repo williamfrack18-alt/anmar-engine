@@ -743,14 +743,21 @@
                         </div>
                     </div>
                 </div>
-                <!-- RIGHT: Notes + Deliverables + History -->
+                <!-- RIGHT: Notes + Deliverables + History + BM -->
                 <div class="detail-panel">
                     <div class="panel-tabs">
                         <button class="panel-tab active" onclick="switchDetailTab('notes', this, 'right')">Notes</button>
+                        <button class="panel-tab" onclick="switchDetailTab('bm', this, 'right'); loadBmContext();">BM</button>
                         <button class="panel-tab" onclick="switchDetailTab('deliver', this, 'right')">Deliverables</button>
                         <button class="panel-tab" onclick="switchDetailTab('history', this, 'right')">History</button>
                     </div>
                     <div class="panel-content" id="rightPanelContent">
+                        <!-- ── BUSINESS MODEL CONTEXT TAB ── -->
+                        <div class="tab-pane" id="pane-bm">
+                            <div id="bmContextContent" style="overflow-y:auto;height:100%;padding:4px 2px;">
+                                <div class="empty-state"><i class="fas fa-brain" style="font-size:1.4rem;"></i><p style="font-size:0.82rem;">Click this tab to load the client's Business Model.</p></div>
+                            </div>
+                        </div>
                         <div class="tab-pane active" id="pane-notes">
                             <div class="notes-container">
                                 <div class="notes-list" id="notesList">
@@ -1459,6 +1466,11 @@
             const summary = t.handoff_package || t.ai_suggestion || 'No additional summary.';
             document.getElementById('projectSummary').textContent = typeof summary === 'object' ? JSON.stringify(summary, null, 2) : summary;
 
+            // Reset BM context cache so it reloads for each new ticket
+            _bmContextLoaded = null;
+            document.getElementById('bmContextContent').innerHTML =
+                '<div class="empty-state"><i class="fas fa-brain" style="font-size:1.4rem;opacity:0.4;"></i><p style="font-size:0.82rem;">Click the BM tab to load the business model.</p></div>';
+
             // Load chat
             loadClientChat();
             renderNotes(t.id || t.ticket_id);
@@ -1565,6 +1577,150 @@
                 input.value = text;
                 _chatSendingInProgress = false;
             }
+        }
+
+        // ─── BUSINESS MODEL CONTEXT ───
+        let _bmContextLoaded = null; // track last loaded project to avoid re-fetching
+
+        async function loadBmContext() {
+            const project = activeTicket?.project_name || '';
+            if (!project) return;
+            const container = document.getElementById('bmContextContent');
+            if (!container) return;
+
+            // Avoid re-fetching the same project
+            if (_bmContextLoaded === project) return;
+            _bmContextLoaded = project;
+
+            container.innerHTML = '<div class="empty-state"><i class="fas fa-circle-notch spinner" style="font-size:1.2rem;"></i><p style="font-size:0.8rem;">Loading business model...</p></div>';
+            try {
+                const r = await fetch(API + '/bm-data?project_name=' + encodeURIComponent(project), { credentials: 'include' });
+                if (!r.ok) {
+                    container.innerHTML = '<div class="empty-state"><i class="fas fa-brain" style="font-size:1.4rem;opacity:0.4;"></i><p style="font-size:0.8rem;">No business model found.<br><span style="font-size:0.72rem;opacity:0.6;">The client hasn\'t generated their BM yet, or it was generated before this feature was added.</span></p></div>';
+                    return;
+                }
+                const resp = await r.json();
+                const d = resp.data || resp;
+                container.innerHTML = renderBmContext(d, resp.project_name || project);
+            } catch (e) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle" style="color:var(--red);"></i><p style="font-size:0.8rem;">Error loading BM data.</p></div>';
+            }
+        }
+
+        function renderBmContext(d, projectName) {
+            if (!d || typeof d !== 'object') return '<div class="empty-state"><p>No data available.</p></div>';
+            const score       = d.score       || {};
+            const market      = d.market      || {};
+            const revenue     = d.revenue     || {};
+            const advantage   = d.advantage   || {};
+            const risk        = d.risk        || {};
+            const persona     = d.persona     || {};
+            const competitors = d.competitors || [];
+            const channels    = d.channels    || [];
+
+            const card = (color, icon, title, content) => `
+                <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px;">
+                    <div style="font-size:0.68rem;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:0.06em;margin-bottom:9px;">
+                        <i class="fas ${icon}" style="margin-right:5px;"></i>${title}
+                    </div>
+                    ${content}
+                </div>`;
+
+            let html = `<div style="padding:4px 2px;">`;
+
+            // Score
+            if (score.overall) {
+                html += `<div style="background:linear-gradient(135deg,rgba(16,185,129,0.08),rgba(16,185,129,0.03));border:1px solid rgba(16,185,129,0.25);border-radius:10px;padding:14px;margin-bottom:12px;">
+                    <div style="font-size:0.68rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:9px;"><i class="fas fa-chart-bar" style="margin-right:5px;"></i>Score</div>
+                    <div style="display:flex;align-items:center;gap:12px;">
+                        <div style="font-size:2.4rem;font-weight:900;color:var(--accent);line-height:1;">${score.overall}</div>
+                        <div>
+                            <div style="font-size:1.1rem;font-weight:800;color:var(--text);">${escHtml(score.grade || '')}</div>
+                            <div style="font-size:0.75rem;color:var(--text-dim);line-height:1.4;max-width:230px;">${escHtml(score.verdict || '')}</div>
+                        </div>
+                    </div>
+                    ${score.breakdown ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px;">
+                        ${['market','timing','advantage','risk'].map(k => `
+                        <div style="background:rgba(0,0,0,0.03);border-radius:6px;padding:6px 8px;">
+                            <div style="font-size:0.65rem;color:var(--text-muted);text-transform:capitalize;">${k}</div>
+                            <div style="font-size:0.88rem;font-weight:700;color:var(--text);">${score.breakdown[k] || '—'}</div>
+                        </div>`).join('')}
+                    </div>` : ''}
+                </div>`;
+            }
+
+            // Market
+            if (market.size || market.insight) {
+                html += card('var(--blue)', 'fa-globe', 'Market',
+                    `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+                        <div><div style="font-size:0.65rem;color:var(--text-muted);">TAM</div><div style="font-size:0.85rem;font-weight:700;color:var(--text);">${escHtml(market.size||'—')}</div></div>
+                        <div><div style="font-size:0.65rem;color:var(--text-muted);">SAM</div><div style="font-size:0.85rem;font-weight:700;color:var(--text);">${escHtml(market.sam||'—')}</div></div>
+                        <div><div style="font-size:0.65rem;color:var(--text-muted);">Growth</div><div style="font-size:0.82rem;font-weight:600;color:var(--text);">${escHtml(market.growth||'—')}</div></div>
+                    </div>
+                    <div style="font-size:0.78rem;color:var(--text-dim);line-height:1.5;">${escHtml(market.insight||'')}</div>`);
+            }
+
+            // Revenue
+            if (revenue.model) {
+                html += card('var(--purple)', 'fa-dollar-sign', 'Revenue Model',
+                    `<div style="font-size:0.84rem;font-weight:600;color:var(--text);margin-bottom:6px;">${escHtml(revenue.model||'')}</div>
+                     <div style="font-size:0.77rem;color:var(--text-dim);line-height:1.5;">
+                         Y1: <strong>${escHtml(revenue.year1||'—')}</strong> &nbsp;→&nbsp; Y3: <strong>${escHtml(revenue.year3||'—')}</strong>
+                     </div>
+                     ${revenue.pricing ? `<div style="font-size:0.75rem;color:var(--text-muted);margin-top:5px;">${escHtml(revenue.pricing)}</div>` : ''}`);
+            }
+
+            // Advantage
+            if (advantage.main) {
+                html += card('var(--amber)', 'fa-shield-alt', 'Competitive Advantage',
+                    `<div style="font-size:0.81rem;color:var(--text);line-height:1.5;margin-bottom:8px;">${escHtml(advantage.main||'')}</div>
+                     <div style="font-size:0.76rem;color:var(--text-dim);line-height:1.5;"><span style="color:var(--amber);font-weight:600;">Moat:</span> ${escHtml(advantage.moat||'')}</div>
+                     ${advantage.differentiation ? `<div style="font-size:0.75rem;color:var(--text-muted);line-height:1.5;margin-top:6px;font-style:italic;">${escHtml(advantage.differentiation)}</div>` : ''}`);
+            }
+
+            // Persona
+            if (persona.name) {
+                html += card('var(--blue)', 'fa-user-circle', 'Ideal Customer',
+                    `<div style="font-size:0.82rem;font-weight:600;color:var(--text);margin-bottom:5px;">${escHtml(persona.name||'')}</div>
+                     <div style="font-size:0.77rem;color:var(--text-dim);line-height:1.5;margin-bottom:5px;">${escHtml(persona.painPoint||'')}</div>
+                     ${persona.willingness ? `<div style="font-size:0.74rem;color:var(--accent);font-style:italic;">${escHtml(persona.willingness)}</div>` : ''}`);
+            }
+
+            // Risk
+            if (risk.description) {
+                html += `<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:14px;margin-bottom:12px;">
+                    <div style="font-size:0.68rem;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:9px;"><i class="fas fa-exclamation-triangle" style="margin-right:5px;"></i>Main Risk</div>
+                    <div style="font-size:0.8rem;color:#374151;line-height:1.5;margin-bottom:6px;">${escHtml(risk.description||'')}</div>
+                    <div style="font-size:0.75rem;color:#6b7280;line-height:1.5;">${escHtml(risk.mitigation||'')}</div>
+                </div>`;
+            }
+
+            // Competitors
+            if (competitors.length) {
+                html += card('var(--text-dim)', 'fa-chess', 'Competitors',
+                    competitors.map((c,i) => `
+                    <div style="${i < competitors.length-1 ? 'border-bottom:1px solid var(--border);padding-bottom:9px;margin-bottom:9px;' : ''}">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
+                            <span style="font-size:0.82rem;font-weight:600;color:var(--text);">${escHtml(c.name||'')}</span>
+                            <span style="font-size:0.68rem;color:var(--text-muted);">${escHtml(c.share||'')}</span>
+                        </div>
+                        <div style="font-size:0.74rem;color:var(--red);margin-bottom:2px;"><i class="fas fa-minus-circle" style="margin-right:3px;"></i>${escHtml(c.weakness||'')}</div>
+                        <div style="font-size:0.74rem;color:var(--accent);"><i class="fas fa-check-circle" style="margin-right:3px;"></i>${escHtml(c.strength||'')}</div>
+                    </div>`).join(''));
+            }
+
+            // Channels
+            if (channels.length) {
+                html += card('var(--text-dim)', 'fa-broadcast-tower', 'Go-to-Market Channels',
+                    channels.map(c => `
+                    <div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:7px;">
+                        <i class="fas fa-arrow-right" style="color:var(--accent);font-size:0.65rem;margin-top:4px;flex-shrink:0;"></i>
+                        <div><strong style="font-size:0.8rem;">${escHtml(c.name||'')}</strong> — <span style="font-size:0.77rem;color:var(--text-dim);">${escHtml(c.reason||'')}</span></div>
+                    </div>`).join(''));
+            }
+
+            html += `</div>`;
+            return html;
         }
 
         // ─── DELIVER ───

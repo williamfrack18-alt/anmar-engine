@@ -4163,6 +4163,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ── Inline BM chat send ───────────────────────────────────────────────────
+    let _bmFirstSent = false;  // show "Got it!" only on the first message
+
     window.bmChatSend = async function () {
         const input  = document.getElementById('bmChatInput');
         const msgBox = document.getElementById('bmChatMessages');
@@ -4207,21 +4209,26 @@ document.addEventListener('DOMContentLoaded', () => {
             sendOk = r.ok;
         } catch (_) { /* silently ignore network errors */ }
 
-        // Short delay, then show confirmation
+        // Short delay then remove typing indicator
         await new Promise(r => setTimeout(r, 900));
         typing.remove();
 
-        const expertBubble = document.createElement('div');
-        expertBubble.style.cssText = 'display:flex;gap:10px;align-items:flex-start;';
-        expertBubble.innerHTML = `
-            <div style="width:28px;height:28px;border-radius:8px;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                <i class="fas fa-user-tie" style="font-size:0.65rem;color:#10b981;"></i>
-            </div>
-            <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);border-radius:10px;padding:10px 13px;font-size:0.83rem;color:rgba(255,255,255,0.8);line-height:1.6;max-width:90%;">
-                ✅ Got it! One of our strategists will review your message and get back to you shortly.
-            </div>`;
-        msgBox.appendChild(expertBubble);
-        msgBox.scrollTop = msgBox.scrollHeight;
+        // Only show the "Got it!" confirmation on the VERY FIRST message
+        if (!_bmFirstSent) {
+            _bmFirstSent = true;
+            const expertBubble = document.createElement('div');
+            expertBubble.style.cssText = 'display:flex;gap:10px;align-items:flex-start;';
+            expertBubble.innerHTML = `
+                <div style="width:28px;height:28px;border-radius:8px;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <i class="fas fa-user-tie" style="font-size:0.65rem;color:#10b981;"></i>
+                </div>
+                <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);border-radius:10px;padding:10px 13px;font-size:0.83rem;color:rgba(255,255,255,0.8);line-height:1.6;max-width:90%;">
+                    ✅ Got it! One of our strategists will review your message and get back to you shortly.
+                </div>`;
+            msgBox.appendChild(expertBubble);
+            msgBox.scrollTop = msgBox.scrollHeight;
+        }
+        // On subsequent messages — just wait for the polling to pick up the reply (nothing shown)
     };
 
     // ── Typewriter utility ────────────────────────────────────────────────────

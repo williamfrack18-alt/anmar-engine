@@ -1522,12 +1522,54 @@ Respond ONLY with a valid JSON object. No markdown, no code fences, no extra tex
         raw = raw.strip()
 
         parsed = json.loads(raw)
+
+        # ── Cache BM result so internal panel can load it ─────────────────────
+        try:
+            bm_cache_path = os.path.join(BASE_DIR, 'backend', 'bm_cache.json')
+            bm_cache = {}
+            if os.path.exists(bm_cache_path):
+                with open(bm_cache_path, 'r') as _f:
+                    bm_cache = json.load(_f)
+            cache_key = project_name.lower().strip().replace(' ', '_')
+            bm_cache[cache_key] = {
+                'data': parsed,
+                'project_name': project_name,
+                'updated_at': datetime.utcnow().isoformat()
+            }
+            with open(bm_cache_path, 'w') as _f:
+                json.dump(bm_cache, _f)
+        except Exception as _e:
+            print(f'[BM Cache] Error saving: {_e}')
+
         return jsonify({'ok': True, 'data': parsed})
 
     except json.JSONDecodeError:
         return jsonify({'error': 'Invalid AI response', 'raw': raw[:300]}), 500
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/bm-data', methods=['GET'])
+def get_bm_data():
+    """Return cached BM analysis for a project. Used by internal panel for context."""
+    project_name = request.args.get('project_name', '').lower().strip().replace(' ', '_')
+    if not project_name:
+        return jsonify({'error': 'project_name required'}), 400
+    bm_cache_path = os.path.join(BASE_DIR, 'backend', 'bm_cache.json')
+    if not os.path.exists(bm_cache_path):
+        return jsonify({'error': 'No BM cache found'}), 404
+    try:
+        with open(bm_cache_path, 'r') as f:
+            bm_cache = json.load(f)
+    except Exception:
+        return jsonify({'error': 'Error reading BM cache'}), 500
+    # Try both underscore and space variants
+    data = (bm_cache.get(project_name)
+            or bm_cache.get(project_name.replace('_', ' '))
+            or bm_cache.get(project_name.replace(' ', '_')))
+    if not data:
+        return jsonify({'error': 'BM not found for this project'}), 404
+    return jsonify(data)
 
 def _normalize_project_name(project_name):
     return str(project_name or "").strip().lower()
