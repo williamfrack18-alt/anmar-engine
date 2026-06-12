@@ -2329,8 +2329,15 @@
                 padding: 20px 16px !important;
             }
 
-            /* Fix section-business on mobile */
-            #section-business {
+            /* Fix section-business on mobile — override desktop fixed positioning */
+            #section-business,
+            #section-business.section-view.active {
+                position: relative !important;
+                top: auto !important;
+                left: auto !important;
+                right: auto !important;
+                bottom: auto !important;
+                height: 100% !important;
                 overflow-y: auto !important;
             }
 
@@ -3486,7 +3493,7 @@
                 </div><!-- /bmScrollArea -->
 
                 <!-- ── BM Chat Input Bar — pinned to bottom of section ── -->
-                <div id="bmChatInputBar" style="display:none; position:absolute; bottom:0; left:0; right:0; padding:0 1.5rem 1.6rem; z-index:6; background:linear-gradient(to top, rgba(7,14,11,0.98) 60%, transparent);">
+                <div id="bmChatInputBar" style="display:none; position:absolute; bottom:0; left:0; right:0; padding:0 1.5rem 1.6rem; z-index:12; background:linear-gradient(to top, rgba(7,14,11,0.98) 60%, transparent);">
                     <div style="max-width:720px; width:100%; margin:0 auto;">
                         <div class="chat-input-wrap" style="background:rgba(0,0,0,0.55); backdrop-filter:blur(18px); border:1px solid rgba(255,255,255,0.12); border-radius:16px; box-shadow:0 8px 32px rgba(0,0,0,0.4);">
                             <textarea id="bmChatInput" rows="1"
