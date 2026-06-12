@@ -161,6 +161,8 @@
         .channel-tab.active-build .tab-count { background: rgba(59,130,246,0.2); color: var(--blue); }
         .channel-tab.active-marketing .tab-count { background: rgba(168,85,247,0.2); color: var(--purple); }
         .channel-tab.active-organic .tab-count { background: rgba(16,185,129,0.2); color: var(--accent); }
+        .channel-tab.active-validate { background: rgba(245,158,11,0.12); color: var(--amber); }
+        .channel-tab.active-validate .tab-count { background: rgba(245,158,11,0.2); color: var(--amber); }
         .channel-badge {
             display: inline-flex; align-items: center; gap: 5px;
             padding: 3px 10px; border-radius: 999px; font-size: 0.66rem;
@@ -217,6 +219,13 @@
             box-shadow: 0 0 12px rgba(59,130,246,0.1);
             animation: newClientPulse 2s ease-in-out 3;
         }
+        /* ── Unread messages highlight ── */
+        .ticket-row.has-unread {
+            border-left: 3px solid #ef4444;
+            background: rgba(239,68,68,0.03);
+        }
+        /* ── Validate channel badge ── */
+        .channel-badge.ch-validate { background: rgba(245,158,11,0.12); color: var(--amber); border: 1px solid rgba(245,158,11,0.2); }
         @keyframes newClientPulse {
             0%, 100% { box-shadow: 0 0 6px rgba(59,130,246,0.08); }
             50% { box-shadow: 0 0 18px rgba(59,130,246,0.2); }
@@ -623,6 +632,10 @@
                     <i class="fas fa-leaf"></i> Organic
                     <span class="tab-count" id="count-ch-organic">0</span>
                 </button>
+                <button class="channel-tab" id="chtab-validate" onclick="setChannel('validate')">
+                    <i class="fas fa-comments"></i> Validate
+                    <span class="tab-count" id="count-ch-validate">0</span>
+                </button>
             </div>
 
             <div class="queue-header">
@@ -881,9 +894,10 @@
         let notifPermission = 'default';
 
         const CHANNEL_CONFIG = {
-            build: { label: 'Build', icon: 'fa-code', color: 'var(--blue)', cssClass: 'ch-build', activeClass: 'active-build' },
-            marketing: { label: 'Marketing', icon: 'fa-bullhorn', color: 'var(--purple)', cssClass: 'ch-marketing', activeClass: 'active-marketing' },
-            organic: { label: 'Organic', icon: 'fa-leaf', color: 'var(--accent)', cssClass: 'ch-organic', activeClass: 'active-organic' }
+            build:    { label: 'Build',    icon: 'fa-code',     color: 'var(--blue)',   cssClass: 'ch-build',    activeClass: 'active-build' },
+            marketing:{ label: 'Marketing',icon: 'fa-bullhorn', color: 'var(--purple)', cssClass: 'ch-marketing',activeClass: 'active-marketing' },
+            organic:  { label: 'Organic',  icon: 'fa-leaf',     color: 'var(--accent)', cssClass: 'ch-organic',  activeClass: 'active-organic' },
+            validate: { label: 'Validate', icon: 'fa-comments', color: 'var(--amber)',  cssClass: 'ch-validate', activeClass: 'active-validate' }
         };
 
         // ─── AUTH ───
@@ -1000,17 +1014,19 @@
         function getTicketChannel(t) {
             if (t.channel) return t.channel;
             const text = ((t.summary || '') + ' ' + (t.blueprint_md || '') + ' ' + (t.project_name || '')).toLowerCase();
-            if (text.includes('marketing') || text.includes('ads') || text.includes('paid')) return 'marketing';
+            if (text.includes('marketing') || text.includes('ads')) return 'marketing';
             if (text.includes('organic') || text.includes('seo') || text.includes('community')) return 'organic';
             return 'build';
         }
 
         function updateChannelCounts() {
-            const counts = { build: 0, marketing: 0, organic: 0 };
+            const counts = { build: 0, marketing: 0, organic: 0, validate: 0 };
             allTickets.forEach(t => { const ch = getTicketChannel(t); if (counts[ch] !== undefined) counts[ch]++; });
-            document.getElementById('count-ch-build').textContent = counts.build;
-            document.getElementById('count-ch-marketing').textContent = counts.marketing;
-            document.getElementById('count-ch-organic').textContent = counts.organic;
+            document.getElementById('count-ch-build').textContent      = counts.build;
+            document.getElementById('count-ch-marketing').textContent  = counts.marketing;
+            document.getElementById('count-ch-organic').textContent    = counts.organic;
+            const vcEl = document.getElementById('count-ch-validate');
+            if (vcEl) vcEl.textContent = counts.validate;
         }
 
         function channelBadgeHtml(ch) {
@@ -1020,10 +1036,10 @@
 
         function planBadgeHtml(plan) {
             const p = (plan || 'none').toLowerCase();
-            const labels = { validate: 'Validate', mvp: 'MVP', growth: 'Growth', none: 'No plan' };
-            const icons = { validate: 'fa-check-circle', mvp: 'fa-rocket', growth: 'fa-chart-line', none: 'fa-minus-circle' };
-            const cls = p === 'validate' ? 'plan-validate' : p === 'mvp' ? 'plan-mvp' : p === 'growth' ? 'plan-growth' : 'plan-none';
-            return `<span class="plan-badge ${cls}"><i class="fas ${icons[p] || icons.none}"></i> ${labels[p] || 'No plan'}</span>`;
+            const labels = { starter: 'Starter', validate: 'Validate', mvp: 'MVP', growth: 'Growth', pro: 'Pro', enterprise: 'Enterprise', none: 'No plan' };
+            const icons  = { starter: 'fa-star', validate: 'fa-check-circle', mvp: 'fa-rocket', growth: 'fa-chart-line', pro: 'fa-gem', enterprise: 'fa-building', none: 'fa-minus-circle' };
+            const cls    = p === 'starter' ? 'plan-validate' : p === 'validate' ? 'plan-validate' : p === 'mvp' ? 'plan-mvp' : p === 'growth' ? 'plan-growth' : 'plan-none';
+            return `<span class="plan-badge ${cls}"><i class="fas ${icons[p] || icons.none}"></i> ${labels[p] || p || 'No plan'}</span>`;
         }
 
         // ─── FILTERS ───
@@ -1113,10 +1129,14 @@
                 const created = t.created_at ? timeAgo(t.created_at) : '';
                 const isNewClient = t.client_plan && t.client_plan !== 'none' && t.created_at && (Date.now() - new Date(t.created_at).getTime()) < 30 * 60 * 1000 && (t.status === 'pending' || t.status === 'pending_human_review');
                 const newBadge = isNewClient ? '<span class="new-badge"><i class="fas fa-bolt" style="font-size:0.5rem;"></i> NEW</span>' : '';
-                return `<div class="glass-card ticket-row${isNewClient ? ' new-client' : ''}" onclick="openTicket('${t.id || t.ticket_id || ''}')">
+                const unread = parseInt(t.unread_messages || 0);
+                const unreadBadge = unread > 0
+                    ? `<span style="display:inline-flex;align-items:center;gap:4px;background:#ef4444;color:#fff;border-radius:999px;font-size:0.62rem;font-weight:700;padding:2px 7px;margin-left:6px;"><i class="fas fa-comment-dots" style="font-size:0.55rem;"></i>${unread} new</span>`
+                    : '';
+                return `<div class="glass-card ticket-row${isNewClient ? ' new-client' : ''}${unread > 0 ? ' has-unread' : ''}" onclick="openTicket('${t.id || t.ticket_id || ''}')">
                     <div class="ticket-priority ${prClass}"></div>
                     <div class="ticket-info">
-                        <h4>${highlightText(projectName, query)}${newBadge}</h4>
+                        <h4>${highlightText(projectName, query)}${newBadge}${unreadBadge}</h4>
                         <p>${highlightText(clientEmail, query)} ${planBadgeHtml(t.client_plan)} ${channelBadgeHtml(ch)}</p>
                     </div>
                     <div class="ticket-meta">${created}</div>

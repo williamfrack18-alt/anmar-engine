@@ -5055,6 +5055,15 @@ def send_human_chat():
             summary_text = content[:140]
             base_project = project_name[:-11] if project_name.endswith("__marketing") else project_name
             if not ticket:
+                # Look up client plan for display in panel
+                client_plan = 'none'
+                try:
+                    _conn = get_db_connection()
+                    _row = _conn.execute('SELECT subscription_plan FROM users WHERE LOWER(email)=?', (client_email.lower(),)).fetchone()
+                    _conn.close()
+                    if _row: client_plan = _row['subscription_plan'] or 'none'
+                except Exception: pass
+
                 ticket = {
                     "id": str(uuid.uuid4())[:8],
                     "project_name": project_name,
@@ -5064,6 +5073,8 @@ def send_human_chat():
                     "updated_at": now,
                     "status": "pending",
                     "priority": "high",
+                    "channel": "validate",
+                    "client_plan": client_plan,
                     "preview_url": f"/projects/{base_project}/index.html",
                     "unread_messages": 0,
                     "events": []
@@ -5085,6 +5096,23 @@ def send_human_chat():
             save_alerts(alerts)
         except Exception as e:
             print(f"Error updating internal alerts for human chat: {e}")
+
+        # SMS notification to admin when a paying client sends a message
+        if role == "client" and TWILIO_ADMIN_PHONE:
+            try:
+                display_project = project_name.replace('_', ' ').title()
+                preview = content[:100] + ('…' if len(content) > 100 else '')
+                _send_sms(
+                    to_phone=TWILIO_ADMIN_PHONE,
+                    body=(
+                        f"💬 New message from {actor or client_email}\n"
+                        f"Project: {display_project}\n"
+                        f"\"{preview}\"\n"
+                        f"Reply at anmarenterprices.com/internal/panel.html"
+                    )
+                )
+            except Exception as e:
+                print(f"[SMS] Error sending admin alert: {e}")
 
         return jsonify({"status": "success"})
     except Exception as e:

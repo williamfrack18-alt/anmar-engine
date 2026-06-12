@@ -789,10 +789,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function formatPlanLabel(plan) {
         const key = (plan || '').toLowerCase();
-        if (key.includes('marketing + build') || key.includes('marketing + build')) {
-            return 'Marketing + Build';
-        }
-        if (key.includes('marketing')) return 'Marketing';
+        if (key.includes('marketing + build')) return 'Marketing + Build';
+        if (key.includes('marketing'))         return 'Marketing';
+        if (key.includes('starter'))           return 'Starter';
+        if (key.includes('validate'))          return 'Validate';
+        if (key.includes('mvp'))               return 'MVP';
+        if (key.includes('growth'))            return 'Growth';
+        if (key.includes('pro'))               return 'Pro';
+        if (key.includes('enterprise'))        return 'Enterprise';
+        if (key && key !== 'none')             return key.charAt(0).toUpperCase() + key.slice(1);
         return 'Plan required';
     }
 
@@ -887,9 +892,89 @@ document.addEventListener('DOMContentLoaded', () => {
             input.style.height = Math.min(input.scrollHeight, 120) + 'px';
         });
 
+        // If BM is already rendered (bmCard-done visible), make sure chat panel is shown
+        const done = document.getElementById('bmCard-done');
+        const chatPanel = document.getElementById('bmChatPanel');
+        if (done && done.style.display !== 'none' && done.style.display !== '') {
+            if (inputBar)   inputBar.style.display   = 'block';
+            if (chatPanel)  chatPanel.style.display  = 'block';
+            // Populate welcome message if chat is empty
+            const msgBox = document.getElementById('bmChatMessages');
+            if (msgBox && !msgBox.children.length) {
+                msgBox.innerHTML = `
+                    <div style="display:flex;gap:10px;align-items:flex-start;">
+                        <div style="width:28px;height:28px;border-radius:8px;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <i class="fas fa-user-tie" style="font-size:0.65rem;color:#10b981;"></i>
+                        </div>
+                        <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);border-radius:10px;padding:10px 13px;font-size:0.83rem;color:rgba(255,255,255,0.75);line-height:1.55;max-width:90%;">
+                            Your business model is ready! 🎯 Send us your questions — one of our strategists will review your analysis and get back to you shortly.
+                        </div>
+                    </div>`;
+            }
+        }
+
         _bmChatUnlocked = true;
+
+        // Start polling for employee replies every 6 seconds
+        startBmChatPolling();
     }
     window.unlockBmChat = unlockBmChat;
+
+    // ── Poll for employee replies in BM chat ──────────────────────────────────
+    let _bmPollInterval = null;
+    let _bmLastMsgId    = null;  // track last known message id to avoid duplicates
+
+    function startBmChatPolling() {
+        if (_bmPollInterval) return; // already running
+        _bmPollInterval = setInterval(async () => {
+            try {
+                const proj = (currentProjectName || '').toLowerCase().trim();
+                if (!proj || !currentUser?.email) return;
+                const r = await fetch(
+                    `/api/human-chat/history?project_name=${encodeURIComponent(proj)}&client_email=${encodeURIComponent(currentUser.email)}`,
+                    { credentials: 'include' }
+                );
+                if (!r.ok) return;
+                const data = await r.json();
+                const msgs = Array.isArray(data.messages) ? data.messages
+                           : Array.isArray(data.history)  ? data.history
+                           : Array.isArray(data)          ? data : [];
+
+                // Only show NEW internal/human messages from the team
+                const msgBox = document.getElementById('bmChatMessages');
+                if (!msgBox) return;
+                for (const m of msgs) {
+                    const id = m.id || m.timestamp || JSON.stringify(m);
+                    if (id === _bmLastMsgId) break; // reached already-shown messages
+                    if (m.role === 'internal' || m.role === 'human') {
+                        // New employee reply — render it
+                        const bubble = document.createElement('div');
+                        bubble.style.cssText = 'display:flex;gap:10px;align-items:flex-start;';
+                        bubble.dataset.msgId = id;
+                        bubble.innerHTML = `
+                            <div style="width:28px;height:28px;border-radius:8px;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                <i class="fas fa-user-tie" style="font-size:0.65rem;color:#10b981;"></i>
+                            </div>
+                            <div style="flex:1;">
+                                <div style="font-size:0.68rem;color:rgba(255,255,255,0.35);margin-bottom:4px;">${escapeHtml(m.actor || m.sender || 'Anmar Team')}</div>
+                                <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);border-radius:10px;padding:10px 13px;font-size:0.83rem;color:rgba(255,255,255,0.85);line-height:1.6;max-width:90%;white-space:pre-wrap;">${escapeHtml(m.content || '')}</div>
+                            </div>`;
+                        msgBox.appendChild(bubble);
+                        msgBox.scrollTop = msgBox.scrollHeight;
+                    }
+                }
+                // Update last known id to the most recent message id
+                if (msgs.length > 0) {
+                    const last = msgs[msgs.length - 1];
+                    _bmLastMsgId = last.id || last.timestamp || JSON.stringify(last);
+                }
+            } catch (_) { /* silently ignore poll errors */ }
+        }, 6000);
+    }
+
+    function stopBmChatPolling() {
+        if (_bmPollInterval) { clearInterval(_bmPollInterval); _bmPollInterval = null; }
+    }
 
     async function checkUserCredits() {
         await refreshSubscriptionStatus();
@@ -4094,57 +4179,49 @@ document.addEventListener('DOMContentLoaded', () => {
         msgBox.appendChild(userBubble);
         msgBox.scrollTop = msgBox.scrollHeight;
 
-        // Typing indicator
+        // Typing indicator — brief delay then show expert response
         const typing = document.createElement('div');
         typing.style.cssText = 'display:flex;gap:10px;align-items:flex-start;';
         typing.innerHTML = `
             <div style="width:28px;height:28px;border-radius:8px;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                <i class="fas fa-brain" style="font-size:0.65rem;color:#10b981;"></i>
+                <i class="fas fa-user-tie" style="font-size:0.65rem;color:#10b981;"></i>
             </div>
-            <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);border-radius:10px;padding:10px 13px;font-size:0.83rem;color:rgba(255,255,255,0.4);font-style:italic;">Thinking...</div>`;
+            <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);border-radius:10px;padding:10px 13px;font-size:0.83rem;color:rgba(255,255,255,0.4);font-style:italic;">Forwarding to our team…</div>`;
         msgBox.appendChild(typing);
         msgBox.scrollTop = msgBox.scrollHeight;
 
+        // Send message to internal team via human-chat endpoint
+        let sendOk = false;
         try {
-            const res = await fetch('/api/continue-chat', {
+            const r = await fetch('/api/human-chat/send', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
                 body: JSON.stringify({
-                    message: text,
-                    user_email: currentUser?.email || '',
-                    project_name: currentProjectName || '',
-                    history: [],
-                    engine: 'anthropic'
+                    role: 'client',
+                    content: text,
+                    client_email: currentUser?.email || '',
+                    project_name: (currentProjectName || '').toLowerCase().trim()
                 })
             });
-            const json = await res.json().catch(() => ({}));
-            const reply = json.ai_reply || json.reply || json.message || '';
+            sendOk = r.ok;
+        } catch (_) { /* silently ignore network errors */ }
 
-            typing.remove();
-            if (reply) {
-                const aiBubble = document.createElement('div');
-                aiBubble.style.cssText = 'display:flex;gap:10px;align-items:flex-start;';
-                aiBubble.innerHTML = `
-                    <div style="width:28px;height:28px;border-radius:8px;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                        <i class="fas fa-brain" style="font-size:0.65rem;color:#10b981;"></i>
-                    </div>
-                    <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);border-radius:10px;padding:10px 13px;font-size:0.83rem;color:rgba(255,255,255,0.8);line-height:1.6;max-width:90%;white-space:pre-wrap;">${escapeHtml(reply)}</div>`;
-                msgBox.appendChild(aiBubble);
-                msgBox.scrollTop = msgBox.scrollHeight;
-            }
-        } catch (e) {
-            typing.remove();
-            const errBubble = document.createElement('div');
-            errBubble.style.cssText = 'display:flex;gap:10px;align-items:flex-start;';
-            errBubble.innerHTML = `
-                <div style="width:28px;height:28px;border-radius:8px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                    <i class="fas fa-exclamation" style="font-size:0.65rem;color:#f87171;"></i>
-                </div>
-                <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:10px 13px;font-size:0.83rem;color:rgba(255,255,255,0.4);">Connection error. Please try again.</div>`;
-            msgBox.appendChild(errBubble);
-            msgBox.scrollTop = msgBox.scrollHeight;
-        }
+        // Short delay, then show confirmation
+        await new Promise(r => setTimeout(r, 900));
+        typing.remove();
+
+        const expertBubble = document.createElement('div');
+        expertBubble.style.cssText = 'display:flex;gap:10px;align-items:flex-start;';
+        expertBubble.innerHTML = `
+            <div style="width:28px;height:28px;border-radius:8px;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <i class="fas fa-user-tie" style="font-size:0.65rem;color:#10b981;"></i>
+            </div>
+            <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);border-radius:10px;padding:10px 13px;font-size:0.83rem;color:rgba(255,255,255,0.8);line-height:1.6;max-width:90%;">
+                ✅ Got it! One of our strategists will review your message and get back to you shortly.
+            </div>`;
+        msgBox.appendChild(expertBubble);
+        msgBox.scrollTop = msgBox.scrollHeight;
     };
 
     // ── Typewriter utility ────────────────────────────────────────────────────
@@ -4442,24 +4519,41 @@ document.addEventListener('DOMContentLoaded', () => {
             const actEl = document.getElementById('bmLiveActivity');
             if (actEl) actEl.textContent = `${liveCount} entrepreneurs validated similar ideas this week`;
 
-            // Countdown timer — 48h from first generation, persisted in localStorage
-            const timerKey = `bm_timer_${(projectName || '').toLowerCase().trim()}`;
-            let expiry = parseInt(localStorage.getItem(timerKey) || '0');
-            if (!expiry || expiry < Date.now()) {
-                expiry = Date.now() + 48 * 60 * 60 * 1000;
-                localStorage.setItem(timerKey, expiry);
+            // Paid users: hide countdown + CTA, show "validation active" badge
+            const ctaBtn    = document.getElementById('bmChatCTA');
+            const cdWrap    = document.getElementById('bmCountdown') && document.getElementById('bmCountdown').parentElement;
+            if (subscriptionActive) {
+                // Hide the upsell elements
+                if (ctaBtn)  ctaBtn.style.display  = 'none';
+                if (cdWrap)  cdWrap.style.display  = 'none';
+                // Show paid status badge if not already present
+                if (!document.getElementById('bmPaidBadge')) {
+                    const badge = document.createElement('div');
+                    badge.id = 'bmPaidBadge';
+                    badge.style.cssText = 'display:inline-flex;align-items:center;gap:8px;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.35);border-radius:10px;padding:9px 18px;margin-bottom:16px;font-size:0.82rem;color:#10b981;font-weight:600;';
+                    badge.innerHTML = '<i class="fas fa-check-circle"></i> Validation active — our team will be in touch soon';
+                    done.insertBefore(badge, ctaBtn || done.firstChild);
+                }
+            } else {
+                // Free users: show countdown timer
+                const timerKey = `bm_timer_${(projectName || '').toLowerCase().trim()}`;
+                let expiry = parseInt(localStorage.getItem(timerKey) || '0');
+                if (!expiry || expiry < Date.now()) {
+                    expiry = Date.now() + 48 * 60 * 60 * 1000;
+                    localStorage.setItem(timerKey, expiry);
+                }
+                const cdEl = document.getElementById('bmCountdown');
+                function updateCountdown() {
+                    if (!cdEl) return;
+                    const diff = Math.max(0, expiry - Date.now());
+                    const h = Math.floor(diff / 3600000);
+                    const m = Math.floor((diff % 3600000) / 60000);
+                    const s2 = Math.floor((diff % 60000) / 1000);
+                    cdEl.textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s2).padStart(2,'0')}`;
+                }
+                updateCountdown();
+                setInterval(updateCountdown, 1000);
             }
-            const cdEl = document.getElementById('bmCountdown');
-            function updateCountdown() {
-                if (!cdEl) return;
-                const diff = Math.max(0, expiry - Date.now());
-                const h = Math.floor(diff / 3600000);
-                const m = Math.floor((diff % 3600000) / 60000);
-                const s2 = Math.floor((diff % 60000) / 1000);
-                cdEl.textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s2).padStart(2,'0')}`;
-            }
-            updateCountdown();
-            setInterval(updateCountdown, 1000);
 
             // Confetti burst
             if (speed > 0) _bmConfetti();
@@ -4478,10 +4572,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (msgBox) msgBox.innerHTML = `
                 <div style="display:flex;gap:10px;align-items:flex-start;">
                     <div style="width:28px;height:28px;border-radius:8px;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                        <i class="fas fa-brain" style="font-size:0.65rem;color:#10b981;"></i>
+                        <i class="fas fa-user-tie" style="font-size:0.65rem;color:#10b981;"></i>
                     </div>
                     <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);border-radius:10px;padding:10px 13px;font-size:0.83rem;color:rgba(255,255,255,0.75);line-height:1.55;max-width:90%;">
-                        Your business model is ready! Ask me anything — strategy questions, pricing, how to find your first customers, what to build first, or anything about the analysis above.
+                        Your business model is ready! 🎯 Send us your questions — one of our strategists will review your analysis and get back to you shortly.
                     </div>
                 </div>`;
         }
