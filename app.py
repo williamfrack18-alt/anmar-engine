@@ -1250,7 +1250,7 @@ def forgot_password():
     import secrets, hashlib
     token     = secrets.token_urlsafe(32)
     token_hash = hashlib.sha256(token.encode()).hexdigest()
-    expires_at = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+    expires_at = (datetime.utcnow() + timedelta(hours=1)).strftime('%Y-%m-%d %H:%M:%S')  # BUG FIX: was utcnow() — tokens expired instantly
 
     # Store token in DB (reuse chat_memory table with special key)
     conn = get_db_connection()
@@ -1552,6 +1552,12 @@ Respond ONLY with a valid JSON object. No markdown, no code fences, no extra tex
 @app.route('/api/bm-data', methods=['GET'])
 def get_bm_data():
     """Return cached BM analysis for a project. Used by internal panel for context."""
+    # BUG FIX: require authentication — internal team OR the project owner
+    is_internal = bool(session.get('internal_user'))
+    is_client   = bool(session.get('user_email'))
+    if not is_internal and not is_client:
+        return jsonify({'error': 'Unauthorized'}), 401
+
     project_name = request.args.get('project_name', '').lower().strip().replace(' ', '_')
     if not project_name:
         return jsonify({'error': 'project_name required'}), 400
@@ -5053,6 +5059,10 @@ def send_human_chat():
         if role == 'client':
             if not client_email:
                 return jsonify({"error": "You have not logged in."}), 401
+            # BUG FIX: verify client_email matches the authenticated session to prevent impersonation
+            session_email = session.get('user_email', '').lower()
+            if session_email and session_email != client_email.lower():
+                return jsonify({"error": "Forbidden"}), 403
             if not is_user_subscribed(client_email):
                 return jsonify({"error": "Plan is required to chat with the team.", "code": "subscription_required"}), 402
             # For clients, get verified name from DB to prevent spoofing

@@ -753,8 +753,14 @@
                     </div>
                     <div class="panel-content" id="rightPanelContent">
                         <!-- ── BUSINESS MODEL CONTEXT TAB ── -->
-                        <div class="tab-pane" id="pane-bm">
-                            <div id="bmContextContent" style="overflow-y:auto;height:100%;padding:4px 2px;">
+                        <div class="tab-pane" id="pane-bm" style="flex-direction:column;">
+                            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 18px 6px;border-bottom:1px solid var(--border);flex-shrink:0;">
+                                <span style="font-size:0.78rem;font-weight:600;color:var(--text-dim);">Business Model Analysis</span>
+                                <button onclick="_bmContextLoaded=null;loadBmContext();" style="font-size:0.72rem;background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent-glow);border-radius:6px;padding:4px 10px;cursor:pointer;">
+                                    <i class="fas fa-sync-alt"></i> Refresh
+                                </button>
+                            </div>
+                            <div id="bmContextContent" style="overflow-y:auto;flex:1;padding:4px 2px;">
                                 <div class="empty-state"><i class="fas fa-brain" style="font-size:1.4rem;"></i><p style="font-size:0.82rem;">Click this tab to load the client's Business Model.</p></div>
                             </div>
                         </div>

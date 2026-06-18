@@ -166,6 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
             notifBtn.classList.add('active');
         } else {
             notifBtn.classList.remove('active');
+            notifBadge.textContent = ''; // BUG FIX: clear stale count
         }
 
         const fresh = pendingBlueprints.filter(msg => msg.id && !notifiedBlueprintIds.has(msg.id));
@@ -941,11 +942,18 @@ document.addEventListener('DOMContentLoaded', () => {
                            : Array.isArray(data)          ? data : [];
 
                 // Only show NEW internal/human messages from the team
+                // BUG FIX: iterate forward and skip until we pass the last known ID,
+                // then render everything after it. Using break was wrong because msgs
+                // are in ascending (oldest-first) order — break stopped too early.
                 const msgBox = document.getElementById('bmChatMessages');
                 if (!msgBox) return;
+                let foundLast = (_bmLastMsgId === null); // if no prior id, show all
                 for (const m of msgs) {
                     const id = m.id || m.timestamp || JSON.stringify(m);
-                    if (id === _bmLastMsgId) break; // reached already-shown messages
+                    if (!foundLast) {
+                        if (id === _bmLastMsgId) foundLast = true;
+                        continue; // skip messages already shown
+                    }
                     if (m.role === 'internal' || m.role === 'human') {
                         // New employee reply — render it
                         const bubble = document.createElement('div');
@@ -963,7 +971,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         msgBox.scrollTop = msgBox.scrollHeight;
                     }
                 }
-                // Update last known id to the most recent message id
+                // Update last known id to the most recent message
                 if (msgs.length > 0) {
                     const last = msgs[msgs.length - 1];
                     _bmLastMsgId = last.id || last.timestamp || JSON.stringify(last);
@@ -4163,7 +4171,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ── Inline BM chat send ───────────────────────────────────────────────────
-    let _bmFirstSent = false;  // show "Got it!" only on the first message
+    // BUG FIX: persist "Got it!" seen state across page reloads per user+project
+    function _getBmFirstSentKey() {
+        const email = currentUser?.email || '';
+        const proj  = (currentProjectName || '').toLowerCase().trim();
+        return `_bmFirstSent_${email}_${proj}`;
+    }
+    let _bmFirstSent = false; // in-memory cache; persisted to localStorage below
 
     window.bmChatSend = async function () {
         const input  = document.getElementById('bmChatInput');
@@ -4213,9 +4227,10 @@ document.addEventListener('DOMContentLoaded', () => {
         await new Promise(r => setTimeout(r, 900));
         typing.remove();
 
-        // Only show the "Got it!" confirmation on the VERY FIRST message
-        if (!_bmFirstSent) {
+        // Only show the "Got it!" confirmation on the VERY FIRST message (persisted across reloads)
+        if (!_bmFirstSent && !localStorage.getItem(_getBmFirstSentKey())) {
             _bmFirstSent = true;
+            try { localStorage.setItem(_getBmFirstSentKey(), '1'); } catch(_) {}
             const expertBubble = document.createElement('div');
             expertBubble.style.cssText = 'display:flex;gap:10px;align-items:flex-start;';
             expertBubble.innerHTML = `
@@ -4574,17 +4589,21 @@ document.addEventListener('DOMContentLoaded', () => {
         if (chatInputBar) chatInputBar.style.display = 'block';
         if (chatPanel) {
             chatPanel.style.display = 'block';
-            // Clear old messages
+            // BUG FIX: Only set welcome message if the chat box has never been initialized.
+            // Never wipe msgBox if it already has content — polled replies would be destroyed.
             const msgBox = document.getElementById('bmChatMessages');
-            if (msgBox) msgBox.innerHTML = `
-                <div style="display:flex;gap:10px;align-items:flex-start;">
-                    <div style="width:28px;height:28px;border-radius:8px;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                        <i class="fas fa-user-tie" style="font-size:0.65rem;color:#10b981;"></i>
-                    </div>
-                    <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);border-radius:10px;padding:10px 13px;font-size:0.83rem;color:rgba(255,255,255,0.75);line-height:1.55;max-width:90%;">
-                        Your business model is ready! 🎯 Send us your questions — one of our strategists will review your analysis and get back to you shortly.
-                    </div>
-                </div>`;
+            if (msgBox && !msgBox.dataset.initialized) {
+                msgBox.dataset.initialized = '1';
+                msgBox.innerHTML = `
+                    <div style="display:flex;gap:10px;align-items:flex-start;">
+                        <div style="width:28px;height:28px;border-radius:8px;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <i class="fas fa-user-tie" style="font-size:0.65rem;color:#10b981;"></i>
+                        </div>
+                        <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);border-radius:10px;padding:10px 13px;font-size:0.83rem;color:rgba(255,255,255,0.75);line-height:1.55;max-width:90%;">
+                            Your business model is ready! 🎯 Send us your questions — one of our strategists will review your analysis and get back to you shortly.
+                        </div>
+                    </div>`;
+            }
         }
 
         // Scroll + update hint
