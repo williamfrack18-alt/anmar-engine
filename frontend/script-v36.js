@@ -875,7 +875,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const btn = inputBar.querySelector('.chat-send-btn');
             if (btn) {
                 btn.removeAttribute('onclick');
-                btn.addEventListener('click', () => { if (window.bmChatSend) window.bmChatSend(); });
+                btn.addEventListener('click', () => {
+                    if (window.bmChatSend) window.bmChatSend();
+                    else addLog('Analysis not ready yet — wait a moment.', 'warning'); // BUG FIX Bug 13
+                });
             }
         }
 
@@ -884,6 +887,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 if (window.bmChatSend) window.bmChatSend();
+                else addLog('Analysis not ready yet — wait a moment.', 'warning'); // BUG FIX Bug 13
             }
         });
 
@@ -2073,7 +2077,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!terminalContent) return;
         const msgRow = document.createElement('div');
         msgRow.className = 'msg-row user';
-        msgRow.innerHTML = `<div class="user-msg">${text}</div>`;
+        msgRow.innerHTML = `<div class="user-msg">${escapeHtml(text)}</div>`; // BUG FIX Bug 11: escape to prevent XSS
         terminalContent.insertBefore(msgRow, resultSection || null);
         terminalContent.scrollTop = terminalContent.scrollHeight;
     }
@@ -2455,7 +2459,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (container) container.appendChild(msgRow);
         const log = document.getElementById('humanLog');
         if (log) log.scrollTop = log.scrollHeight;
-        lastHumanChatCount++; // optimistic update
+        // BUG FIX Bug 10: removed lastHumanChatCount++ here — optimistic increment
+        // caused a race where the next poll would see matching count and skip rendering employee replies.
+        // The poll already syncs the count from the server response.
         updateSendState();
 
         if (!window.__humanAssignedOnce) {
@@ -2812,6 +2818,10 @@ document.addEventListener('DOMContentLoaded', () => {
         latestMissingFields = getRequiredFields().slice();
         latestBriefScore = 0;
         if (pollInterval) clearInterval(pollInterval);
+        // BUG FIX Bug 5: stop BM poll interval when resetting context to prevent memory leak
+        stopBmChatPolling();
+        // BUG FIX Bug 9: reset humanAssignedOnce so the UX shows for new project
+        window.__humanAssignedOnce = false;
         resetChatView();
         renderBriefState({ missing_fields: latestMissingFields, memory_summary: '' });
         await saveMemoryNow();
@@ -3638,6 +3648,10 @@ document.addEventListener('DOMContentLoaded', () => {
             lastHumanChatCount = 0;
             if (humanChatInterval) clearInterval(humanChatInterval);
             humanChatInterval = setInterval(pollHumanChat, 3000);
+            // BUG FIX Bug 5: stop previous BM poll for old project
+            stopBmChatPolling();
+            // BUG FIX Bug 9: reset so team assignment UX shows for new project
+            window.__humanAssignedOnce = false;
             persistCurrentProject();
             conversationHistory = [];
             originalIdea = '';
@@ -4085,6 +4099,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 fetch('/api/generate-business-model', {
                     method:  'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include', // BUG FIX Bug 8: send session cookie with request
                     body:    JSON.stringify(projectInfo)
                 }),
                 new Promise(r => setTimeout(r, 4000))

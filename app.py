@@ -1561,6 +1561,19 @@ def get_bm_data():
     project_name = request.args.get('project_name', '').lower().strip().replace(' ', '_')
     if not project_name:
         return jsonify({'error': 'project_name required'}), 400
+
+    # Ownership check: clients may only access their own project's BM
+    if is_client and not is_internal:
+        client_email = session.get('user_email', '').strip().lower()
+        alerts = load_alerts()
+        project_ticket = next(
+            (t for t in alerts if str(t.get('project_name', '')).lower().replace(' ', '_') == project_name),
+            None
+        )
+        # If ticket exists, verify caller is the owner
+        if project_ticket and project_ticket.get('client_email', '').lower() != client_email:
+            return jsonify({'error': 'Forbidden'}), 403
+
     bm_cache_path = os.path.join(BASE_DIR, 'backend', 'bm_cache.json')
     if not os.path.exists(bm_cache_path):
         return jsonify({'error': 'No BM cache found'}), 404
@@ -1626,6 +1639,11 @@ def read_chat_memory():
     project_name = request.args.get('project_name', '').strip().lower()
     if not email:
         return jsonify({"error": "email is required"}), 400
+    # Auth: only the owner or an internal user may read memory
+    is_internal = bool(session.get('internal_user'))
+    session_email = session.get('user_email', '').strip().lower()
+    if not is_internal and (not session_email or session_email != email):
+        return jsonify({"error": "Unauthorized"}), 401
     memory = get_chat_memory(email, project_name=project_name)
     return jsonify({"memory": memory or {}})
 
@@ -1634,6 +1652,10 @@ def write_chat_memory():
     data = request.json or {}
     email = (data.get('email') or '').strip().lower()
     project_name = (data.get('project_name') or '').strip().lower()
+    # Auth: only the owner may write their own memory
+    session_email = session.get('user_email', '').strip().lower()
+    if not session_email or session_email != email:
+        return jsonify({"error": "Unauthorized"}), 401
     memory = data.get('memory')
     if not email:
         return jsonify({"error": "email is required"}), 400
@@ -1670,6 +1692,11 @@ def reset_chat_memory_endpoint():
     project_name = (data.get('project_name') or '').strip().lower()
     if not email:
         return jsonify({"error": "email is required"}), 400
+    # Auth: only the owner or internal user may reset memory
+    is_internal = bool(session.get('internal_user'))
+    session_email = session.get('user_email', '').strip().lower()
+    if not is_internal and (not session_email or session_email != email):
+        return jsonify({"error": "Unauthorized"}), 401
 
     existing = get_chat_memory(email, project_name=project_name) or {}
     reset_payload = reset_memory_payload(existing)
@@ -5060,8 +5087,10 @@ def send_human_chat():
             if not client_email:
                 return jsonify({"error": "You have not logged in."}), 401
             # BUG FIX: verify client_email matches the authenticated session to prevent impersonation
+            # FIXED: changed from `if session_email and ...` to `if not session_email or ...`
+            # to prevent bypass when no session exists (unauthenticated attacker)
             session_email = session.get('user_email', '').lower()
-            if session_email and session_email != client_email.lower():
+            if not session_email or session_email != client_email.lower():
                 return jsonify({"error": "Forbidden"}), 403
             if not is_user_subscribed(client_email):
                 return jsonify({"error": "Plan is required to chat with the team.", "code": "subscription_required"}), 402
@@ -5221,9 +5250,17 @@ def accept_blueprint():
         if not project_name or not blueprint_id:
             return jsonify({"error": "Missing parameters"}), 400
 
-        # Auth: require client email and verify they own the project
-        if not client_email:
+        # Auth: require Flask session — prevent unauthenticated blueprint approval
+        session_email = session.get('user_email', '').strip().lower()
+        if not session_email:
             return jsonify({"error": "Authentication required"}), 401
+        # client_email in body must match the session to prevent CSRF/impersonation
+        if client_email and client_email != session_email:
+            return jsonify({"error": "Forbidden"}), 403
+        # Use session email as canonical identity
+        if not client_email:
+            client_email = session_email
+
         alerts = load_alerts()
         project_ticket = next(
             (t for t in alerts if str(t.get('project_name', '')).lower() == project_name),

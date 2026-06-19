@@ -1539,6 +1539,13 @@
             const project = activeTicket.project_name || activeTicket.project_id || '';
             try {
                 const r = await fetch(API + '/human-chat/history?project_name=' + encodeURIComponent(project) + '&mark_read=1', { credentials: 'include' });
+                // BUG FIX Bug 7: handle 401 explicitly — session may have expired
+                if (r.status === 401) {
+                    if (window._clientChatPoll) { clearInterval(window._clientChatPoll); window._clientChatPoll = null; }
+                    showToast('Session expired. Please log in again.', 'error');
+                    setTimeout(() => window.location.replace('login.html'), 2000);
+                    return;
+                }
                 if (!r.ok) throw new Error();
                 const data = await r.json();
                 const messages = data.messages || data.history || data || [];
@@ -1816,7 +1823,8 @@
         }
 
         // ─── NOTES ───
-        function getNotesKey(ticketId) { return `anmar_notes_${ticketId}`; }
+        // BUG FIX Bug 12: include agent email in key to isolate notes per agent
+        function getNotesKey(ticketId) { const agentSlug = (currentUser?.email || 'anon').replace(/[^a-z0-9]/gi, '_'); return `anmar_notes_${agentSlug}_${ticketId}`; }
         function loadNotes(ticketId) { const raw = localStorage.getItem(getNotesKey(ticketId)); return raw ? JSON.parse(raw) : []; }
         function saveNotes(ticketId, notes) { localStorage.setItem(getNotesKey(ticketId), JSON.stringify(notes)); }
 
