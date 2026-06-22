@@ -1264,11 +1264,23 @@ def forgot_password():
     reset_url = f"https://anmarenterprices.com/reset-password.html?token={token}&email={email}"
     print(f"[RESET] Password reset link for {email}: {reset_url}")
 
-    # Send email notification if possible
+    # BUG FIX Bug 14: send actual reset email (was wrongly calling notify_new_registration
+    # which sent the welcome email instead of the reset link)
     try:
-        notify_new_registration(f"Password Reset for {user['name']}", email)
-    except Exception:
-        pass
+        name_str = user['name'] or 'there'
+        reset_html = f"""
+        <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;background:#0a0a0a;color:#e5e7eb;border-radius:12px;">
+          <h2 style="color:#10b981;margin-bottom:8px;">Password Reset</h2>
+          <p style="color:#9ca3af;">Hi {name_str},</p>
+          <p>We received a request to reset your Anmar password. Click the button below to set a new password. This link expires in <strong>1 hour</strong>.</p>
+          <a href="{reset_url}" style="display:inline-block;margin:24px 0;padding:12px 28px;background:#10b981;color:#000;font-weight:700;border-radius:8px;text-decoration:none;">Reset My Password</a>
+          <p style="color:#6b7280;font-size:0.85rem;">If you didn't request this, you can safely ignore this email. Your password won't change.</p>
+          <p style="color:#6b7280;font-size:0.8rem;">Or copy this link: <a href="{reset_url}" style="color:#10b981;">{reset_url}</a></p>
+        </div>
+        """
+        _resend_send_email(email, "Reset your Anmar password", reset_html)
+    except Exception as e:
+        print(f"[RESET] Could not send email to {email}: {e}")
 
     return jsonify({"message": "If that email exists, a reset link has been sent."}), 200
 
@@ -4646,7 +4658,7 @@ def get_internal_alerts():
         alerts.sort(key=lambda a: a.get("updated_at", a.get("timestamp", "")), reverse=True)
         # Enrich with client plan info
         try:
-            conn = get_db()
+            conn = get_db_connection()  # BUG FIX Bug 2: get_db() no existe, nombre correcto es get_db_connection()
             for alert in alerts:
                 client_email = alert.get('user_email') or alert.get('client_email') or ''
                 if client_email:
@@ -4778,7 +4790,7 @@ def get_internal_clients():
         if not require_internal_auth():
             return jsonify({"error": "unauthorized"}), 401
 
-        conn = get_db()
+        conn = get_db_connection()  # BUG FIX Bug 2
         # Get all users from the users table
         users_rows = conn.execute(
             'SELECT email, name, subscription_plan, subscription_active, created_at, stripe_customer_id FROM users ORDER BY created_at DESC'
@@ -4898,7 +4910,7 @@ def internal_upgrade_client():
         if new_plan not in ('validate', 'mvp', 'growth', 'none'):
             return jsonify({"error": "Invalid plan. Must be validate, mvp, growth, or none"}), 400
 
-        conn = get_db()
+        conn = get_db_connection()  # BUG FIX Bug 2
         user = conn.execute('SELECT email, stripe_customer_id FROM users WHERE email = ?', (client_email,)).fetchone()
         if not user:
             return jsonify({"error": "Client not found in database"}), 404

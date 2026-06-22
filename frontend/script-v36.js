@@ -3144,8 +3144,13 @@ document.addEventListener('DOMContentLoaded', () => {
                             </div>
                          `);
 
-                        // Stop polling after completion? Or keep for updates? 
-                        // Usually safe to keep or slow down.
+                        // BUG FIX Bug 22: detener el polling cuando el proyecto está completado.
+                        // Antes seguía corriendo indefinidamente cada 3s para siempre.
+                        // Con muchos proyectos completados esto causa decenas de llamadas innecesarias por minuto.
+                        if (pollInterval) {
+                            clearInterval(pollInterval);
+                            pollInterval = null;
+                        }
                     }
 
                     lastStatus = status.status;
@@ -4589,7 +4594,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     cdEl.textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s2).padStart(2,'0')}`;
                 }
                 updateCountdown();
-                setInterval(updateCountdown, 1000);
+                // BUG FIX Bug 21: limpiar intervalo anterior antes de crear uno nuevo
+                // Sin esto, cada cambio de proyecto acumula un nuevo timer sin detener el anterior
+                if (window._bmCountdownInterval) clearInterval(window._bmCountdownInterval);
+                window._bmCountdownInterval = setInterval(updateCountdown, 1000);
             }
 
             // Confetti burst
