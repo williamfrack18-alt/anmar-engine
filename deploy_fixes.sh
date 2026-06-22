@@ -9,8 +9,8 @@ BASE_REMOTE="/var/www/anmar-engine"
 echo "Deploying internal messaging system + bug fixes..."
 
 cat "$BASE_LOCAL/frontend/script-v36.js" | ssh "$SERVER" "cat > $BASE_REMOTE/frontend/script-v36.js" && echo "OK script-v36.js" || echo "FAILED script-v36.js"
-scp "$BASE_LOCAL/app.py"                  "$SERVER:$BASE_REMOTE/app.py"                  && echo "OK app.py"              || echo "FAILED app.py"
-scp "$BASE_LOCAL/internal/panel.html"     "$SERVER:$BASE_REMOTE/internal/panel.html"     && echo "OK internal/panel.html" || echo "FAILED internal/panel.html"
+cat "$BASE_LOCAL/app.py"                  | ssh "$SERVER" "cat > $BASE_REMOTE/app.py"                  && echo "OK app.py"              || echo "FAILED app.py"
+cat "$BASE_LOCAL/internal/panel.html"     | ssh "$SERVER" "cat > $BASE_REMOTE/internal/panel.html"     && echo "OK internal/panel.html" || echo "FAILED internal/panel.html"
 
 echo ""
 echo "Restarting anmar.service..."
